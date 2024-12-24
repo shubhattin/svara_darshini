@@ -3,7 +3,7 @@
 
   let frequency = $state(0);
   let is_listening = $state(false);
-  let work_factor = $state(2048);
+  let fft_size = $state(2048);
 
   async function startFrequencyDetection() {
     if (is_listening) return; // Prevent multiple calls
@@ -11,7 +11,7 @@
 
     const audioContext = new AudioContext();
     const analyser = audioContext.createAnalyser();
-    analyser.fftSize = work_factor; // Set FFT size for frequency resolution
+    analyser.fftSize = fft_size; // Set FFT size for frequency resolution
 
     const bufferLength = analyser.frequencyBinCount;
     const frequencyData = new Uint8Array(bufferLength);
@@ -65,8 +65,12 @@
   </button>
 </div>
 <label class="mt-3 block">
-  <span class="label-text">Factor</span>
-  <input type="number" step={100} class="input w-32 rounded-md" bind:value={work_factor} />
+  <span class="label-text">FFT Size</span>
+  <select bind:value={fft_size} class="select w-32 rounded-md">
+    {#each Array.from({ length: 6 }).map((_, i) => Math.pow(2, i + 11)) as size}
+      <option value={size}>{size}</option>
+    {/each}
+  </select>
 </label>
 {#if is_listening}
   <div in:scale out:slide class="mt-4 text-xl font-bold">
