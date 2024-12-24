@@ -1,93 +1,9 @@
 <script lang="ts">
-  import {
-    Chart,
-    LineController,
-    LineElement,
-    PointElement,
-    LinearScale,
-    Title,
-    Tooltip,
-    Legend,
-    CategoryScale
-  } from 'chart.js';
-  import { onMount } from 'svelte';
   import { scale, slide } from 'svelte/transition';
 
   let frequency = $state(0);
   let is_listening = $state(false);
-  let chart: Chart | null = null;
-  let freequency_data = $state<number[]>(Array.from({ length: 100 }).map(() => 0));
-
-  onMount(() => {
-    Chart.register(
-      LineController,
-      LineElement,
-      PointElement,
-      LinearScale,
-      Title,
-      Tooltip,
-      Legend,
-      CategoryScale
-    );
-  });
-
-  let graph_canvas: HTMLCanvasElement = $state(null!);
-
-  $effect(() => {
-    if (!is_listening) {
-      freequency_data = [];
-      return;
-    }
-    // const data = freequency_data.slice(-100);
-    // chart!.data.datasets[0].data = data;
-  });
-
-  $effect(() => {
-    if (!is_listening || !graph_canvas) return;
-    if (chart) chart.destroy();
-    chart = new Chart(graph_canvas, {
-      type: 'line',
-      data: {
-        labels: freequency_data.map((v, i) => `${i + 1}`),
-        datasets: [
-          {
-            label: 'Frequency',
-            data: freequency_data,
-            borderColor: '#007bff',
-            backgroundColor: '#007bff',
-            fill: false,
-            tension: 0.4,
-            pointRadius: 0,
-            pointHoverRadius: 0,
-            pointHitRadius: 0
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: {
-            display: false
-          },
-          title: {
-            display: true,
-            text: 'Frequency'
-          },
-          tooltip: {
-            enabled: false
-          }
-        },
-        scales: {
-          x: {
-            display: false
-          },
-          y: {
-            display: true
-          }
-        }
-      }
-    });
-  });
+  let work_factor = $state(2048);
 
   async function startFrequencyDetection() {
     if (is_listening) return; // Prevent multiple calls
@@ -95,7 +11,7 @@
 
     const audioContext = new AudioContext();
     const analyser = audioContext.createAnalyser();
-    analyser.fftSize = 2048; // Set FFT size for frequency resolution
+    analyser.fftSize = work_factor; // Set FFT size for frequency resolution
 
     const bufferLength = analyser.frequencyBinCount;
     const frequencyData = new Uint8Array(bufferLength);
@@ -148,16 +64,16 @@
     Stop
   </button>
 </div>
-
+<label class="mt-3 block">
+  <span class="label-text">Factor</span>
+  <input type="number" step={100} class="input w-32 rounded-md" bind:value={work_factor} />
+</label>
 {#if is_listening}
   <div in:scale out:slide class="mt-4 text-xl font-bold">
     <div class="font-semibold">
       Detected Frequency: <span class="font-bold text-primary-500 dark:text-primary-400"
         >{frequency} Hz</span
       >
-    </div>
-    <div class="mt-4 rounded-lg border-2 border-gray-700 p-1.5">
-      <canvas bind:this={graph_canvas}></canvas>
     </div>
   </div>
 {/if}
