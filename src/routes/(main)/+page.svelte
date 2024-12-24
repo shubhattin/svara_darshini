@@ -1,10 +1,15 @@
 <script lang="ts">
-  let frequency = $state(0); // Store the detected frequency
-  let isListening = $state(false); // Toggle listening state
+  let frequency = $state(0);
+  let is_listening = $state(false);
+
+  let graph_canvas: HTMLCanvasElement = $state(null!);
+  $effect(() => {
+    if (!is_listening) return;
+  });
 
   async function startFrequencyDetection() {
-    if (isListening) return; // Prevent multiple calls
-    isListening = true;
+    if (is_listening) return; // Prevent multiple calls
+    is_listening = true;
 
     const audioContext = new AudioContext();
     const analyser = audioContext.createAnalyser();
@@ -24,10 +29,10 @@
       // Find the dominant frequency
       const maxIndex = frequencyData.indexOf(Math.max(...frequencyData));
       const nyquist = audioContext.sampleRate / 2;
-      frequency = (maxIndex / bufferLength) * nyquist;
+      frequency = parseFloat(((maxIndex / bufferLength) * nyquist).toFixed(2));
 
       // Loop
-      if (isListening) {
+      if (is_listening) {
         requestAnimationFrame(detectFrequency);
       }
     }
@@ -36,7 +41,7 @@
   }
 
   function stopFrequencyDetection() {
-    isListening = false;
+    is_listening = false;
     frequency = 0;
   }
 </script>
@@ -45,25 +50,28 @@
   <title>Freequency Reader</title>
 </svelte:head>
 
-<div class="m-4 text-center text-2xl">
-  {#if isListening}
-    Detected Frequency: <strong>{frequency} Hz</strong>
-  {/if}
-</div>
-
-<div class="spaxe-x-6">
+<div class="mt-4 space-x-6">
   <button
-    class="btn cursor-pointer bg-green-400 px-2 py-1"
+    class="btn rounded-md bg-green-600 px-2 py-1 text-lg font-bold text-white dark:bg-green-700"
     onclick={startFrequencyDetection}
-    disabled={isListening}
+    disabled={is_listening}
   >
     Start
   </button>
   <button
-    class="btn m-2 cursor-pointer px-2 py-1"
+    class="btn rounded-md bg-red-600 px-2 py-1 text-lg font-bold text-white dark:bg-red-700"
     onclick={stopFrequencyDetection}
-    disabled={!isListening}
+    disabled={!is_listening}
   >
     Stop
   </button>
 </div>
+
+{#if is_listening}
+  <div class="mt-4 text-xl font-bold">
+    Detected Frequency: <strong>{frequency} Hz</strong>
+    <div class="mt-4 rounded-lg border-2 border-gray-700">
+      <canvas bind:this={graph_canvas}></canvas>
+    </div>
+  </div>
+{/if}
