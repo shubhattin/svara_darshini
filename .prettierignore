@@ -1,4 +1,10 @@
-# Package Managers
-package-lock.json
+node_modules
+build
+.netlify
+.svelte-kit
+
+# Ignore files for PNPM, NPM and YARN
 pnpm-lock.yaml
-yarn.lock
+
+src/db/migrations
+src/db/scripts/out/
