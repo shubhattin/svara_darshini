@@ -1,83 +1,21 @@
 <script lang="ts">
-  import { scale, slide } from 'svelte/transition';
+  import { Tabs } from '@skeletonlabs/skeleton-svelte';
+  import NativeAudio from './NativeAudio.svelte';
+  import Pfft from './PFFT.svelte';
+  import PulseFft from './PulseFFT.svelte';
 
-  let frequency = $state(0);
-  let is_listening = $state(false);
-  let fft_size = $state(2048);
-
-  async function startFrequencyDetection() {
-    if (is_listening) return; // Prevent multiple calls
-    is_listening = true;
-
-    const audioContext = new AudioContext();
-    const analyser = audioContext.createAnalyser();
-    analyser.fftSize = fft_size; // Set FFT size for frequency resolution
-
-    const bufferLength = analyser.frequencyBinCount;
-    const frequencyData = new Uint8Array(bufferLength);
-
-    // Access microphone
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const source = audioContext.createMediaStreamSource(stream);
-    source.connect(analyser);
-
-    function detectFrequency() {
-      analyser.getByteFrequencyData(frequencyData);
-
-      // Find the dominant frequency
-      const maxIndex = frequencyData.indexOf(Math.max(...frequencyData));
-      const nyquist = audioContext.sampleRate / 2;
-      frequency = parseFloat(((maxIndex / bufferLength) * nyquist).toFixed(2));
-
-      // Loop
-      if (is_listening) {
-        requestAnimationFrame(detectFrequency);
-      }
-    }
-
-    detectFrequency();
-  }
-
-  function stopFrequencyDetection() {
-    is_listening = false;
-    frequency = 0;
-  }
+  let tab = $state<'native' | 'pfft' | 'pulsefft'>('native');
 </script>
 
-<svelte:head>
-  <title>Frequency Reader</title>
-</svelte:head>
-
-<div class="mt-4 space-x-6">
-  <button
-    class="btn rounded-md bg-green-600 px-2 py-1 text-lg font-bold text-white dark:bg-green-700"
-    onclick={startFrequencyDetection}
-    disabled={is_listening}
-  >
-    Start
-  </button>
-  <button
-    class="btn rounded-md bg-red-600 px-2 py-1 text-lg font-bold text-white dark:bg-red-700"
-    onclick={stopFrequencyDetection}
-    disabled={!is_listening}
-  >
-    Stop
-  </button>
-</div>
-<label class="mt-3 block">
-  <span class="label-text">FFT Size</span>
-  <select bind:value={fft_size} class="select w-32 rounded-md">
-    {#each Array.from({ length: 6 }).map((_, i) => Math.pow(2, i + 11)) as size}
-      <option value={size}>{size}</option>
-    {/each}
-  </select>
-</label>
-{#if is_listening}
-  <div in:scale out:slide class="mt-4 text-xl font-bold">
-    <div class="font-semibold">
-      Detected Frequency: <span class="font-bold text-primary-500 dark:text-primary-400"
-        >{frequency} Hz</span
-      >
-    </div>
-  </div>
-{/if}
+<Tabs bind:value={tab} base="mt-4">
+  {#snippet list()}
+    <Tabs.Control value={'native'} labelClasses="rounded-md">Native</Tabs.Control>
+    <Tabs.Control value={'pfft'} labelClasses="rounded-md">PFFT</Tabs.Control>
+    <Tabs.Control value={'pulsefft'} labelClasses="rounded-md">PulseFFT</Tabs.Control>
+  {/snippet}
+  {#snippet content()}
+    <Tabs.Panel value="native"><NativeAudio /></Tabs.Panel>
+    <Tabs.Panel value="pfft"><Pfft /></Tabs.Panel>
+    <Tabs.Panel value="pulsefft"><PulseFft /></Tabs.Panel>
+  {/snippet}
+</Tabs>
