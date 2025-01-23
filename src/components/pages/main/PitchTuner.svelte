@@ -5,8 +5,8 @@
   import { onMount } from 'svelte';
   import { FiPlay } from 'svelte-icons-pack/fi';
   import Icon from '~/tools/Icon.svelte';
-  import { slide } from 'svelte/transition';
   import { BiStopCircle } from 'svelte-icons-pack/bi';
+  import { cl_join } from '~/tools/cl_join';
 
   const getNoteNumberFromPitch = (frequency: number) => {
     const noteNum = 12 * (Math.log(frequency / 440) / Math.log(2));
@@ -36,17 +36,26 @@
     //clear interval
     clearInterval(update_interval);
 
-    audio_info = null;
-
-    // stop mic stream
-    mic_stream?.disconnect();
     // stop audio motion
     audio_motion?.disconnectInput(mic_stream, true);
 
+    // stop mic stream
+    mic_stream?.disconnect();
+
     // destroy analyzer node
     analyzer_node?.disconnect();
+
     // stop audio context
     audio_context?.close();
+
+    audio_info = null;
+    audio_context = null;
+    analyzer_node = null;
+    audio_motion = null;
+    mic_stream = null;
+    if (audio_div_element) {
+      audio_div_element.innerHTML = '';
+    }
   };
 
   onMount(() => {
@@ -126,7 +135,7 @@
 <div class="flex h-full w-full flex-col items-center">
   {#if !audio_info}
     <button
-      class="btn mt-40 gap-1 rounded-lg bg-primary-600 text-xl font-bold text-white dark:bg-primary-500"
+      class="btn mt-40 gap-1 rounded-lg bg-primary-600 px-3 py-1 text-xl font-bold text-white dark:bg-primary-500"
       onclick={Start}
     >
       <Icon src={FiPlay} class="text-2xl" />
@@ -134,9 +143,10 @@
     </button>
   {/if}
   <div class="relative h-full w-full">
-    <!-- {#if audio_info} -->
-    <div bind:this={audio_div_element} class="h-full w-full"></div>
-    <!-- {/if} -->
+    <div
+      bind:this={audio_div_element}
+      class={cl_join('h-full w-full', !audio_info && 'inset-0 z-[-10] hidden h-0 w-0')}
+    ></div>
     <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transform">
       {#if audio_info}
         {@const { clarity, detune, note, pitch, scale } = audio_info}
@@ -151,13 +161,15 @@
           <br />
           <kbd class="kbd-lg kbd">{`${detune} cents`}</kbd>
         </div>
-        <button
-          class="btn mt-6 block gap-1 rounded-lg bg-error-600 px-2 py-1 text-xl font-bold text-white dark:bg-error-500"
-          onclick={Stop}
-        >
-          <Icon src={BiStopCircle} class="text-2xl" />
-          Stop
-        </button>
+        <div class="mt-10 flex items-center justify-center gap-2">
+          <button
+            class="btn gap-1 rounded-lg bg-error-500 px-2 py-1 text-xl font-bold text-white"
+            onclick={Stop}
+          >
+            <Icon src={BiStopCircle} class="text-2xl" />
+            Stop
+          </button>
+        </div>
       {/if}
     </div>
   </div>
