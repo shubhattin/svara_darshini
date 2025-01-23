@@ -7,6 +7,7 @@
   import Icon from '~/tools/Icon.svelte';
   import { BiStopCircle } from 'svelte-icons-pack/bi';
   import { cl_join } from '~/tools/cl_join';
+  import { slide } from 'svelte/transition';
 
   const getNoteNumberFromPitch = (frequency: number) => {
     const noteNum = 12 * (Math.log(frequency / 440) / Math.log(2));
@@ -135,6 +136,8 @@
 <div class="flex h-full w-full flex-col items-center">
   {#if !audio_info}
     <button
+      in:slide
+      out:slide
       class="btn mt-40 gap-1 rounded-lg bg-primary-600 px-3 py-1 text-xl font-bold text-white dark:bg-primary-500"
       onclick={Start}
     >
@@ -142,35 +145,33 @@
       Start
     </button>
   {/if}
-  <div class="relative h-full w-full">
-    <div
-      bind:this={audio_div_element}
-      class={cl_join('h-full w-full', !audio_info && 'inset-0 z-[-10] hidden h-0 w-0')}
-    ></div>
-    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transform">
-      {#if audio_info}
-        {@const { clarity, detune, note, pitch, scale } = audio_info}
-        <div class="flex flex-col items-center justify-center">
-          <div class="text-primary text-2xl">
-            {`${note}`}
-            {scale === 0 ? '' : scale}
-          </div>
-          <div class="text-accent text-3xl">{`${pitch} Hz`}</div>
-          <br />
-          <progress class="progress-success progress w-56" value={clarity} max="100"></progress>
-          <br />
-          <kbd class="kbd-lg kbd">{`${detune} cents`}</kbd>
+  <div
+    bind:this={audio_div_element}
+    class={cl_join('h-full w-full', !audio_info && 'inset-0 z-[-10] hidden h-0 w-0')}
+  ></div>
+  <div class="z-10 mt-2">
+    {#if audio_info}
+      {@const { clarity, detune, note, pitch, scale } = audio_info}
+      <div class="flex flex-col items-center justify-center space-y-2">
+        <div class="text-primary text-2xl">
+          {note}
+          {#if scale !== 0}
+            <span class="text-zinc-800 dark:text-zinc-300">{scale}</span>
+          {/if}
         </div>
-        <div class="mt-10 flex items-center justify-center gap-2">
-          <button
-            class="btn gap-1 rounded-lg bg-error-500 px-2 py-1 text-xl font-bold text-white"
-            onclick={Stop}
-          >
-            <Icon src={BiStopCircle} class="text-2xl" />
-            Stop
-          </button>
-        </div>
-      {/if}
-    </div>
+        <div class="text-3xl">{pitch} Hz</div>
+        <progress class="progress-success progress w-56" value={clarity} max="100"></progress>
+        <kbd class="kbd rounded-lg">{detune} cents</kbd>
+      </div>
+      <div class="mt-6 flex items-center justify-center">
+        <button
+          class="btn gap-1 rounded-lg bg-error-500 px-2 py-1 text-xl font-bold text-white"
+          onclick={Stop}
+        >
+          <Icon src={BiStopCircle} class="text-2xl" />
+          Stop
+        </button>
+      </div>
+    {/if}
   </div>
 </div>
