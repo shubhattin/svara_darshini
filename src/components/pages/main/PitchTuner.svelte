@@ -165,7 +165,7 @@
       </div>
       <div class="mt-6 flex items-center justify-center">
         <button
-          class="btn gap-1 rounded-lg bg-error-500 px-2 py-1 text-xl font-bold text-white"
+          class="btn gap-1 rounded-lg bg-error-600 px-2 py-1 text-xl font-bold text-white dark:bg-error-500"
           onclick={Stop}
         >
           <Icon src={BiStopCircle} class="text-2xl" />
