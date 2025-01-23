@@ -45,7 +45,7 @@
       {/snippet}
       {#snippet content()}
         <a
-          href="https://github.com/shubhattin"
+          href="https://github.com/shubhattin/freequency_audio"
           target="_blank"
           rel="noopener noreferrer"
           class="will-close group flex space-x-1 rounded-md px-2 py-1 hover:bg-gray-200 dark:hover:bg-gray-700"
