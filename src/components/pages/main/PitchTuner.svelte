@@ -6,6 +6,7 @@
   import { FiPlay } from 'svelte-icons-pack/fi';
   import Icon from '~/tools/Icon.svelte';
   import { slide } from 'svelte/transition';
+  import { BiStopCircle } from 'svelte-icons-pack/bi';
 
   const getNoteNumberFromPitch = (frequency: number) => {
     const noteNum = 12 * (Math.log(frequency / 440) / Math.log(2));
@@ -21,6 +22,7 @@
   let update_interval: NodeJS.Timeout = null!;
   let mic_stream: MediaStreamAudioSourceNode | null = null;
   let audio_motion: AudioMotionAnalyzer | null = null;
+  let audio_div_element = $state<HTMLDivElement | null>(null);
 
   let audio_info = $state<{
     pitch: number;
@@ -34,6 +36,8 @@
     //clear interval
     clearInterval(update_interval);
 
+    audio_info = null;
+
     // stop mic stream
     mic_stream?.disconnect();
     // stop audio motion
@@ -43,14 +47,14 @@
     analyzer_node?.disconnect();
     // stop audio context
     audio_context?.close();
-
-    audio_info = null;
   };
 
   onMount(() => {
     clearInterval(update_interval);
 
-    return Stop;
+    return () => {
+      Stop();
+    };
   });
 
   const Start = () => {
@@ -79,7 +83,7 @@
 
       // connect analyzer node to audio context destination
       navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-        console.log(audio_context, analyzer_node);
+        // console.log(audio_context, analyzer_node);
         if (!audio_context) return;
         if (!analyzer_node) return;
         if (!audio_motion) return;
@@ -103,7 +107,7 @@
           // console.log(pitch, clarity);
           const rawNote = getNoteNumberFromPitch(pitch);
           const noteName = NOTES[rawNote % 12];
-          console.log(pitch);
+          // console.log(pitch);
           audio_info = {
             pitch: Math.round(pitch * 10) / 10,
             clarity: Math.round(clarity * 100),
@@ -117,14 +121,11 @@
       console.log('error in Start-->', error);
     }
   };
-  let audio_div_element = $state<HTMLDivElement>(null!);
 </script>
 
 <div class="flex h-full w-full flex-col items-center">
   {#if !audio_info}
     <button
-      in:slide
-      out:slide
       class="btn mt-40 gap-1 rounded-lg bg-primary-600 text-xl font-bold text-white dark:bg-primary-500"
       onclick={Start}
     >
@@ -133,23 +134,30 @@
     </button>
   {/if}
   <div class="relative h-full w-full">
+    <!-- {#if audio_info} -->
     <div bind:this={audio_div_element} class="h-full w-full"></div>
+    <!-- {/if} -->
     <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transform">
       {#if audio_info}
         {@const { clarity, detune, note, pitch, scale } = audio_info}
-        <div class="space-y-4">
-          <div class="flex flex-col items-center justify-center">
-            <div class="text-primary text-2xl">
-              {`${note}`}
-              {scale === 0 ? '' : scale}
-            </div>
-            <div class="text-accent text-3xl">{`${pitch} Hz`}</div>
-            <br />
-            <progress class="progress-success progress w-56" value={clarity} max="100"></progress>
-            <br />
-            <kbd class="kbd-lg kbd">{`${detune} cents`}</kbd>
+        <div class="flex flex-col items-center justify-center">
+          <div class="text-primary text-2xl">
+            {`${note}`}
+            {scale === 0 ? '' : scale}
           </div>
+          <div class="text-accent text-3xl">{`${pitch} Hz`}</div>
+          <br />
+          <progress class="progress-success progress w-56" value={clarity} max="100"></progress>
+          <br />
+          <kbd class="kbd-lg kbd">{`${detune} cents`}</kbd>
         </div>
+        <button
+          class="btn mt-6 block gap-1 rounded-lg bg-error-600 px-2 py-1 text-xl font-bold text-white dark:bg-error-500"
+          onclick={Stop}
+        >
+          <Icon src={BiStopCircle} class="text-2xl" />
+          Stop
+        </button>
       {/if}
     </div>
   </div>
