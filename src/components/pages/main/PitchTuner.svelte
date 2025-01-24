@@ -1,7 +1,7 @@
 <script lang="ts">
   import AudioMotionAnalyzer from 'audiomotion-analyzer';
   import { PitchDetector } from 'pitchy';
-  import { NOTES } from './constants';
+  import { NOTES, SARGAM, notesToSargam } from './constants';
   import { onMount } from 'svelte';
   import { FiPlay } from 'svelte-icons-pack/fi';
   import Icon from '~/tools/Icon.svelte';
@@ -131,6 +131,20 @@
       console.log('error in Start-->', error);
     }
   };
+
+  const centsToRotation = (cents: number, note: string) => {
+    // Get the base rotation for the note
+    const noteIndex = NOTES.indexOf(note);
+    const baseRotation = noteIndex * 30; // 360/12 = 30 degrees per note
+
+    // Add fine rotation from cents (-50 to +50 maps to ±15 degrees)
+    const centsRotation = (cents / 50) * 15;
+
+    // Return total rotation
+    return baseRotation + centsRotation;
+  };
+
+  const isInTune = (cents: number) => Math.abs(cents) <= 5;
 </script>
 
 <div class="flex h-full w-full flex-col items-center">
@@ -152,25 +166,129 @@
   <div class="z-10 mt-2">
     {#if audio_info}
       {@const { clarity, detune, note, pitch, scale } = audio_info}
-      <div class="flex flex-col items-center justify-center space-y-2">
-        <div class="text-primary text-2xl">
-          {note}
-          {#if scale !== 0}
-            <span class="text-zinc-800 dark:text-zinc-300">{scale}</span>
-          {/if}
+      <div class="flex flex-col items-center justify-center space-y-4">
+        <div class="relative h-96 w-96">
+          <svg viewBox="-100 -100 200 200" class="h-full w-full">
+            <!-- Outer circle for Sargam -->
+            <circle
+              cx="0"
+              cy="0"
+              r="90"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1"
+              class="opacity-20"
+            />
+
+            <!-- Inner circle for Notes -->
+            <circle cx="0" cy="0" r="70" fill="none" stroke="currentColor" stroke-width="1" />
+
+            <!-- Frequency circles -->
+            <circle
+              cx="0"
+              cy="0"
+              r="50"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="0.5"
+              class="opacity-50"
+            />
+
+            <!-- Note markers and labels -->
+            {#each NOTES as note, i}
+              {@const angle = i * 30 - 90}
+              <!-- Start from top (-90 deg) -->
+              <!-- Note tick -->
+              <line
+                x1="0"
+                y1="-70"
+                x2="0"
+                y2="-65"
+                transform="rotate({angle})"
+                stroke="currentColor"
+                stroke-width="1.5"
+              />
+              <!-- Note label -->
+              <text
+                x={50 * Math.cos((angle * Math.PI) / 180)}
+                y={50 * Math.sin((angle * Math.PI) / 180)}
+                text-anchor="middle"
+                dominant-baseline="middle"
+                class="dark:text-w text-xs font-semibold"
+                transform={`rotate(${angle + 90} ${50 * Math.cos((angle * Math.PI) / 180)} ${50 * Math.sin((angle * Math.PI) / 180)})`}
+              >
+                {note}
+              </text>
+            {/each}
+
+            <!-- Sargam labels -->
+            {#each SARGAM as swar, i}
+              {@const angle = i * (360 / 7) - 90}
+              <text
+                x={85 * Math.cos((angle * Math.PI) / 180)}
+                y={85 * Math.sin((angle * Math.PI) / 180)}
+                text-anchor="middle"
+                dominant-baseline="middle"
+                class="text-xs font-medium opacity-70"
+                transform={`rotate(${angle + 90} ${85 * Math.cos((angle * Math.PI) / 180)} ${85 * Math.sin((angle * Math.PI) / 180)})`}
+              >
+                {swar}
+              </text>
+            {/each}
+
+            <!-- Fine tick marks for cents -->
+            {#each Array(60) as _, i}
+              {@const angle = i * 6 - 90}
+              {@const isMajor = i % 5 === 0}
+              <line
+                x1="0"
+                y1="-70"
+                x2="0"
+                y2={isMajor ? -65 : -67}
+                transform="rotate({angle})"
+                stroke="currentColor"
+                stroke-width={isMajor ? 1 : 0.5}
+                class="opacity-50"
+              />
+            {/each}
+
+            <!-- Needle -->
+            <g transform={`rotate(${centsToRotation(detune, note)})`}>
+              <line
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="-60"
+                stroke={isInTune(detune) ? '#22c55e' : '#ef4444'}
+                stroke-width="2"
+              />
+              <circle cx="0" cy="-60" r="2" fill={isInTune(detune) ? '#22c55e' : '#ef4444'} />
+            </g>
+
+            <!-- Center display -->
+            <circle cx="0" cy="0" r="30" fill="white" class="opacity-90" />
+            <text x="0" y="-10" text-anchor="middle" class="text-xl font-bold">
+              {note}{scale !== 0 ? scale : ''}
+            </text>
+            <text x="0" y="10" text-anchor="middle" class="text-sm">
+              {detune > 0 ? '+' : ''}{detune} cents
+            </text>
+          </svg>
         </div>
+
         <div class="text-3xl">{pitch} Hz</div>
         <progress class="progress-success progress w-56" value={clarity} max="100"></progress>
-        <kbd class="kbd rounded-lg">{detune} cents</kbd>
-      </div>
-      <div class="mt-6 flex items-center justify-center">
-        <button
-          class="btn gap-1 rounded-lg bg-error-600 px-2 py-1 text-xl font-bold text-white dark:bg-error-500"
-          onclick={Stop}
-        >
-          <Icon src={BiStopCircle} class="text-2xl" />
-          Stop
-        </button>
+
+        <!-- Stop button -->
+        <div class="mt-6 flex items-center justify-center">
+          <button
+            class="btn gap-1 rounded-lg bg-error-600 px-2 py-1 text-xl font-bold text-white dark:bg-error-500"
+            onclick={Stop}
+          >
+            <Icon src={BiStopCircle} class="text-2xl" />
+            Stop
+          </button>
+        </div>
       </div>
     {/if}
   </div>
