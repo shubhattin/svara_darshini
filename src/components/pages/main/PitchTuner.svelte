@@ -159,15 +159,11 @@
       Start
     </button>
   {/if}
-  <div
-    bind:this={audio_div_element}
-    class={cl_join('h-full w-full', !audio_info && 'inset-0 z-[-10] hidden h-0 w-0')}
-  ></div>
-  <div class="z-10 mt-2">
+  <div class="z-10 mb-4">
     {#if audio_info}
       {@const { clarity, detune, note, pitch, scale } = audio_info}
       <div class="flex flex-col items-center justify-center space-y-4">
-        <div class="relative h-96 w-96">
+        <div class="relative h-96 w-96 select-none">
           <svg viewBox="-100 -100 200 200" class="h-full w-full">
             <!-- Outer circle for Sargam -->
             <circle
@@ -214,7 +210,7 @@
                 y={50 * Math.sin((angle * Math.PI) / 180)}
                 text-anchor="middle"
                 dominant-baseline="middle"
-                class="dark:text-w text-xs font-semibold"
+                class="fill-black text-xs font-semibold dark:fill-white"
                 transform={`rotate(${angle + 90} ${50 * Math.cos((angle * Math.PI) / 180)} ${50 * Math.sin((angle * Math.PI) / 180)})`}
               >
                 {note}
@@ -229,7 +225,7 @@
                 y={85 * Math.sin((angle * Math.PI) / 180)}
                 text-anchor="middle"
                 dominant-baseline="middle"
-                class="text-xs font-medium opacity-70"
+                class="fill-black text-xs font-medium opacity-90 dark:fill-white"
                 transform={`rotate(${angle + 90} ${85 * Math.cos((angle * Math.PI) / 180)} ${85 * Math.sin((angle * Math.PI) / 180)})`}
               >
                 {swar}
@@ -248,7 +244,7 @@
                 transform="rotate({angle})"
                 stroke="currentColor"
                 stroke-width={isMajor ? 1 : 0.5}
-                class="opacity-50"
+                class="opacity-70"
               />
             {/each}
 
@@ -266,11 +262,16 @@
             </g>
 
             <!-- Center display -->
-            <circle cx="0" cy="0" r="30" fill="white" class="opacity-90" />
-            <text x="0" y="-10" text-anchor="middle" class="text-xl font-bold">
+            <circle cx="0" cy="0" r="30" class="fill-white opacity-90 dark:fill-black" />
+            <text
+              x="0"
+              y="-10"
+              text-anchor="middle"
+              class="text-md fill-black font-bold dark:fill-white"
+            >
               {note}{scale !== 0 ? scale : ''}
             </text>
-            <text x="0" y="10" text-anchor="middle" class="text-sm">
+            <text x="0" y="10" text-anchor="middle" class="fill-black text-xs dark:fill-white">
               {detune > 0 ? '+' : ''}{detune} cents
             </text>
           </svg>
@@ -292,4 +293,8 @@
       </div>
     {/if}
   </div>
+  <div
+    bind:this={audio_div_element}
+    class={cl_join('h-full w-full', !audio_info && 'inset-0 z-[-10] hidden h-0 w-0')}
+  ></div>
 </div>
