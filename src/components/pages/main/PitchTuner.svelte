@@ -1,12 +1,10 @@
 <script lang="ts">
-  import AudioMotionAnalyzer from 'audiomotion-analyzer';
   import { PitchDetector } from 'pitchy';
   import { NOTES, SARGAM, notesToSargam } from './constants';
   import { onMount } from 'svelte';
   import { FiPlay } from 'svelte-icons-pack/fi';
   import Icon from '~/tools/Icon.svelte';
   import { BiStopCircle } from 'svelte-icons-pack/bi';
-  import { cl_join } from '~/tools/cl_join';
   import { slide } from 'svelte/transition';
 
   const getNoteNumberFromPitch = (frequency: number) => {
@@ -21,9 +19,18 @@
   let audio_context: AudioContext | null = null;
   let analyzer_node: AnalyserNode | null = null;
   let update_interval: NodeJS.Timeout = null!;
-  let mic_stream: MediaStreamAudioSourceNode | null = null;
-  let audio_motion: AudioMotionAnalyzer | null = null;
-  let audio_div_element = $state<HTMLDivElement | null>(null);
+  let mic_stream: MediaStream | null = null;
+
+  let audioDevices = $state<MediaDeviceInfo[]>([]);
+  let selectedDevice = $state<string>('default');
+
+  const getAudioDevices = async () => {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    audioDevices = devices.filter((device) => device.kind === 'audioinput');
+  };
+  onMount(async () => {
+    await getAudioDevices();
+  });
 
   let audio_info = $state<{
     pitch: number;
@@ -37,11 +44,8 @@
     //clear interval
     clearInterval(update_interval);
 
-    // stop audio motion
-    audio_motion?.disconnectInput(mic_stream, true);
-
     // stop mic stream
-    mic_stream?.disconnect();
+    mic_stream?.getTracks().forEach((track) => track.stop());
 
     // destroy analyzer node
     analyzer_node?.disconnect();
@@ -52,11 +56,7 @@
     audio_info = null;
     audio_context = null;
     analyzer_node = null;
-    audio_motion = null;
     mic_stream = null;
-    if (audio_div_element) {
-      audio_div_element.innerHTML = '';
-    }
   };
 
   onMount(() => {
@@ -74,35 +74,13 @@
       // create analyzer node
       analyzer_node = audio_context.createAnalyser();
 
-      audio_motion = new AudioMotionAnalyzer(audio_div_element!, {
-        mode: 10,
-        channelLayout: 'single',
-        fillAlpha: 0.6,
-        gradient: 'rainbow',
-        lineWidth: 1.5,
-        maxFreq: 20000,
-        minFreq: 30,
-        mirror: -1,
-        radial: false,
-        reflexAlpha: 1,
-        reflexBright: 1,
-        reflexRatio: 0.5,
-        showPeaks: false,
-        showScaleX: false
-      });
-
       // connect analyzer node to audio context destination
       navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-        // console.log(audio_context, analyzer_node);
         if (!audio_context) return;
         if (!analyzer_node) return;
-        if (!audio_motion) return;
 
         if (!stream) return;
-        mic_stream = audio_motion.audioCtx.createMediaStreamSource(stream);
-        audio_motion.connectInput(mic_stream);
-        // set vol to 0
-        audio_motion.volume = 0;
+        mic_stream = stream;
 
         audio_context.createMediaStreamSource(stream).connect(analyzer_node);
         const detector = PitchDetector.forFloat32Array(analyzer_node.fftSize);
@@ -147,6 +125,14 @@
   const isInTune = (cents: number) => Math.abs(cents) <= 5;
 </script>
 
+<select class="select" bind:value={selectedDevice}>
+  <!-- onchange={handleDeviceChange} -->
+  {#each audioDevices as device}
+    <option value={device.deviceId}>
+      {device.label || `Microphone ${audioDevices.indexOf(device) + 1}`}
+    </option>
+  {/each}
+</select>
 <div class="flex h-full w-full flex-col items-center">
   {#if !audio_info}
     <button
@@ -293,8 +279,4 @@
       </div>
     {/if}
   </div>
-  <div
-    bind:this={audio_div_element}
-    class={cl_join('h-full w-full', !audio_info && 'inset-0 z-[-10] hidden h-0 w-0')}
-  ></div>
 </div>
