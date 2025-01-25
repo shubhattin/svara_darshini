@@ -1,4 +1,19 @@
-export const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const NOTES_ = {
+  C: null,
+  'C#': null,
+  D: null,
+  'D#': null,
+  E: null,
+  F: null,
+  'F#': null,
+  G: null,
+  'G#': null,
+  A: null,
+  'A#': null,
+  B: null
+};
+export type note_types = keyof typeof NOTES_;
+export const NOTES = Object.keys(NOTES_);
 
 export const PURE_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 

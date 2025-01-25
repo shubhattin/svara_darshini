@@ -1,6 +1,6 @@
 <script lang="ts">
   import { PitchDetector } from 'pitchy';
-  import { NOTES } from './constants';
+  import { NOTES, type note_types } from './constants';
   import { onMount } from 'svelte';
   import { FiPlay, FiRefreshCcw } from 'svelte-icons-pack/fi';
   import Icon from '~/tools/Icon.svelte';
@@ -11,7 +11,10 @@
   import { cl_join } from '~/tools/cl_join';
   import PitchDisplay from './PitchDisplay.svelte';
 
-  let { selected_device = $bindable() }: { selected_device: string } = $props();
+  let {
+    selected_device = $bindable(),
+    selected_Sa_at = $bindable()
+  }: { selected_device: string; selected_Sa_at: note_types } = $props();
 
   let audio_devices = $state<MediaDeviceInfo[]>([]);
   let device_list_loaded = $state(false);
@@ -154,10 +157,25 @@
     {#if audio_info}
       {@const { clarity, detune, note, pitch, scale } = audio_info}
       <div class="flex flex-col items-center justify-center space-y-4">
-        <div class="relative mt-4 h-72 w-72 select-none sm:mt-8 sm:h-80 sm:w-80 md:h-96 md:w-96">
-          <PitchDisplay {audio_info} />
+        <div
+          class="relative mb-8 mt-4 h-72 w-72 select-none sm:mt-8 sm:h-80 sm:w-80 md:h-96 md:w-96"
+        >
+          <div class="flex items-start justify-center">
+            <label class=" space-x-1">
+              <span class="font-semibold">Sa at</span>
+              <select
+                class="select inline-block w-16 rounded-md px-2 py-1"
+                bind:value={selected_Sa_at}
+              >
+                {#each NOTES as note}
+                  <option value={note}>{note}</option>
+                {/each}
+              </select>
+            </label>
+          </div>
+          <PitchDisplay {audio_info} Sa_at={selected_Sa_at} />
         </div>
-        <div class="text-3xl">{pitch} Hz</div>
+        <div class=" text-3xl">{pitch} Hz</div>
         <progress class="progress-success progress w-56" value={clarity} max="100"></progress>
 
         <!-- Stop button -->

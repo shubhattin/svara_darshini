@@ -1,18 +1,22 @@
 <script lang="ts">
-  import { NOTES, SARGAM } from './constants';
+  import { NOTES, SARGAM, type note_types } from './constants';
 
   let {
-    audio_info
+    audio_info,
+    Sa_at
   }: {
     audio_info: { clarity: number; detune: number; note: string; pitch: number; scale: number };
+    Sa_at: note_types;
   } = $props();
+
+  let Sa_at_index = $derived(NOTES.indexOf(Sa_at));
 
   const { clarity, detune, note, pitch, scale } = $derived(audio_info);
 
   const cents_to_rotation = (cents: number, note: string) => {
     // Get the base rotation for the note
     const noteIndex = NOTES.indexOf(note);
-    const baseRotation = noteIndex * 30; // 360/12 = 30 degrees per note
+    const baseRotation = (noteIndex - Sa_at_index) * 30; // 360/12 = 30 degrees per note
 
     // Add fine rotation from cents (-50 to +50 maps to ±15 degrees)
     const centsRotation = (cents / 50) * 15;
@@ -36,7 +40,7 @@
   const NEEDLE_LINE_LENGTH = 75;
 </script>
 
-<svg viewBox="-100 -100 200 200" class="h-full w-full">
+<svg viewBox="-100 -100 200 200" class="block h-full w-full">
   <!-- Outer circle for Sargam -->
   <circle
     cx="0"
@@ -71,7 +75,7 @@
 
   <!-- Note markers and labels -->
   {#each NOTES as note, i}
-    {@const angle = i * 30 - 90}
+    {@const angle = (i - Sa_at_index) * 30 - 90}
     <!-- Start from top (-90 deg) -->
     <!-- Note tick -->
     <line
@@ -159,7 +163,7 @@
   <text x="0" y="-5" text-anchor="middle" class="fill-black text-base font-bold dark:fill-white">
     {note}{scale !== 0 ? scale : ''}
   </text>
-  <text x="0" y="12" text-anchor="middle" class="fill-black text-xs dark:fill-white">
+  <text x="0" y="12" text-anchor="middle" class="fill-black text-[0.7rem] dark:fill-white">
     {detune > 0 ? '+' : ''}{detune} cents
   </text>
 </svg>
