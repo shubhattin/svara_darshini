@@ -1,13 +1,14 @@
 <script lang="ts">
+  import { cl_join } from '~/tools/cl_join';
   import { NOTES, SARGAM } from './constants';
 
   let {
-    clarity,
-    detune,
-    note,
-    pitch,
-    scale
-  }: { clarity: number; detune: number; note: string; pitch: number; scale: number } = $props();
+    audio_info
+  }: {
+    audio_info: { clarity: number; detune: number; note: string; pitch: number; scale: number };
+  } = $props();
+
+  const { clarity, detune, note, pitch, scale } = $derived(audio_info);
 
   const centsToRotation = (cents: number, note: string) => {
     // Get the base rotation for the note
@@ -22,6 +23,15 @@
   };
 
   const isInTune = (cents: number) => Math.abs(cents) <= 5;
+
+  const to_radians = (degrees: number) => (degrees * Math.PI) / 180;
+
+  const OUTER_CIRCLE_SARGAM_RADIUS = 95;
+  const INNER_CIRCLE_NOTE_RADIUS = 70;
+  const NOTE_TICK_LENGTH = 5;
+  const FREQUENCY_CIRCLE_RADIUS = 43;
+  const NOTE_LABEL_RADIUS = 54;
+  const SARGAM_LABEL_RADIUS = 85;
 </script>
 
 <svg viewBox="-100 -100 200 200" class="h-full w-full">
@@ -29,25 +39,32 @@
   <circle
     cx="0"
     cy="0"
-    r="90"
+    r={OUTER_CIRCLE_SARGAM_RADIUS}
     fill="none"
     stroke="currentColor"
     stroke-width="1"
-    class="opacity-20"
+    class="opacity-70"
   />
 
   <!-- Inner circle for Notes -->
-  <circle cx="0" cy="0" r="70" fill="none" stroke="currentColor" stroke-width="1" />
+  <circle
+    cx="0"
+    cy="0"
+    r={INNER_CIRCLE_NOTE_RADIUS}
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1"
+  />
 
   <!-- Frequency circles -->
   <circle
     cx="0"
     cy="0"
-    r="50"
+    r={FREQUENCY_CIRCLE_RADIUS}
     fill="none"
     stroke="currentColor"
     stroke-width="0.5"
-    class="opacity-50"
+    class="opacity-70"
   />
 
   <!-- Note markers and labels -->
@@ -57,21 +74,21 @@
     <!-- Note tick -->
     <line
       x1="0"
-      y1="-70"
+      y1={-INNER_CIRCLE_NOTE_RADIUS}
       x2="0"
-      y2="-65"
+      y2={-(INNER_CIRCLE_NOTE_RADIUS - NOTE_TICK_LENGTH)}
       transform="rotate({angle})"
       stroke="currentColor"
       stroke-width="1.5"
     />
     <!-- Note label -->
     <text
-      x={50 * Math.cos((angle * Math.PI) / 180)}
-      y={50 * Math.sin((angle * Math.PI) / 180)}
+      x={NOTE_LABEL_RADIUS * Math.cos(to_radians(angle))}
+      y={NOTE_LABEL_RADIUS * Math.sin(to_radians(angle))}
       text-anchor="middle"
       dominant-baseline="middle"
-      class="fill-black text-xs font-semibold dark:fill-white"
-      transform={`rotate(${angle + 90} ${50 * Math.cos((angle * Math.PI) / 180)} ${50 * Math.sin((angle * Math.PI) / 180)})`}
+      class="fill-black text-[0.7rem] font-semibold dark:fill-white"
+      transform={`rotate(${angle + 90} ${NOTE_LABEL_RADIUS * Math.cos(to_radians(angle))} ${NOTE_LABEL_RADIUS * Math.sin(to_radians(angle))})`}
     >
       {note}
     </text>
@@ -81,12 +98,12 @@
   {#each SARGAM as swar, i}
     {@const angle = i * (360 / 7) - 90}
     <text
-      x={85 * Math.cos((angle * Math.PI) / 180)}
-      y={85 * Math.sin((angle * Math.PI) / 180)}
+      x={SARGAM_LABEL_RADIUS * Math.cos(to_radians(angle))}
+      y={SARGAM_LABEL_RADIUS * Math.sin(to_radians(angle))}
       text-anchor="middle"
       dominant-baseline="middle"
       class="fill-black text-xs font-medium opacity-90 dark:fill-white"
-      transform={`rotate(${angle + 90} ${85 * Math.cos((angle * Math.PI) / 180)} ${85 * Math.sin((angle * Math.PI) / 180)})`}
+      transform={`rotate(${angle + 90} ${SARGAM_LABEL_RADIUS * Math.cos(to_radians(angle))} ${SARGAM_LABEL_RADIUS * Math.sin(to_radians(angle))})`}
     >
       {swar}
     </text>
@@ -98,14 +115,17 @@
     {@const isMajor = i % 5 === 0}
     <line
       x1="0"
-      y1="-70"
+      y1={-INNER_CIRCLE_NOTE_RADIUS}
       x2="0"
-      y2={isMajor ? -65 : -67}
+      y2={-(isMajor
+        ? INNER_CIRCLE_NOTE_RADIUS - NOTE_TICK_LENGTH
+        : INNER_CIRCLE_NOTE_RADIUS - Math.ceil(NOTE_TICK_LENGTH / 2))}
       transform="rotate({angle})"
       stroke="currentColor"
       stroke-width={isMajor ? 1 : 0.5}
       class="opacity-70"
     />
+    <!-- y2={isMajor ? -65 : -67} -->
   {/each}
 
   <!-- Needle -->
@@ -115,18 +135,21 @@
       y1="0"
       x2="0"
       y2="-60"
-      stroke={isInTune(detune) ? '#22c55e' : '#ef4444'}
       stroke-width="2"
+      class={isInTune(detune)
+        ? 'stroke-green-500 dark:stroke-green-500'
+        : 'stroke-rose-500 dark:stroke-rose-500'}
     />
+    <!-- stroke={isInTune(detune) ? '#22c55e' : '#ef4444'} -->
     <circle cx="0" cy="-60" r="2" fill={isInTune(detune) ? '#22c55e' : '#ef4444'} />
   </g>
 
   <!-- Center display -->
-  <circle cx="0" cy="0" r="30" class="fill-white opacity-90 dark:fill-black" />
-  <text x="0" y="-10" text-anchor="middle" class="text-md fill-black font-bold dark:fill-white">
+  <!-- <circle cx="0" cy="0" r="30" class="fill-white opacity-90 dark:fill-black" /> -->
+  <text x="0" y="-5" text-anchor="middle" class="fill-black text-base font-bold dark:fill-white">
     {note}{scale !== 0 ? scale : ''}
   </text>
-  <text x="0" y="10" text-anchor="middle" class="fill-black text-xs dark:fill-white">
+  <text x="0" y="12" text-anchor="middle" class="fill-black text-xs dark:fill-white">
     {detune > 0 ? '+' : ''}{detune} cents
   </text>
 </svg>

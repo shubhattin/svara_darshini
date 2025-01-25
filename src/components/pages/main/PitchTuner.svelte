@@ -1,6 +1,6 @@
 <script lang="ts">
   import { PitchDetector } from 'pitchy';
-  import { NOTES, SARGAM } from './constants';
+  import { NOTES } from './constants';
   import { onMount } from 'svelte';
   import { FiPlay, FiRefreshCcw } from 'svelte-icons-pack/fi';
   import Icon from '~/tools/Icon.svelte';
@@ -154,8 +154,8 @@
     {#if audio_info}
       {@const { clarity, detune, note, pitch, scale } = audio_info}
       <div class="flex flex-col items-center justify-center space-y-4">
-        <div class="relative h-96 w-96 select-none">
-          <PitchDisplay {clarity} {detune} {note} {pitch} {scale} />
+        <div class="relative mt-4 h-72 w-72 select-none sm:mt-8 sm:h-80 sm:w-80 md:h-96 md:w-96">
+          <PitchDisplay {audio_info} />
         </div>
         <div class="text-3xl">{pitch} Hz</div>
         <progress class="progress-success progress w-56" value={clarity} max="100"></progress>
