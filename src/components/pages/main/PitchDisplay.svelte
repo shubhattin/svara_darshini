@@ -74,31 +74,35 @@
   />
 
   <!-- Note markers and labels -->
-  {#each NOTES as note, i}
-    {@const angle = (i - Sa_at_index) * 30 - 90}
-    <!-- Start from top (-90 deg) -->
-    <!-- Note tick -->
-    <line
-      x1="0"
-      y1={-INNER_CIRCLE_NOTE_RADIUS}
-      x2="0"
-      y2={-(INNER_CIRCLE_NOTE_RADIUS - NOTE_TICK_LENGTH)}
-      transform="rotate({angle})"
-      stroke="currentColor"
-      stroke-width="1.5"
-    />
-    <!-- Note label -->
-    <text
-      x={NOTE_LABEL_RADIUS * Math.cos(to_radians(angle))}
-      y={NOTE_LABEL_RADIUS * Math.sin(to_radians(angle))}
-      text-anchor="middle"
-      dominant-baseline="middle"
-      class="fill-black text-[0.7rem] font-semibold dark:fill-white"
-      transform={`rotate(${angle + 90} ${NOTE_LABEL_RADIUS * Math.cos(to_radians(angle))} ${NOTE_LABEL_RADIUS * Math.sin(to_radians(angle))})`}
-    >
-      {note}
-    </text>
-  {/each}
+  <g
+    style="transform: rotate({-Sa_at_index *
+      30}deg); transform-origin: 0 0; transition: transform 0.5s ease;"
+  >
+    {#each NOTES as note, i}
+      {@const angle = i * 30 - 90}
+      <!-- Note tick -->
+      <line
+        x1="0"
+        y1={-INNER_CIRCLE_NOTE_RADIUS}
+        x2="0"
+        y2={-(INNER_CIRCLE_NOTE_RADIUS - NOTE_TICK_LENGTH)}
+        transform="rotate({angle})"
+        stroke="currentColor"
+        stroke-width="1.5"
+      />
+      <!-- Note label -->
+      <text
+        x={NOTE_LABEL_RADIUS * Math.cos(to_radians(angle))}
+        y={NOTE_LABEL_RADIUS * Math.sin(to_radians(angle))}
+        text-anchor="middle"
+        dominant-baseline="middle"
+        class="fill-black text-[0.7rem] font-semibold dark:fill-white"
+        transform={`rotate(${angle + 90} ${NOTE_LABEL_RADIUS * Math.cos(to_radians(angle))} ${NOTE_LABEL_RADIUS * Math.sin(to_radians(angle))})`}
+      >
+        {note}
+      </text>
+    {/each}
+  </g>
 
   <!-- Sargam labels -->
   {#each SARGAM as swar, i}
