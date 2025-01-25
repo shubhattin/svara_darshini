@@ -1,8 +1,38 @@
-export const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const NOTES_ = {
+  C: null,
+  'C#': null,
+  D: null,
+  'D#': null,
+  E: null,
+  F: null,
+  'F#': null,
+  G: null,
+  'G#': null,
+  A: null,
+  'A#': null,
+  B: null
+};
+export type note_types = keyof typeof NOTES_;
+export const NOTES = Object.keys(NOTES_);
 
 export const PURE_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 
-export const SARGAM = ['Sa', 'Re', 'Ga', 'Ma', 'Pa', 'Dha', 'Ni'];
+export const SARGAM: { name: string; key: string }[] = [
+  { name: 'Sa', key: 's' },
+  { name: 'Flat Re', key: 'R' },
+  { name: 'Re', key: 'r' },
+  { name: 'Flat G', key: 'G' },
+  { name: 'Ga', key: 'g' },
+  { name: 'Ma', key: 'm' },
+  { name: 'Sharp Ma', key: 'M' },
+  { name: 'Pa', key: 'p' },
+  { name: 'Flat Dha', key: 'D' },
+  { name: 'Dha', key: 'd' },
+  { name: 'Flat Ni', key: 'N' },
+  { name: 'Ni', key: 'n' }
+];
+
+export const PURE_SARGAM = ['Sa', 'Re', 'Ga', 'Ma', 'Pa', 'Dha', 'Ni'];
 
 // function to generate NOTES to sa re ga ma pa dha ni mapping from base note, no half steps
 // Sa to Re - 2 half steps
