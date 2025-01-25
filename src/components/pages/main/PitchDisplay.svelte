@@ -75,8 +75,8 @@
 
   <!-- Note markers and labels -->
   <g
-    style="transform: rotate({-Sa_at_index *
-      30}deg); transform-origin: 0 0; transition: transform 0.5s ease;"
+    class="origin-[0_0] transition-transform duration-500 ease-in-out"
+    style="transform: rotate({-Sa_at_index * 30}deg)"
   >
     {#each NOTES as note, i}
       {@const angle = i * 30 - 90}
