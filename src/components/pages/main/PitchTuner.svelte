@@ -10,7 +10,7 @@
   import { delay } from '~/tools/delay';
   import { cl_join } from '~/tools/cl_join';
 
-  let { selected_device = $bindable('default') }: { selected_device: string } = $props();
+  let { selected_device = $bindable() }: { selected_device: string } = $props();
 
   let audio_devices = $state<MediaDeviceInfo[]>([]);
   let device_list_loaded = $state(false);
@@ -20,15 +20,16 @@
   let update_interval: NodeJS.Timeout = null!;
   let mic_stream: MediaStream | null = null;
 
-  const get_audio_devices = async () => {
-    device_list_loaded = false;
+  const FFT_SIZE = Math.pow(2, 12); // 4096
+
+  const get_audio_devices = async (show_loading = true) => {
+    if (show_loading) device_list_loaded = false;
     await delay(250, true);
     const devices = await navigator.mediaDevices.enumerateDevices();
     audio_devices = devices.filter((device) => device.kind === 'audioinput');
-    if (selected_device && !audio_devices.some((device) => device.deviceId === selected_device)) {
+    if (!audio_devices.some((device) => device.deviceId === selected_device))
       selected_device = audio_devices[0].deviceId; // set to 1st available device (default)
-    }
-    device_list_loaded = true;
+    if (show_loading) device_list_loaded = true;
   };
   onMount(() => {
     get_audio_devices();
@@ -91,11 +92,14 @@
           deviceId: selected_device ? { exact: selected_device } : undefined
         }
       });
+      get_audio_devices(false); // refesh list
       if (!audio_context) return;
       if (!analyzer_node) return;
 
       if (!stream) return;
       mic_stream = stream;
+
+      analyzer_node.fftSize = FFT_SIZE;
 
       audio_context.createMediaStreamSource(stream).connect(analyzer_node);
       const detector = PitchDetector.forFloat32Array(analyzer_node.fftSize);
@@ -315,7 +319,7 @@
     <button
       title="Refresh Device List"
       class={cl_join('btn m-0 select-none p-0 pl-2 outline-none')}
-      onclick={get_audio_devices}
+      onclick={() => get_audio_devices()}
       disabled={!device_list_loaded}
     >
       <Icon src={FiRefreshCcw} class=" text-lg" />
