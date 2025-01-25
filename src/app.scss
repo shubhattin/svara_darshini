@@ -14,3 +14,11 @@
   --base-font-family: 'Roboto', 'Nirmala UI', sans-serif;
   --heading-font-family: 'Roboto', 'Nirmala UI', sans-serif;
 }
+
+@font-face {
+  font-family: 'ome_bhatkhande_en';
+  src:
+    url('./fonts/woff2/ome_bhatkhande_en.woff2') format('woff2'),
+    url('./fonts/ttf/ome_bhatkhande_en.ttf') format('truetype');
+  font-display: swap;
+}

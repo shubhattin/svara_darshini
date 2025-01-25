@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { cl_join } from '~/tools/cl_join';
   import { NOTES, SARGAM } from './constants';
 
   let {
@@ -10,7 +9,7 @@
 
   const { clarity, detune, note, pitch, scale } = $derived(audio_info);
 
-  const centsToRotation = (cents: number, note: string) => {
+  const cents_to_rotation = (cents: number, note: string) => {
     // Get the base rotation for the note
     const noteIndex = NOTES.indexOf(note);
     const baseRotation = noteIndex * 30; // 360/12 = 30 degrees per note
@@ -22,16 +21,19 @@
     return baseRotation + centsRotation;
   };
 
-  const isInTune = (cents: number) => Math.abs(cents) <= 5;
+  const is_in_tune = (cents: number) => Math.abs(cents) <= 5;
 
   const to_radians = (degrees: number) => (degrees * Math.PI) / 180;
 
-  const OUTER_CIRCLE_SARGAM_RADIUS = 95;
+  const OUTER_CIRCLE_SARGAM_RADIUS = 96;
   const INNER_CIRCLE_NOTE_RADIUS = 70;
   const NOTE_TICK_LENGTH = 5;
   const FREQUENCY_CIRCLE_RADIUS = 43;
   const NOTE_LABEL_RADIUS = 54;
   const SARGAM_LABEL_RADIUS = 85;
+  const MIDDLE_CIRCLE_RADIUS = 30;
+
+  const NEEDLE_LINE_LENGTH = 75;
 </script>
 
 <svg viewBox="-100 -100 200 200" class="h-full w-full">
@@ -96,16 +98,17 @@
 
   <!-- Sargam labels -->
   {#each SARGAM as swar, i}
-    {@const angle = i * (360 / 7) - 90}
+    {@const angle = i * (360 / SARGAM.length) - 90}
     <text
       x={SARGAM_LABEL_RADIUS * Math.cos(to_radians(angle))}
       y={SARGAM_LABEL_RADIUS * Math.sin(to_radians(angle))}
       text-anchor="middle"
       dominant-baseline="middle"
-      class="fill-black text-xs font-medium opacity-90 dark:fill-white"
+      class="fill-black text-xs font-semibold opacity-90 dark:fill-white"
       transform={`rotate(${angle + 90} ${SARGAM_LABEL_RADIUS * Math.cos(to_radians(angle))} ${SARGAM_LABEL_RADIUS * Math.sin(to_radians(angle))})`}
+      font-family="ome_bhatkhande_en"
     >
-      {swar}
+      {swar.key}
     </text>
   {/each}
 
@@ -129,23 +132,30 @@
   {/each}
 
   <!-- Needle -->
-  <g transform={`rotate(${centsToRotation(detune, note)})`}>
+  <g transform={`rotate(${cents_to_rotation(detune, note)})`} class="-z-10">
     <line
       x1="0"
       y1="0"
       x2="0"
-      y2="-60"
+      y2={-NEEDLE_LINE_LENGTH}
       stroke-width="2"
-      class={isInTune(detune)
+      class={is_in_tune(detune)
         ? 'stroke-green-500 dark:stroke-green-500'
         : 'stroke-rose-500 dark:stroke-rose-500'}
     />
     <!-- stroke={isInTune(detune) ? '#22c55e' : '#ef4444'} -->
-    <circle cx="0" cy="-60" r="2" fill={isInTune(detune) ? '#22c55e' : '#ef4444'} />
+    <circle
+      cx="0"
+      cy={-NEEDLE_LINE_LENGTH}
+      r="2"
+      class={is_in_tune(detune)
+        ? 'fill-green-500 dark:fill-green-500'
+        : 'fill-rose-500 dark:fill-rose-500'}
+    />
   </g>
 
   <!-- Center display -->
-  <!-- <circle cx="0" cy="0" r="30" class="fill-white opacity-90 dark:fill-black" /> -->
+  <circle cx="0" cy="0" r={MIDDLE_CIRCLE_RADIUS} class="fill-white opacity-60 dark:fill-black" />
   <text x="0" y="-5" text-anchor="middle" class="fill-black text-base font-bold dark:fill-white">
     {note}{scale !== 0 ? scale : ''}
   </text>

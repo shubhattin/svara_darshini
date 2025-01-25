@@ -3,7 +3,7 @@
   import TopAppBar from '~/components/TopAppBar.svelte';
   import { type Snippet } from 'svelte';
   import '@fontsource/roboto/latin.css';
-  import '../app.pcss';
+  import '../app.scss';
 
   let { children }: { children: Snippet } = $props();
 </script>
