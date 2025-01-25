@@ -1,35 +1,37 @@
 <script lang="ts">
   import { PitchDetector } from 'pitchy';
-  import { NOTES, SARGAM, notesToSargam } from './constants';
+  import { NOTES, SARGAM } from './constants';
   import { onMount } from 'svelte';
-  import { FiPlay } from 'svelte-icons-pack/fi';
+  import { FiPlay, FiRefreshCcw } from 'svelte-icons-pack/fi';
   import Icon from '~/tools/Icon.svelte';
   import { BiStopCircle } from 'svelte-icons-pack/bi';
   import { slide } from 'svelte/transition';
+  import { BsMic } from 'svelte-icons-pack/bs';
+  import { delay } from '~/tools/delay';
+  import { cl_join } from '~/tools/cl_join';
 
-  const getNoteNumberFromPitch = (frequency: number) => {
-    const noteNum = 12 * (Math.log(frequency / 440) / Math.log(2));
-    return Math.round(noteNum) + 69;
-  };
+  let { selected_device = $bindable('default') }: { selected_device: string } = $props();
 
-  const getNoteFrequency = (note: number) => {
-    return 440 * Math.pow(2, (note - 69) / 12);
-  };
+  let audio_devices = $state<MediaDeviceInfo[]>([]);
+  let device_list_loaded = $state(false);
 
   let audio_context: AudioContext | null = null;
   let analyzer_node: AnalyserNode | null = null;
   let update_interval: NodeJS.Timeout = null!;
   let mic_stream: MediaStream | null = null;
 
-  let audioDevices = $state<MediaDeviceInfo[]>([]);
-  let selectedDevice = $state<string>('default');
-
-  const getAudioDevices = async () => {
+  const get_audio_devices = async () => {
+    device_list_loaded = false;
+    await delay(250, true);
     const devices = await navigator.mediaDevices.enumerateDevices();
-    audioDevices = devices.filter((device) => device.kind === 'audioinput');
+    audio_devices = devices.filter((device) => device.kind === 'audioinput');
+    if (selected_device && !audio_devices.some((device) => device.deviceId === selected_device)) {
+      selected_device = audio_devices[0].deviceId; // set to 1st available device (default)
+    }
+    device_list_loaded = true;
   };
-  onMount(async () => {
-    await getAudioDevices();
+  onMount(() => {
+    get_audio_devices();
   });
 
   let audio_info = $state<{
@@ -39,6 +41,15 @@
     scale: number;
     detune: number;
   } | null>(null);
+
+  const getNoteNumberFromPitch = (frequency: number) => {
+    const noteNum = 12 * (Math.log(frequency / 440) / Math.log(2));
+    return Math.round(noteNum) + 69;
+  };
+
+  const getNoteFrequency = (note: number) => {
+    return 440 * Math.pow(2, (note - 69) / 12);
+  };
 
   const Stop = () => {
     //clear interval
@@ -67,7 +78,7 @@
     };
   });
 
-  const Start = () => {
+  const Start = async () => {
     try {
       // start audio context
       audio_context = new AudioContext();
@@ -75,38 +86,49 @@
       analyzer_node = audio_context.createAnalyser();
 
       // connect analyzer node to audio context destination
-      navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-        if (!audio_context) return;
-        if (!analyzer_node) return;
-
-        if (!stream) return;
-        mic_stream = stream;
-
-        audio_context.createMediaStreamSource(stream).connect(analyzer_node);
-        const detector = PitchDetector.forFloat32Array(analyzer_node.fftSize);
-        const input = new Float32Array(detector.inputLength);
-
-        clearInterval(update_interval);
-
-        // update every 100ms
-        update_interval = setInterval(() => {
-          analyzer_node?.getFloatTimeDomainData(input);
-          const [pitch, clarity] = detector.findPitch(input, audio_context!.sampleRate);
-          // console.log(pitch, clarity);
-          const rawNote = getNoteNumberFromPitch(pitch);
-          const noteName = NOTES[rawNote % 12];
-          // console.log(pitch);
-          audio_info = {
-            pitch: Math.round(pitch * 10) / 10,
-            clarity: Math.round(clarity * 100),
-            note: noteName,
-            scale: Math.floor(rawNote / 12) - 1,
-            detune: Math.floor((1200 * Math.log(pitch / getNoteFrequency(rawNote))) / Math.log(2))
-          };
-        }, 100);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          deviceId: selected_device ? { exact: selected_device } : undefined
+        }
       });
+      if (!audio_context) return;
+      if (!analyzer_node) return;
+
+      if (!stream) return;
+      mic_stream = stream;
+
+      audio_context.createMediaStreamSource(stream).connect(analyzer_node);
+      const detector = PitchDetector.forFloat32Array(analyzer_node.fftSize);
+      const input = new Float32Array(detector.inputLength);
+
+      clearInterval(update_interval);
+
+      // update every 100ms
+      update_interval = setInterval(() => {
+        analyzer_node?.getFloatTimeDomainData(input);
+        const [pitch, clarity] = detector.findPitch(input, audio_context!.sampleRate);
+        // console.log(pitch, clarity);
+        const rawNote = getNoteNumberFromPitch(pitch);
+        const noteName = NOTES[rawNote % 12];
+        // console.log(pitch);
+        audio_info = {
+          pitch: Math.round(pitch * 10) / 10,
+          clarity: Math.round(clarity * 100),
+          note: noteName,
+          scale: Math.floor(rawNote / 12) - 1,
+          detune: Math.floor((1200 * Math.log(pitch / getNoteFrequency(rawNote))) / Math.log(2))
+        };
+      }, 100);
     } catch (error) {
       console.log('error in Start-->', error);
+    }
+  };
+
+  const handleDeviceChange = () => {
+    if (audio_info) {
+      // disconnect previous mic
+      mic_stream?.getTracks().forEach((track) => track.stop());
+      Start(); // Restart with new device if already running
     }
   };
 
@@ -125,14 +147,6 @@
   const isInTune = (cents: number) => Math.abs(cents) <= 5;
 </script>
 
-<select class="select" bind:value={selectedDevice}>
-  <!-- onchange={handleDeviceChange} -->
-  {#each audioDevices as device}
-    <option value={device.deviceId}>
-      {device.label || `Microphone ${audioDevices.indexOf(device) + 1}`}
-    </option>
-  {/each}
-</select>
 <div class="flex h-full w-full flex-col items-center">
   {#if !audio_info}
     <button
@@ -279,4 +293,32 @@
       </div>
     {/if}
   </div>
+  <label class="mt-3 flex space-x-1">
+    <Icon src={BsMic} class="text-2xl sm:text-3xl" />
+    {#if !device_list_loaded}
+      <span
+        class="placeholder -mt-1 inline-block h-10 w-44 animate-pulse rounded-md sm:w-56 md:w-60 lg:w-64"
+      ></span>
+    {:else}
+      <select
+        class="select inline-block w-44 rounded-md px-2 py-1 sm:w-56 md:w-60 lg:w-64"
+        bind:value={selected_device}
+        onchange={handleDeviceChange}
+      >
+        {#each audio_devices as device (device.deviceId)}
+          <option value={device.deviceId}>
+            {device.label || `Microphone ${audio_devices.indexOf(device) + 1}`}
+          </option>
+        {/each}
+      </select>
+    {/if}
+    <button
+      title="Refresh Device List"
+      class={cl_join('btn m-0 select-none p-0 pl-2 outline-none')}
+      onclick={get_audio_devices}
+      disabled={!device_list_loaded}
+    >
+      <Icon src={FiRefreshCcw} class=" text-lg" />
+    </button>
+  </label>
 </div>
