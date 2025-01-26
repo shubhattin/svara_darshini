@@ -188,10 +188,11 @@
             note_orientation={selected_note_orientation}
           />
         </div>
-        <div class=" text-3xl">{pitch} Hz</div>
+        <div class="text-3xl">{pitch} Hz</div>
         <progress class="progress-success progress w-56" value={clarity} max="100"></progress>
         <div>
-          <label class="">
+          <div class="text-center font-bold">Orientation</div>
+          <label>
             <span class="text-sm font-semibold">Sargam</span>
             <select
               class="select inline-block w-20 rounded-md px-2 py-1 text-sm"
@@ -201,7 +202,7 @@
               <option value="vertical">Vertical</option>
             </select>
           </label>
-          <label class="">
+          <label>
             <span class="text-sm font-semibold">Note</span>
             <select
               class="select inline-block w-20 rounded-md px-2 py-1 text-sm"
