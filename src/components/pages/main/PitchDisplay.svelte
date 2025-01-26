@@ -4,7 +4,7 @@
 
   let {
     audio_info,
-    Sa_at,
+    Sa_at = $bindable(),
     sargam_orientation,
     note_orientation
   }: {
@@ -35,11 +35,11 @@
   const to_radians = (degrees: number) => (degrees * Math.PI) / 180;
 
   let OUTER_CIRCLE_SARGAM_RADIUS = $derived(92 - (sargam_orientation === 'vertical' ? 1.5 : 0));
+  let SARGAM_LABEL_RADIUS = $derived(80 + (sargam_orientation === 'vertical' ? 1.5 : 0));
   let INNER_CIRCLE_NOTE_RADIUS = 70;
   let NOTE_TICK_LENGTH = 5;
   let FREQUENCY_CIRCLE_RADIUS = 43;
   let NOTE_LABEL_RADIUS = $derived(54 + (note_orientation === 'vertical' ? 1.5 : 0));
-  let SARGAM_LABEL_RADIUS = $derived(80 + (sargam_orientation === 'vertical' ? 1.5 : 0));
   let MIDDLE_CIRCLE_RADIUS = 30;
 
   let NEEDLE_LINE_LENGTH = 75;
@@ -98,9 +98,11 @@
         stroke-width="1.5"
       />
       <!-- Note label -->
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
       <text
         {x}
         {y}
+        ondblclick={() => (Sa_at = note as note_types)}
         text-anchor="middle"
         dominant-baseline="middle"
         class={cl_join(

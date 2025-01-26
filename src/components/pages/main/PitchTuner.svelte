@@ -183,7 +183,7 @@
           </div>
           <PitchDisplay
             {audio_info}
-            Sa_at={selected_Sa_at}
+            bind:Sa_at={selected_Sa_at}
             sargam_orientation={selected_sargam_orientation}
             note_orientation={selected_note_orientation}
           />
