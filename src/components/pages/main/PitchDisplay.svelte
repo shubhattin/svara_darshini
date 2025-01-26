@@ -1,17 +1,22 @@
 <script lang="ts">
+  import { cl_join } from '~/tools/cl_join';
   import { NOTES, SARGAM, type note_types } from './constants';
 
   let {
     audio_info,
-    Sa_at
+    Sa_at,
+    sargam_orientation,
+    note_orientation
   }: {
     audio_info: { clarity: number; detune: number; note: string; pitch: number; scale: number };
     Sa_at: note_types;
+    sargam_orientation: 'radial' | 'vertical';
+    note_orientation: 'radial' | 'vertical';
   } = $props();
 
   let Sa_at_index = $derived(NOTES.indexOf(Sa_at));
 
-  const { clarity, detune, note, pitch, scale } = $derived(audio_info);
+  const { detune, note: note_, scale } = $derived(audio_info);
 
   const cents_to_rotation = (cents: number, note: string) => {
     // Get the base rotation for the note
@@ -29,18 +34,18 @@
 
   const to_radians = (degrees: number) => (degrees * Math.PI) / 180;
 
-  const OUTER_CIRCLE_SARGAM_RADIUS = 96;
-  const INNER_CIRCLE_NOTE_RADIUS = 70;
-  const NOTE_TICK_LENGTH = 5;
-  const FREQUENCY_CIRCLE_RADIUS = 43;
-  const NOTE_LABEL_RADIUS = 54;
-  const SARGAM_LABEL_RADIUS = 85;
-  const MIDDLE_CIRCLE_RADIUS = 30;
+  let OUTER_CIRCLE_SARGAM_RADIUS = $derived(92 - (sargam_orientation === 'vertical' ? 1.5 : 0));
+  let INNER_CIRCLE_NOTE_RADIUS = 70;
+  let NOTE_TICK_LENGTH = 5;
+  let FREQUENCY_CIRCLE_RADIUS = 43;
+  let NOTE_LABEL_RADIUS = $derived(54 + (note_orientation === 'vertical' ? 1.5 : 0));
+  let SARGAM_LABEL_RADIUS = $derived(80 + (sargam_orientation === 'vertical' ? 1.5 : 0));
+  let MIDDLE_CIRCLE_RADIUS = 30;
 
-  const NEEDLE_LINE_LENGTH = 75;
+  let NEEDLE_LINE_LENGTH = 75;
 </script>
 
-<svg viewBox="-100 -100 200 200" class="block h-full w-full">
+<svg viewBox={`-${100} -${100} ${200} ${200}`} class="block h-full w-full">
   <!-- Outer circle for Sargam -->
   <circle
     cx="0"
@@ -80,6 +85,8 @@
   >
     {#each NOTES as note, i}
       {@const angle = i * 30 - 90}
+      {@const x = NOTE_LABEL_RADIUS * Math.cos(to_radians(angle))}
+      {@const y = NOTE_LABEL_RADIUS * Math.sin(to_radians(angle))}
       <!-- Note tick -->
       <line
         x1="0"
@@ -92,55 +99,73 @@
       />
       <!-- Note label -->
       <text
-        x={NOTE_LABEL_RADIUS * Math.cos(to_radians(angle))}
-        y={NOTE_LABEL_RADIUS * Math.sin(to_radians(angle))}
+        {x}
+        {y}
         text-anchor="middle"
         dominant-baseline="middle"
-        class="fill-black text-[0.7rem] font-semibold dark:fill-white"
-        transform={`rotate(${angle + 90} ${NOTE_LABEL_RADIUS * Math.cos(to_radians(angle))} ${NOTE_LABEL_RADIUS * Math.sin(to_radians(angle))})`}
+        class={cl_join(
+          'fill-black text-[0.7rem] font-semibold dark:fill-zinc-300',
+          'duration-600 origin-[0_0] transition-transform ease-in-out'
+        )}
+        transform={note_orientation === 'radial'
+          ? `rotate(${angle + 90} ${x} ${y})`
+          : `rotate(${Sa_at_index * 30} ${x} ${y})`}
       >
         {note}
       </text>
     {/each}
   </g>
 
-  <!-- Sargam labels -->
-  {#each SARGAM as swar, i}
-    {@const angle = i * (360 / SARGAM.length) - 90}
-    <text
-      x={SARGAM_LABEL_RADIUS * Math.cos(to_radians(angle))}
-      y={SARGAM_LABEL_RADIUS * Math.sin(to_radians(angle))}
-      text-anchor="middle"
-      dominant-baseline="middle"
-      class="fill-black text-xs font-semibold opacity-90 dark:fill-white"
-      transform={`rotate(${angle + 90} ${SARGAM_LABEL_RADIUS * Math.cos(to_radians(angle))} ${SARGAM_LABEL_RADIUS * Math.sin(to_radians(angle))})`}
-      font-family="ome_bhatkhande_en"
-    >
-      {swar.key}
-    </text>
-  {/each}
+  <g>
+    <!-- Sargam labels -->
+    {#each SARGAM as swar, i}
+      {@const angle = i * (360 / SARGAM.length) - 90}
+      {@const x = SARGAM_LABEL_RADIUS * Math.cos(to_radians(angle))}
+      {@const y = SARGAM_LABEL_RADIUS * Math.sin(to_radians(angle))}
+      <text
+        {x}
+        {y}
+        text-anchor="middle"
+        dominant-baseline="middle"
+        class={cl_join(
+          'fill-black text-xs font-semibold opacity-90 dark:fill-gray-200',
+          'duration-600 origin-[0_0] transition-transform ease-in-out'
+        )}
+        font-family="ome_bhatkhande_en"
+        {...sargam_orientation === 'radial'
+          ? {
+              transform: `rotate(${angle + 90} ${x} ${y})`
+            }
+          : {}}
+      >
+        {swar.key}
+      </text>
+    {/each}
+  </g>
 
-  <!-- Fine tick marks for cents -->
-  {#each Array(60) as _, i}
-    {@const angle = i * 6 - 90}
-    {@const isMajor = i % 5 === 0}
-    <line
-      x1="0"
-      y1={-INNER_CIRCLE_NOTE_RADIUS}
-      x2="0"
-      y2={-(isMajor
-        ? INNER_CIRCLE_NOTE_RADIUS - NOTE_TICK_LENGTH
-        : INNER_CIRCLE_NOTE_RADIUS - Math.ceil(NOTE_TICK_LENGTH / 2))}
-      transform="rotate({angle})"
-      stroke="currentColor"
-      stroke-width={isMajor ? 1 : 0.5}
-      class="opacity-70"
-    />
-    <!-- y2={isMajor ? -65 : -67} -->
-  {/each}
+  <g>
+    <!-- Fine tick marks for cents -->
+    {#each Array(60) as _, i}
+      {@const angle = i * 6 - 90}
+      {@const is_major = i % 5 === 0}
+      <line
+        x1="0"
+        y1={-INNER_CIRCLE_NOTE_RADIUS}
+        x2="0"
+        y2={-(is_major
+          ? INNER_CIRCLE_NOTE_RADIUS - NOTE_TICK_LENGTH
+          : INNER_CIRCLE_NOTE_RADIUS - Math.ceil(NOTE_TICK_LENGTH / 2))}
+        transform="rotate({angle})"
+        stroke="currentColor"
+        stroke-width={is_major ? 1 : 0.5}
+        class="opacity-70"
+      />
+      <!-- y2={isMajor ? -65 : -67} -->
+    {/each}
+  </g>
 
   <!-- Needle -->
-  <g transform={`rotate(${cents_to_rotation(detune, note)})`} class="-z-10">
+  <g transform={`rotate(${cents_to_rotation(detune, note_)})`} class="-z-10">
     <line
       x1="0"
       y1="0"
@@ -165,7 +190,7 @@
   <!-- Center display -->
   <circle cx="0" cy="0" r={MIDDLE_CIRCLE_RADIUS} class="fill-white opacity-60 dark:fill-black" />
   <text x="0" y="-5" text-anchor="middle" class="fill-black text-base font-bold dark:fill-white">
-    {note}{scale !== 0 ? scale : ''}
+    {note_}{scale !== 0 ? scale : ''}
   </text>
   <text x="0" y="12" text-anchor="middle" class="fill-black text-[0.7rem] dark:fill-white">
     {detune > 0 ? '+' : ''}{detune} cents

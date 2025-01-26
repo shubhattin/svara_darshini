@@ -10,11 +10,19 @@
   import { delay } from '~/tools/delay';
   import { cl_join } from '~/tools/cl_join';
   import PitchDisplay from './PitchDisplay.svelte';
+  import { Popover } from '@skeletonlabs/skeleton-svelte';
 
   let {
     selected_device = $bindable(),
-    selected_Sa_at = $bindable()
-  }: { selected_device: string; selected_Sa_at: note_types } = $props();
+    selected_Sa_at = $bindable(),
+    selected_sargam_orientation = $bindable(),
+    selected_note_orientation = $bindable()
+  }: {
+    selected_device: string;
+    selected_Sa_at: note_types;
+    selected_sargam_orientation: 'radial' | 'vertical';
+    selected_note_orientation: 'radial' | 'vertical';
+  } = $props();
 
   let audio_devices = $state<MediaDeviceInfo[]>([]);
   let device_list_loaded = $state(false);
@@ -46,6 +54,8 @@
     scale: number;
     detune: number;
   } | null>(null);
+
+  let sargam_orientation_popover_status = $state(false);
 
   const getNoteNumberFromPitch = (frequency: number) => {
     const noteNum = 12 * (Math.log(frequency / 440) / Math.log(2));
@@ -155,13 +165,11 @@
   {/if}
   <div class="z-10 mb-4">
     {#if audio_info}
-      {@const { clarity, detune, note, pitch, scale } = audio_info}
+      {@const { clarity, pitch } = audio_info}
       <div class="flex flex-col items-center justify-center space-y-4">
-        <div
-          class="relative mb-8 mt-4 h-72 w-72 select-none sm:mt-8 sm:h-80 sm:w-80 md:h-96 md:w-96"
-        >
-          <div class="flex items-start justify-center">
-            <label class=" space-x-1">
+        <div class="mb-8 mt-4 h-72 w-72 select-none sm:mt-8 sm:h-80 sm:w-80 md:h-96 md:w-96">
+          <div class="flex items-start justify-center space-x-4">
+            <label class="space-x-1">
               <span class="font-semibold">Sa at</span>
               <select
                 class="select inline-block w-16 rounded-md px-2 py-1"
@@ -173,10 +181,37 @@
               </select>
             </label>
           </div>
-          <PitchDisplay {audio_info} Sa_at={selected_Sa_at} />
+          <PitchDisplay
+            {audio_info}
+            Sa_at={selected_Sa_at}
+            sargam_orientation={selected_sargam_orientation}
+            note_orientation={selected_note_orientation}
+          />
         </div>
         <div class=" text-3xl">{pitch} Hz</div>
         <progress class="progress-success progress w-56" value={clarity} max="100"></progress>
+        <div>
+          <label class="">
+            <span class="text-sm font-semibold">Sargam</span>
+            <select
+              class="select inline-block w-20 rounded-md px-2 py-1 text-sm"
+              bind:value={selected_sargam_orientation}
+            >
+              <option value="radial">Radial</option>
+              <option value="vertical">Vertical</option>
+            </select>
+          </label>
+          <label class="">
+            <span class="text-sm font-semibold">Note</span>
+            <select
+              class="select inline-block w-20 rounded-md px-2 py-1 text-sm"
+              bind:value={selected_note_orientation}
+            >
+              <option value="radial">Radial</option>
+              <option value="vertical">Vertical</option>
+            </select>
+          </label>
+        </div>
 
         <!-- Stop button -->
         <div class="mt-6 flex items-center justify-center">
