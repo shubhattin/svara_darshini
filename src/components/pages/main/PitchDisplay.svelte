@@ -45,7 +45,7 @@
   let NEEDLE_LINE_LENGTH = 75;
 </script>
 
-<svg viewBox={`-${100} -${100} ${200} ${200}`} class="block h-full w-full">
+<svg viewBox={`-${100} -${100} ${200} ${200}`} class="block h-full w-full select-none outline-none">
   <!-- Outer circle for Sargam -->
   <circle
     cx="0"

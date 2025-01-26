@@ -163,7 +163,7 @@
       Start
     </button>
   {/if}
-  <div class="z-10 mb-4">
+  <div class="z-10 mb-4 select-none">
     {#if audio_info}
       {@const { clarity, pitch } = audio_info}
       <div class="flex flex-col items-center justify-center space-y-4">
