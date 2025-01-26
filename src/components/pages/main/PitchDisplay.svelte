@@ -105,7 +105,7 @@
         dominant-baseline="middle"
         class={cl_join(
           'fill-zinc-700 text-[0.7rem] font-semibold dark:fill-zinc-300',
-          'duration-600 origin-[0_0] transition-transform ease-in-out'
+          'origin-[0_0] transition-transform duration-[600] ease-in-out'
         )}
         transform={note_orientation === 'radial'
           ? `rotate(${angle + 90} ${x} ${y})`
