@@ -66,6 +66,9 @@ importers:
       '@types/node':
         specifier: ^22.10.10
         version: 22.10.10
+      '@vite-pwa/sveltekit':
+        specifier: ^0.6.7
+        version: 0.6.7(@sveltejs/kit@2.16.1(@sveltejs/vite-plugin-svelte@5.0.3(svelte@5.19.3)(vite@6.0.11(@types/node@22.10.10)(jiti@1.21.7)(sass@1.83.4)(terser@5.37.0)(tsx@4.19.2)(yaml@2.7.0)))(svelte@5.19.3)(vite@6.0.11(@types/node@22.10.10)(jiti@1.21.7)(sass@1.83.4)(terser@5.37.0)(tsx@4.19.2)(yaml@2.7.0)))(vite-plugin-pwa@0.21.1(vite@6.0.11(@types/node@22.10.10)(jiti@1.21.7)(sass@1.83.4)(terser@5.37.0)(tsx@4.19.2)(yaml@2.7.0))(workbox-build@7.3.0)(workbox-window@7.3.0))
       autoprefixer:
         specifier: ^10.4.20
         version: 10.4.20(postcss@8.5.1)
@@ -117,9 +120,6 @@ importers:
       vite-node:
         specifier: ^2.1.8
         version: 2.1.8(@types/node@22.10.10)(sass@1.83.4)(terser@5.37.0)
-      vite-plugin-pwa:
-        specifier: ^0.21.1
-        version: 0.21.1(vite@6.0.11(@types/node@22.10.10)(jiti@1.21.7)(sass@1.83.4)(terser@5.37.0)(tsx@4.19.2)(yaml@2.7.0))(workbox-build@7.3.0)(workbox-window@7.3.0)
       vite-plugin-tailwind-purgecss:
         specifier: ^0.3.5
         version: 0.3.5(tailwindcss@3.4.17)(vite@6.0.11(@types/node@22.10.10)(jiti@1.21.7)(sass@1.83.4)(terser@5.37.0)(tsx@4.19.2)(yaml@2.7.0))
@@ -1415,6 +1415,17 @@ packages:
   '@types/trusted-types@2.0.7':
     resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
 
+  '@vite-pwa/sveltekit@0.6.7':
+    resolution: {integrity: sha512-geeRgOiFr4RdW4JHIshOTsa8OqX4P+aJtudnKjuxzpmHy44bo4o18OWM1iXc4qXBJCxCw+3yTttyJsdmHXG/sA==}
+    engines: {node: '>=16.14 || >=18.13'}
+    peerDependencies:
+      '@sveltejs/kit': ^1.3.1 || ^2.0.1
+      '@vite-pwa/assets-generator': ^0.2.6
+      vite-plugin-pwa: '>=0.21.1 <1'
+    peerDependenciesMeta:
+      '@vite-pwa/assets-generator':
+        optional: true
+
   '@zag-js/accordion@0.75.0':
     resolution: {integrity: sha512-ZqwI4/EO6lA8fRSce7MvATDVniea6TruA3XsBeb/KyDVea360laIJYKeo5giZJR5MEsNqOmmDIK2Uzkcq1uUnA==}
 
@@ -2260,6 +2271,9 @@ packages:
   klona@2.0.6:
     resolution: {integrity: sha512-dhG34DXATL5hSxJbIexCft8FChFXtmskoZYnoPWjXQuebWYCNkVeV3KkGegCK9CP1oswI/vQibS2GY7Em/sJJA==}
     engines: {node: '>= 8'}
+
+  kolorist@1.8.0:
+    resolution: {integrity: sha512-Y+60/zizpJ3HRH8DCss+q95yr6145JXZo46OTpFvDZWLfRCE4qChOyk1b26nMaNpfHHgxagk9dXT5OP0Tfe+dQ==}
 
   leven@3.1.0:
     resolution: {integrity: sha512-qsda+H8jTaUaN/x5vzW2rzc+8Rw4TAQ/4KjB46IwK5VH+IlVeeeje/EoZRpiXvIqjFgK84QffqPztGI3VBLG1A==}
@@ -4374,6 +4388,13 @@ snapshots:
 
   '@types/trusted-types@2.0.7': {}
 
+  '@vite-pwa/sveltekit@0.6.7(@sveltejs/kit@2.16.1(@sveltejs/vite-plugin-svelte@5.0.3(svelte@5.19.3)(vite@6.0.11(@types/node@22.10.10)(jiti@1.21.7)(sass@1.83.4)(terser@5.37.0)(tsx@4.19.2)(yaml@2.7.0)))(svelte@5.19.3)(vite@6.0.11(@types/node@22.10.10)(jiti@1.21.7)(sass@1.83.4)(terser@5.37.0)(tsx@4.19.2)(yaml@2.7.0)))(vite-plugin-pwa@0.21.1(vite@6.0.11(@types/node@22.10.10)(jiti@1.21.7)(sass@1.83.4)(terser@5.37.0)(tsx@4.19.2)(yaml@2.7.0))(workbox-build@7.3.0)(workbox-window@7.3.0))':
+    dependencies:
+      '@sveltejs/kit': 2.16.1(@sveltejs/vite-plugin-svelte@5.0.3(svelte@5.19.3)(vite@6.0.11(@types/node@22.10.10)(jiti@1.21.7)(sass@1.83.4)(terser@5.37.0)(tsx@4.19.2)(yaml@2.7.0)))(svelte@5.19.3)(vite@6.0.11(@types/node@22.10.10)(jiti@1.21.7)(sass@1.83.4)(terser@5.37.0)(tsx@4.19.2)(yaml@2.7.0))
+      kolorist: 1.8.0
+      tinyglobby: 0.2.10
+      vite-plugin-pwa: 0.21.1(vite@6.0.11(@types/node@22.10.10)(jiti@1.21.7)(sass@1.83.4)(terser@5.37.0)(tsx@4.19.2)(yaml@2.7.0))(workbox-build@7.3.0)(workbox-window@7.3.0)
+
   '@zag-js/accordion@0.75.0':
     dependencies:
       '@zag-js/anatomy': 0.75.0
@@ -5445,6 +5466,8 @@ snapshots:
   kleur@4.1.5: {}
 
   klona@2.0.6: {}
+
+  kolorist@1.8.0: {}
 
   leven@3.1.0: {}
 

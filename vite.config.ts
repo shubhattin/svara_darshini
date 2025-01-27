@@ -1,14 +1,20 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 import { purgeCss } from 'vite-plugin-tailwind-purgecss';
-import { VitePWA } from 'vite-plugin-pwa';
+import { SvelteKitPWA } from '@vite-pwa/sveltekit';
 
 export default defineConfig({
   plugins: [
     sveltekit(),
     purgeCss(),
-    VitePWA({
+    SvelteKitPWA({
+      strategies: 'generateSW',
+      // strategies: 'injectManifest',
+      srcDir: 'src',
       registerType: 'autoUpdate',
+      devOptions: {
+        enabled: true
+      },
       manifest: {
         name: 'SvaraDarshini',
         short_name: 'SvaraDarshini',
