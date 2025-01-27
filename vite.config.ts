@@ -8,9 +8,7 @@ export default defineConfig({
     sveltekit(),
     purgeCss(),
     SvelteKitPWA({
-      strategies: 'generateSW',
-      // strategies: 'injectManifest',
-      srcDir: 'src',
+      // strategies: 'generateSW',
       registerType: 'autoUpdate',
       devOptions: {
         enabled: true
@@ -35,6 +33,9 @@ export default defineConfig({
         theme_color: '#181e20',
         background_color: '#333',
         display: 'standalone'
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg}']
       }
     })
   ],
