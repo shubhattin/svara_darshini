@@ -10,7 +10,6 @@
   import { delay } from '~/tools/delay';
   import { cl_join } from '~/tools/cl_join';
   import PitchDisplay from './PitchDisplay.svelte';
-  import { Popover } from '@skeletonlabs/skeleton-svelte';
 
   let {
     selected_device = $bindable(),

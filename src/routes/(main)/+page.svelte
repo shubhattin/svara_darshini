@@ -16,7 +16,7 @@
 </script>
 
 <svelte:head>
-  <title>Pitch Tuner</title>
+  <title>SavaraDarshini</title>
 </svelte:head>
 
 <PitchTuner
