@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { note_types } from '~/components/pages/main/constants';
   import PitchTuner from '~/components/pages/main/PitchTuner.svelte';
+  import MetaTags from '~/components/tags/MetaTags.svelte';
   import { persistedStore } from '~/tools/persisted_store';
 
   let default_selected_device = persistedStore('prev_selected_device', 'default');
@@ -15,9 +16,7 @@
   );
 </script>
 
-<svelte:head>
-  <title>SavaraDarshini</title>
-</svelte:head>
+<MetaTags title="SvaraDarshini" description="Svara Darshini" />
 
 <PitchTuner
   bind:selected_device={$default_selected_device}

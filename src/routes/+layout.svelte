@@ -4,6 +4,8 @@
   import { type Snippet } from 'svelte';
   import '@fontsource/roboto/latin.css';
   import '../app.scss';
+  import PartyTown from '~/components/tags/PartyTown.svelte';
+  import GA from '~/components/tags/GA.svelte';
 
   let { children }: { children: Snippet } = $props();
 </script>
@@ -15,3 +17,5 @@
     {@render children()}
   </div>
 </div>
+<PartyTown />
+<GA />

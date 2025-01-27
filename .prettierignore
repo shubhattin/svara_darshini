@@ -8,3 +8,5 @@ pnpm-lock.yaml
 
 src/db/migrations
 src/db/scripts/out/
+
+static/~partytown
