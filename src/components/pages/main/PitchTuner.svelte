@@ -24,6 +24,9 @@
     selected_note_orientation: 'radial' | 'vertical';
   } = $props();
 
+  const MAX_ACTIVE_TIME_MS = ms('30mins');
+  let prev_max_timeout: NodeJS.Timeout | null = null;
+
   let audio_devices = $state<MediaDeviceInfo[]>([]);
   let device_list_loaded = $state(false);
 
@@ -31,9 +34,6 @@
   let analyzer_node: AnalyserNode | null = null;
   let update_interval: NodeJS.Timeout | null = null;
   let mic_stream: MediaStream | null = null;
-
-  const MAX_ACTIVE_TIME_MS = ms('30mins');
-  let prev_max_timeout: NodeJS.Timeout | null = null;
 
   const FFT_SIZE = Math.pow(2, 12); // 4096
 
