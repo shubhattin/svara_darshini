@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { note_types } from '~/components/pages/main/constants';
   import PitchTuner from '~/components/pages/main/PitchTuner.svelte';
+  import GS from '~/components/tags/GS.svelte';
   import MetaTags from '~/components/tags/MetaTags.svelte';
   import { persistedStore } from '~/tools/persisted_store';
 
@@ -16,7 +17,11 @@
   );
 </script>
 
-<MetaTags title="SvaraDarshini" description="स्वरदर्शिनी" />
+<MetaTags
+  title="SvaraDarshini"
+  description="SvaraDarshini is an intuitive tool to understand Principles of Music that are common across the world."
+/>
+<GS />
 
 <PitchTuner
   bind:selected_device={$default_selected_device}
