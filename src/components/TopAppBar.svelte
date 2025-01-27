@@ -7,6 +7,8 @@
   import { page } from '$app/stores';
   import { PAGE_TITLES } from '~/state/page_titles';
   import type { Snippet } from 'svelte';
+  import { OiDownload24 } from 'svelte-icons-pack/oi';
+  import { pwa_state } from '~/state/main.svelte';
 
   let { start, headline, end }: { start?: Snippet; headline?: Snippet; end?: Snippet } = $props();
 
@@ -57,6 +59,19 @@
           />
           <span>Github</span>
         </a>
+        {#if pwa_state.install_event_fired}
+          <button
+            class="select-none gap-1 px-2 py-1 text-sm outline-none"
+            onclick={async () => {
+              app_bar_popover_status = false;
+              if (pwa_state.install_event_fired && pwa_state.event_triggerer)
+                await pwa_state.event_triggerer.prompt();
+            }}
+          >
+            <Icon src={OiDownload24} class="-mt-1 text-base" />
+            Install
+          </button>
+        {/if}
         <div class="wont-close flex space-x-3 rounded-md px-2 py-1">
           <span class="mt-1">Set Theme</span>
           <ThemeChanger />

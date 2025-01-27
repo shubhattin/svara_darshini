@@ -16,7 +16,7 @@
   );
 </script>
 
-<MetaTags title="SvaraDarshini" description="Svara Darshini" />
+<MetaTags title="SvaraDarshini" description="स्वरदर्शिनी" />
 
 <PitchTuner
   bind:selected_device={$default_selected_device}
