@@ -10,6 +10,7 @@
   import { delay } from '~/tools/delay';
   import { cl_join } from '~/tools/cl_join';
   import PitchDisplay from './PitchDisplay.svelte';
+  import ms from 'ms';
 
   let {
     selected_device = $bindable(),
@@ -28,8 +29,11 @@
 
   let audio_context: AudioContext | null = null;
   let analyzer_node: AnalyserNode | null = null;
-  let update_interval: NodeJS.Timeout = null!;
+  let update_interval: NodeJS.Timeout | null = null;
   let mic_stream: MediaStream | null = null;
+
+  const MAX_ACTIVE_TIME_MS = ms('30mins');
+  let prev_max_timeout: NodeJS.Timeout | null = null;
 
   const FFT_SIZE = Math.pow(2, 12); // 4096
 
@@ -54,8 +58,6 @@
     detune: number;
   } | null>(null);
 
-  let sargam_orientation_popover_status = $state(false);
-
   const getNoteNumberFromPitch = (frequency: number) => {
     const noteNum = 12 * (Math.log(frequency / 440) / Math.log(2));
     return Math.round(noteNum) + 69;
@@ -67,7 +69,8 @@
 
   const Stop = () => {
     //clear interval
-    clearInterval(update_interval);
+    clearInterval(update_interval!);
+    clearTimeout(prev_max_timeout!);
 
     // stop mic stream
     mic_stream?.getTracks().forEach((track) => track.stop());
@@ -85,7 +88,8 @@
   };
 
   onMount(() => {
-    clearInterval(update_interval);
+    clearInterval(update_interval!);
+    clearTimeout(prev_max_timeout!);
 
     return () => {
       Stop();
@@ -118,7 +122,8 @@
       const detector = PitchDetector.forFloat32Array(analyzer_node.fftSize);
       const input = new Float32Array(detector.inputLength);
 
-      clearInterval(update_interval);
+      clearInterval(update_interval!);
+      clearTimeout(prev_max_timeout!);
 
       // update every 100ms
       update_interval = setInterval(() => {
@@ -136,6 +141,9 @@
           detune: Math.floor((1200 * Math.log(pitch / getNoteFrequency(rawNote))) / Math.log(2))
         };
       }, 100);
+      prev_max_timeout = setTimeout(() => {
+        Stop();
+      }, MAX_ACTIVE_TIME_MS);
     } catch (error) {
       console.log('error in Start-->', error);
     }
