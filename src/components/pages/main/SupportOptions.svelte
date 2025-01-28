@@ -9,12 +9,12 @@
   let qr_canvas: HTMLCanvasElement | null = $state(null);
   let darkColor = '#000000';
   let lightColor = '#ffffff';
-  const CANVAS_SIZE = $state(145);
+  const CANVAS_SIZE = $state(146);
 
   onMount(() => {
     QRCode.toCanvas(qr_canvas!, UPI_ID_LINK, {
       width: CANVAS_SIZE,
-      margin: 1,
+      margin: 1.2,
       color: {
         dark: darkColor,
         light: lightColor
