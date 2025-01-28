@@ -47,7 +47,8 @@
       width={CANVAS_SIZE}
     ></canvas>
     <div
-      class="absolute left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center"
+      style="width: {CANVAS_SIZE}px; height: {CANVAS_SIZE}px;"
+      class="absolute flex items-center justify-center"
     >
       <ImageSpan src="/img/tcs_64.png" class="h-10 w-10 rounded-full bg-white p-1 shadow-md" />
     </div>
