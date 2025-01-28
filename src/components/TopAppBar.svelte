@@ -9,8 +9,9 @@
   import type { Snippet } from 'svelte';
   import { OiDownload24 } from 'svelte-icons-pack/oi';
   import { pwa_state } from '~/state/main.svelte';
-  import { FaSolidMoneyBillWave } from 'svelte-icons-pack/fa';
+  import { ContributeIcon } from '~/components/icons';
   import { cl_join } from '~/tools/cl_join';
+  import SupportOptions from './pages/main/SupportOptions.svelte';
 
   let { start, headline, end }: { start?: Snippet; headline?: Snippet; end?: Snippet } = $props();
 
@@ -35,7 +36,7 @@
   {/snippet}
   {#snippet trail()}
     {@render end?.()}
-    {@render support('hidden sm:inline')}
+    {@render support()}
     <Popover
       bind:open={app_bar_popover_status}
       positioning={{ placement: 'left-start' }}
@@ -63,7 +64,7 @@
           />
           <span>Github</span>
         </a>
-        {@render support('sm:hidden block')}
+        <!-- {@render support('sm:hidden block')} -->
         {#if pwa_state.install_event_fired}
           <button
             class="select-none gap-1 px-2 py-1 text-sm outline-none"
@@ -91,67 +92,23 @@
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <span
     onclick={() => {
-      app_bar_popover_status = false;
       support_modal_status = true;
     }}
     class={cl_join(
-      'btn m-0 select-none gap-1 rounded-md px-2 py-1 text-xs font-semibold outline-none hover:bg-gray-200 sm:text-sm dark:hover:bg-gray-700',
+      'btn m-0 select-none gap-2 rounded-md px-2 py-1 font-semibold outline-none hover:bg-gray-200  dark:hover:bg-gray-700',
       cl
     )}
   >
-    <Icon src={FaSolidMoneyBillWave} class="text-2xl" />
-    Support Our Projects
+    <Icon src={ContributeIcon} class="text-3xl" />
+    <span class="hidden text-sm sm:inline">Support Our Projects</span>
   </span>
 {/snippet}
 <Modal
   bind:open={support_modal_status}
-  contentBase="card z-40 space-y-2 rounded-lg px-3 py-2 shadow-xl bg-surface-100-900"
+  contentBase="card z-40 space-y-2 rounded-lg px-3 py-2 shadow-xl bg-slate-100 dark:bg-surface-900"
   backdropBackground="backdrop-blur-sm"
 >
   {#snippet content()}
-    <div class="text-center text-lg font-bold text-amber-700 dark:text-warning-500">
-      <div>Support Our Projects</div>
-      <div class="text-sm">Pay as you wish</div>
-    </div>
-    <div>
-      <div class="text-center text-lg font-bold">One Time Contributions:</div>
-      <div class="text-center text-sm">
-        UPI : <a
-          href="upi://pay?pa=thesanskritchannel@okicici&pn=The%20Sanskrit%20Channel&cu=INR"
-          target="_blank"
-          class="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-          rel="noopener noreferrer">thesanskritchannel@okicici</a
-        >
-        <br />
-        <a
-          href="https://www.paypal.me/thesanskritchannel"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-        >
-          https://www.paypal.me/thesanskritchannel
-        </a>
-        <br />
-        <a
-          href="https://rzp.io/l/thesanskritchannel"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-        >
-          https://rzp.io/l/thesanskritchannel
-        </a>
-      </div>
-      <div class="text-center text-lg font-bold">Monthly Memberships:</div>
-      <div class="text-center text-sm">
-        <a
-          href="https://www.patreon.com/thesanskritchannel"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-        >
-          https://www.patreon.com/thesanskritchannel
-        </a>
-      </div>
-    </div>
+    <SupportOptions />
   {/snippet}
 </Modal>
