@@ -63,7 +63,7 @@
           />
           <span>Github</span>
         </a>
-        {@render support('sm:hidden')}
+        {@render support('sm:hidden block')}
         {#if pwa_state.install_event_fired}
           <button
             class="select-none gap-1 px-2 py-1 text-sm outline-none"
@@ -110,7 +110,8 @@
 >
   {#snippet content()}
     <div class="text-center text-lg font-bold text-amber-700 dark:text-warning-500">
-      Support Our Projects
+      <div>Support Our Projects</div>
+      <div class="text-sm">Pay as you wish</div>
     </div>
     <div>
       <div class="text-center text-lg font-bold">One Time Contributions:</div>
