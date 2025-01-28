@@ -3,7 +3,6 @@
   import Icon from '~/tools/Icon.svelte';
   import QRCode from 'qrcode';
   import { onMount } from 'svelte';
-  import ImageSpan from '~/components/ImageSpan.svelte';
 
   const UPI_ID = 'thesanskritchannel@okicici';
   const UPI_ID_LINK = `upi://pay?pa=${UPI_ID}&pn=The%20Sanskrit%20Channel&cu=INR`;

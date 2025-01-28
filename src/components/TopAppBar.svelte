@@ -11,7 +11,6 @@
   import { pwa_state } from '~/state/main.svelte';
   import { ContributeIcon } from '~/components/icons';
   import { cl_join } from '~/tools/cl_join';
-  import SupportOptions from './pages/main/SupportOptions.svelte';
 
   let { start, headline, end }: { start?: Snippet; headline?: Snippet; end?: Snippet } = $props();
 
@@ -109,6 +108,8 @@
   backdropBackground="backdrop-blur-sm"
 >
   {#snippet content()}
-    <SupportOptions />
+    {#await import('./pages/main/SupportOptions.svelte') then SupportOptions}
+      <SupportOptions.default />
+    {/await}
   {/snippet}
 </Modal>
