@@ -117,8 +117,9 @@
       <div class="text-center text-lg font-bold">One Time Contributions:</div>
       <div class="text-center text-sm">
         UPI : <a
-          href="upi://pay?pa=thesanskritchannel@okicici&pn=Udaya%20Shreyast&cu=INR"
+          href="upi://pay?pa=thesanskritchannel@okicici&pn=The%20Sanskrit%20Channel&cu=INR"
           target="_blank"
+          class="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
           rel="noopener noreferrer">thesanskritchannel@okicici</a
         >
         <br />
