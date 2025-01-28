@@ -47,9 +47,11 @@
         height={CANVAS_SIZE}
         width={CANVAS_SIZE}
       ></canvas>
-      <div class="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+      <div
+        class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center"
+      >
         <img
-          src="/img/tcs.png"
+          src="/img/tcs_64.png"
           class="mb-14 h-10 w-10 rounded-full bg-white p-1 shadow-md"
           alt="icon"
         />
