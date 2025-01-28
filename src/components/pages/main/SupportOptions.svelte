@@ -30,7 +30,7 @@
   </div>
   <div class="mt-2.5">
     <!-- <div class="text-center text-lg font-bold">One Time Contributions:</div> -->
-    <div class="flex text-center text-sm">
+    <div class="flex justify-center text-center text-sm">
       <Icon src={UPIIcon} class="-mt-1.5 text-3xl" /> UPI :
       <a
         href={UPI_ID_LINK}
@@ -47,41 +47,58 @@
         width={CANVAS_SIZE}
       ></canvas>
     </div>
-    <div class="mt-2 flex justify-center space-x-3">
-      <a
-        href="https://www.paypal.me/thesanskritchannel"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="inline-block"
-        title="Support us on Paypal"
-      >
-        <Icon src={PayPalIcon} class="-mt-3 text-4xl" />
-      </a>
+    <div class="mt-2 space-y-0">
       <a
         href="https://pages.razorpay.com/thesanskritchannel"
         target="_blank"
         rel="noopener noreferrer"
-        class="inline"
+        class="flex items-center justify-center"
         title="Support us on Razorpay"
       >
-        <Icon src={RazorpayIcon} class="-my-12 -mt-3 text-8xl" />
+        <Icon src={RazorpayIcon} class="-my-12 -mt-3 text-[5.3rem]" />
+        <span
+          class="ml-1 text-xs text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+          >pages.razorpay.com/thesanskritchannel</span
+        >
+      </a>
+      <a
+        href="https://www.paypal.me/thesanskritchannel"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="flex items-center justify-center"
+        title="Support us on Paypal"
+      >
+        <Icon src={PayPalIcon} class="-mt-3 text-4xl" />
+        <span
+          class="text-xs text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+          >paypal.me/thesanskritchannel</span
+        >
       </a>
     </div>
-    <div class="mt-3 flex justify-center space-x-5">
+    <div class="mt-4 space-y-1">
       <a
         href="https://www.patreon.com/thesanskritchannel"
         target="_blank"
-        class="pt-1 dark:bg-white"
+        class="flex items-center justify-center space-x-2.5 pt-1"
         title="Support us on Patreon"
       >
-        <Icon src={PatreonIcon} class="-mt-1 text-4xl" />
+        <Icon src={PatreonIcon} class="-mt-1 inline-block text-3xl dark:bg-white" />
+        <span
+          class="text-xs text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+          >patreon.com/thesanskritchannel</span
+        >
       </a>
       <a
         href="https://www.youtube.com/channel/UCqFg6QnwgtVHo1iFgpxrx-A/join"
         target="_blank"
         title="Support us on Youtube"
+        class="flex items-center justify-center space-x-2"
       >
-        <Icon src={YoutubeIcon} class="mt-0 text-4xl text-[red]" />
+        <Icon src={YoutubeIcon} class="text-[2.1rem] text-[red]" />
+        <span
+          class="text-[0.6rem] text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+          >youtube.com/channel/UCqFg6QnwgtVHo1iFgpxrx-A/join</span
+        >
       </a>
     </div>
   </div>

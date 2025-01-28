@@ -196,7 +196,10 @@
           />
         </div>
         <div class="text-3xl">{pitch} Hz</div>
-        <progress class="progress-success progress w-56" value={clarity} max="100"></progress>
+        <div class="space-y-0">
+          <div class="-mb-1 text-center text-sm font-semibold">Clarity</div>
+          <progress class="progress w-56" value={clarity} max="100"></progress>
+        </div>
         <div>
           <div class="text-center font-bold">Orientation</div>
           <label>
