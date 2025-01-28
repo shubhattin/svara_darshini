@@ -3,6 +3,7 @@
   import Icon from '~/tools/Icon.svelte';
   import QRCode from 'qrcode';
   import { onMount } from 'svelte';
+  import ImageSpan from '~/components/ImageSpan.svelte';
 
   const UPI_ID = 'thesanskritchannel@okicici';
   const UPI_ID_LINK = `upi://pay?pa=${UPI_ID}&pn=The%20Sanskrit%20Channel&cu=INR`;
@@ -46,13 +47,9 @@
       width={CANVAS_SIZE}
     ></canvas>
     <div
-      class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center"
+      class="absolute left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center"
     >
-      <img
-        src="/img/tcs_64.png"
-        class="mb-14 h-10 w-10 rounded-full bg-white p-1 shadow-md"
-        alt="icon"
-      />
+      <ImageSpan src="/img/tcs_64.png" class="h-10 w-10 rounded-full bg-white p-1 shadow-md" />
     </div>
   </div>
   <div class="mt-2 space-y-1">
