@@ -11,6 +11,7 @@
   import { pwa_state } from '~/state/main.svelte';
   import { ContributeIcon } from '~/components/icons';
   import { cl_join } from '~/tools/cl_join';
+  import SupportOptions from './pages/main/SupportOptions.svelte';
 
   let { start, headline, end }: { start?: Snippet; headline?: Snippet; end?: Snippet } = $props();
 
@@ -104,12 +105,10 @@
 {/snippet}
 <Modal
   bind:open={support_modal_status}
-  contentBase="card z-40 space-y-2 rounded-lg px-3 py-2 shadow-xl bg-slate-100 dark:bg-surface-900"
+  contentBase="card z-40 px-3 py-2 shadow-xl rounded-md select-none outline-none bg-slate-100 dark:bg-surface-900"
   backdropBackground="backdrop-blur-sm"
 >
   {#snippet content()}
-    {#await import('./pages/main/SupportOptions.svelte') then SupportOptions}
-      <SupportOptions.default />
-    {/await}
+    <SupportOptions />
   {/snippet}
 </Modal>
