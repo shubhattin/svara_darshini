@@ -3,6 +3,7 @@
   import Icon from '~/tools/Icon.svelte';
   import QRCode from 'qrcode';
   import { onMount } from 'svelte';
+  import ImageSpan from '~/components/ImageSpan.svelte';
 
   const UPI_ID = 'thesanskritchannel@okicici';
   const UPI_ID_LINK = `upi://pay?pa=${UPI_ID}&pn=The%20Sanskrit%20Channel&cu=INR`;
@@ -46,8 +47,15 @@
         height={CANVAS_SIZE}
         width={CANVAS_SIZE}
       ></canvas>
+      <div class="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+        <img
+          src="/img/tcs.png"
+          class="mb-14 h-10 w-10 rounded-full bg-white p-1 shadow-md"
+          alt="icon"
+        />
+      </div>
     </div>
-    <div class="mt-2 space-y-0">
+    <div class="mt-2 space-y-1">
       <a
         href="https://pages.razorpay.com/thesanskritchannel"
         target="_blank"
@@ -75,7 +83,7 @@
         >
       </a>
     </div>
-    <div class="mt-4 space-y-1">
+    <div class="mt-6 space-y-1">
       <a
         href="https://www.patreon.com/thesanskritchannel"
         target="_blank"
