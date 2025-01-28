@@ -30,7 +30,6 @@
   </div>
   <div class="mt-2.5">
     <!-- <div class="text-center text-lg font-bold">One Time Contributions:</div> -->
-
     <div class="flex text-center text-sm">
       <Icon src={UPIIcon} class="-mt-1.5 text-3xl" /> UPI :
       <a
