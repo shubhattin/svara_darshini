@@ -7,8 +7,8 @@
 
   const UPI_ID = 'thesanskritchannel@okicici';
   const UPI_ID_LINK = (() => {
-    const name = 'The Sanskrit Channel';
-    return encodeURIComponent(`upi://pay?pa=${UPI_ID}&pn=${name}&cu=INR`);
+    const name = encodeURIComponent('The Sanskrit Channel');
+    return `upi://pay?pa=${UPI_ID}&pn=${name}&cu=INR`;
   })();
   let qr_canvas: HTMLCanvasElement | null = $state(null);
   let darkColor = '#000000';
@@ -31,66 +31,74 @@
   <div>Support Our Projects</div>
   <div class="text-sm">Pay as you wish</div>
 </div>
-<div class="mb-1 text-sm font-semibold">One Time Contributions</div>
-<div class="flex justify-center text-center text-sm">
-  <Icon src={UPIIcon} class="-mt-1.5 text-3xl" /> UPI :
-  <a
-    href={UPI_ID_LINK}
-    target="_blank"
-    class="ml-1 select-none text-blue-600 outline-none hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-    rel="noopener noreferrer">{UPI_ID}</a
-  >
-</div>
-<div class="flex justify-center">
-  <canvas bind:this={qr_canvas} class="block h-auto w-full" height={CANVAS_SIZE} width={CANVAS_SIZE}
-  ></canvas>
-  <div
-    style="width: {CANVAS_SIZE}px; height: {CANVAS_SIZE}px;"
-    class="absolute flex items-center justify-center"
-  >
-    <ImageSpan src="/img/tcs_64.png" class="h-10 w-10 rounded-full bg-white p-1 shadow-md" />
+
+<div class="text-sm font-semibold underline">One-Time Contributions :</div>
+<div class="mt-2">
+  <div class="flex justify-center text-center text-sm">
+    <a href={UPI_ID_LINK} target="_blank" class="ml-1 select-none" rel="noopener noreferrer">
+      <Icon src={UPIIcon} class="-mt-1.5 text-3xl" /> UPI :
+      <span
+        class="text-sm text-blue-600 outline-none hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+        >{UPI_ID}</span
+      ></a
+    >
+  </div>
+  <div class="flex justify-center">
+    <canvas
+      bind:this={qr_canvas}
+      class="block h-auto w-full"
+      height={CANVAS_SIZE}
+      width={CANVAS_SIZE}
+    ></canvas>
+    <div
+      style="width: {CANVAS_SIZE}px; height: {CANVAS_SIZE}px;"
+      class="absolute flex items-center justify-center"
+    >
+      <ImageSpan src="/img/tcs_64.png" class="h-10 w-10 rounded-full bg-white p-1 shadow-md" />
+    </div>
+  </div>
+  <div class="mt-0 space-y-1">
+    <a
+      href="https://pages.razorpay.com/thesanskritchannel"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="flex items-center justify-center"
+      title="Support us on Razorpay"
+    >
+      <Icon src={RazorpayIcon} class="-my-12 -mt-3 text-7xl" />
+      <span
+        class="ml-1 mt-2 text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+        >rzp.com/thesanskritchannel</span
+      >
+    </a>
+    <a
+      href="https://www.paypal.me/thesanskritchannel"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="flex items-center justify-center"
+      title="Support us on Paypal"
+    >
+      <Icon src={PayPalIcon} class="-mt-3 text-2xl" />
+      <span
+        class="ml-1 text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+        >paypal.me/thesanskritchannel</span
+      >
+    </a>
   </div>
 </div>
-<div class="mt-0 space-y-1">
-  <a
-    href="https://pages.razorpay.com/thesanskritchannel"
-    target="_blank"
-    rel="noopener noreferrer"
-    class="flex items-center justify-center"
-    title="Support us on Razorpay"
-  >
-    <Icon src={RazorpayIcon} class="-my-12 -mt-3 text-7xl" />
-    <span
-      class="ml-1 mt-2 text-xs text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-      >pages.razorpay.com/thesanskritchannel</span
-    >
-  </a>
-  <a
-    href="https://www.paypal.me/thesanskritchannel"
-    target="_blank"
-    rel="noopener noreferrer"
-    class="flex items-center justify-center"
-    title="Support us on Paypal"
-  >
-    <Icon src={PayPalIcon} class="-mt-3 text-2xl" />
-    <span
-      class="text-xs text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-      >paypal.me/thesanskritchannel</span
-    >
-  </a>
-</div>
-<div class="mt-4 space-y-0">
-  <div class="text-sm font-semibold">Monthly Memberships</div>
+
+<div class="mt-4 text-sm font-semibold underline">Monthly Memberships :</div>
+<div class="mt-[0.2rem] space-y-1">
   <a
     href="https://www.patreon.com/thesanskritchannel"
     target="_blank"
     class="flex items-center justify-center space-x-2.5 pt-1"
     title="Support us on Patreon"
   >
-    <Icon src={PatreonIcon} class="-mt-1 inline-block text-lg dark:bg-white" />
+    <Icon src={PatreonIcon} class="-mt-1 inline-block text-xl dark:bg-white" />
     <span
-      class="text-xs text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-      >patreon.com/thesanskritchannel</span
+      class="text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+      >Join on Patreon</span
     >
   </a>
   <a
@@ -101,8 +109,8 @@
   >
     <Icon src={YoutubeIcon} class="text-2xl text-[red]" />
     <span
-      class="text-[0.6rem] text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-      >youtube.com/channel/UCqFg6QnwgtVHo1iFgpxrx-A/join</span
+      class="text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+      >Join on YouTube</span
     >
   </a>
 </div>
