@@ -36,7 +36,17 @@
   {/snippet}
   {#snippet trail()}
     {@render end?.()}
-    {@render support()}
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <span
+      onclick={() => {
+        support_modal_status = true;
+      }}
+      class="btn m-0 select-none gap-2 rounded-md px-2 py-1 font-semibold outline-none hover:bg-gray-200 dark:hover:bg-gray-700"
+    >
+      <Icon src={ContributeIcon} class="text-3xl" />
+      <span class="hidden text-sm sm:inline">Support Our Projects</span>
+    </span>
     <Popover
       bind:open={app_bar_popover_status}
       positioning={{ placement: 'left-start' }}
@@ -87,22 +97,6 @@
   {/snippet}
 </AppBar>
 
-{#snippet support(cl?: string)}
-  <!-- svelte-ignore a11y_click_events_have_key_events -->
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <span
-    onclick={() => {
-      support_modal_status = true;
-    }}
-    class={cl_join(
-      'btn m-0 select-none gap-2 rounded-md px-2 py-1 font-semibold outline-none hover:bg-gray-200  dark:hover:bg-gray-700',
-      cl
-    )}
-  >
-    <Icon src={ContributeIcon} class="text-3xl" />
-    <span class="hidden text-sm sm:inline">Support Our Projects</span>
-  </span>
-{/snippet}
 <Modal
   bind:open={support_modal_status}
   contentBase="card z-40 px-3 py-2 shadow-xl rounded-md select-none outline-none bg-slate-100 dark:bg-surface-900"
