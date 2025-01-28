@@ -63,9 +63,9 @@
         class="flex items-center justify-center"
         title="Support us on Razorpay"
       >
-        <Icon src={RazorpayIcon} class="-my-12 -mt-3 text-[5.3rem]" />
+        <Icon src={RazorpayIcon} class="-my-12 -mt-3 text-7xl" />
         <span
-          class="ml-1 text-xs text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+          class="ml-1 mt-2 text-xs text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
           >pages.razorpay.com/thesanskritchannel</span
         >
       </a>
@@ -76,21 +76,21 @@
         class="flex items-center justify-center"
         title="Support us on Paypal"
       >
-        <Icon src={PayPalIcon} class="-mt-3 text-4xl" />
+        <Icon src={PayPalIcon} class="-mt-3 text-2xl" />
         <span
           class="text-xs text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
           >paypal.me/thesanskritchannel</span
         >
       </a>
     </div>
-    <div class="mt-6 space-y-1">
+    <div class="mt-4 space-y-0">
       <a
         href="https://www.patreon.com/thesanskritchannel"
         target="_blank"
         class="flex items-center justify-center space-x-2.5 pt-1"
         title="Support us on Patreon"
       >
-        <Icon src={PatreonIcon} class="-mt-1 inline-block text-3xl dark:bg-white" />
+        <Icon src={PatreonIcon} class="-mt-1 inline-block text-lg dark:bg-white" />
         <span
           class="text-xs text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
           >patreon.com/thesanskritchannel</span
@@ -102,7 +102,7 @@
         title="Support us on Youtube"
         class="flex items-center justify-center space-x-2"
       >
-        <Icon src={YoutubeIcon} class="text-[2.1rem] text-[red]" />
+        <Icon src={YoutubeIcon} class="text-2xl text-[red]" />
         <span
           class="text-[0.6rem] text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
           >youtube.com/channel/UCqFg6QnwgtVHo1iFgpxrx-A/join</span

@@ -7,12 +7,12 @@
   let default_selected_device = persistedStore('prev_selected_device', 'default');
   let default_Sa_at = persistedStore<note_types>('prev_Sa_at', 'C');
   let default_sargam_orientation = persistedStore<'vertical' | 'radial'>(
-    'prev_sargam_orientation',
+    'saved_sargam_orientation',
     'vertical'
   );
   let default_note_orientation = persistedStore<'vertical' | 'radial'>(
-    'prev_note_orientation',
-    'radial'
+    'saved_note_orientation',
+    'vertical'
   );
 </script>
 
