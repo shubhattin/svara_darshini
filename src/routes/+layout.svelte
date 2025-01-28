@@ -7,6 +7,7 @@
   import PartyTown from '~/components/tags/PartyTown.svelte';
   import GA from '~/components/tags/GA.svelte';
   import { pwa_state } from '~/state/main.svelte';
+  import GS from '~/components/tags/GS.svelte';
 
   let { children }: { children: Snippet } = $props();
 
@@ -28,3 +29,4 @@
 </div>
 <PartyTown />
 <GA />
+<GS />
