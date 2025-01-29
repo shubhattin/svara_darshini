@@ -10,7 +10,7 @@ User-agent: *
 Disallow: /_app/
 Disallow: /~partytown/
 Disallow: /img/
-Disallow: manifest.json
+Disallow: /manifest.json
 
 Sitemap: ${process.env.VITE_SITE_URL ?? ''}/sitemap.xml
 `;

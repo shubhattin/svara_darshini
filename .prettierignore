@@ -10,3 +10,5 @@ src/db/migrations
 src/db/scripts/out/
 
 static/~partytown
+static/sitemap.xml
+static/robots.txt
