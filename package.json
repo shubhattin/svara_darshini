@@ -25,6 +25,7 @@
     "autoprefixer": "^10.4.20",
     "cross-env": "^7.0.3",
     "dotenv": "^16.4.7",
+    "generate-robotstxt": "^8.0.3",
     "mode-watcher": "^0.3.1",
     "postcss": "^8.5.1",
     "postcss-load-config": "^5.1.0",
