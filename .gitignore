@@ -15,5 +15,7 @@ vite.config.ts.timestamp-*
 src/db/scripts/out/
 
 static/~partytown
+static/robots.txt
+static/sitemap.xml
 
 **/a.ts
