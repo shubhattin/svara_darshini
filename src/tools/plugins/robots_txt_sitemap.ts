@@ -6,7 +6,7 @@ import type { PluginOption } from 'vite';
 // @ts-ignore
 import robotstxt from 'generate-robotstxt';
 
-const BASE_URL = process.env.VITE_SITE_URL ?? 'http://localhost:5173';
+const BASE_URL = process.env.VITE_SITE_URL ?? 'http://localhost:4173';
 
 const make_robots_txt = async () => {
   const data: string = await robotstxt({

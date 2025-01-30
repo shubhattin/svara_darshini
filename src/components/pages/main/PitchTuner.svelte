@@ -6,11 +6,12 @@
   import Icon from '~/tools/Icon.svelte';
   import { BiStopCircle } from 'svelte-icons-pack/bi';
   import { slide } from 'svelte/transition';
-  import { BsMic } from 'svelte-icons-pack/bs';
+  import { BsChevronDown, BsChevronUp, BsMic } from 'svelte-icons-pack/bs';
   import { delay } from '~/tools/delay';
   import { cl_join } from '~/tools/cl_join';
   import PitchDisplay from './PitchDisplay.svelte';
   import ms from 'ms';
+  import { Popover } from '@skeletonlabs/skeleton-svelte';
 
   let {
     selected_device = $bindable(),
@@ -34,6 +35,8 @@
   let analyzer_node: AnalyserNode | null = null;
   let update_interval: NodeJS.Timeout | null = null;
   let mic_stream: MediaStream | null = null;
+
+  let orientation_popup_status = $state(false);
 
   const FFT_SIZE = Math.pow(2, 12); // 4096
 
@@ -170,14 +173,14 @@
       Start
     </button>
   {/if}
-  <div class="z-10 mb-4 select-none">
+  <div class="mb-4 select-none">
     {#if audio_info}
       {@const { clarity, pitch } = audio_info}
-      <div class="flex flex-col items-center justify-center space-y-4">
-        <div class="mb-8 mt-4 h-72 w-72 select-none sm:mt-8 sm:h-80 sm:w-80 md:h-96 md:w-96">
+      <div class="flex flex-col items-center justify-center space-y-2 sm:space-y-3">
+        <div class="mt-2 select-none outline-none sm:mt-4">
           <div class="flex items-start justify-center space-x-4">
             <label class="space-x-1">
-              <span class="font-semibold">Sa at</span>
+              <span class="font-semibold"><span>S</span> at</span>
               <select
                 class="select inline-block w-16 rounded-md px-2 py-1"
                 bind:value={selected_Sa_at}
@@ -200,29 +203,45 @@
           <div class="-mb-1 text-center text-sm font-semibold">Clarity</div>
           <progress class="progress w-56" value={clarity} max="100"></progress>
         </div>
-        <div>
-          <div class="text-center font-bold">Orientation</div>
-          <label>
-            <span class="text-sm font-semibold">Sargam</span>
-            <select
-              class="select inline-block w-20 rounded-md px-2 py-1 text-sm"
-              bind:value={selected_sargam_orientation}
-            >
-              <option value="radial">Radial</option>
-              <option value="vertical">Vertical</option>
-            </select>
-          </label>
-          <label>
-            <span class="text-sm font-semibold">Note</span>
-            <select
-              class="select inline-block w-20 rounded-md px-2 py-1 text-sm"
-              bind:value={selected_note_orientation}
-            >
-              <option value="radial">Radial</option>
-              <option value="vertical">Vertical</option>
-            </select>
-          </label>
-        </div>
+        <Popover
+          contentBase="card z-50 space-y-2 p-2 rounded-lg shadow-xl dark:bg-surface-900 bg-slate-100"
+          bind:open={orientation_popup_status}
+        >
+          {#snippet trigger()}
+            <div class="text-center font-bold outline-none">
+              Orientation
+              {#if !orientation_popup_status}
+                <Icon src={BsChevronDown} class="text-lg" />
+              {:else}
+                <Icon src={BsChevronUp} class="text-lg" />
+              {/if}
+            </div>
+          {/snippet}
+          {#snippet content()}
+            <div class="space-x-1">
+              <span class="text-sm font-semibold">Sargam</span>
+              <label>
+                <input type="radio" bind:group={selected_sargam_orientation} value="vertical" />
+                <span class="text-sm">Vertical</span>
+              </label>
+              <label>
+                <input type="radio" bind:group={selected_sargam_orientation} value="radial" />
+                <span class="text-sm">Radial</span>
+              </label>
+            </div>
+            <div class="space-x-1">
+              <span class="text-sm font-semibold">Note</span>
+              <label>
+                <input type="radio" bind:group={selected_note_orientation} value="vertical" />
+                <span class="text-sm">Vertical</span>
+              </label>
+              <label>
+                <input type="radio" bind:group={selected_note_orientation} value="radial" />
+                <span class="text-sm">Radial</span>
+              </label>
+            </div>
+          {/snippet}
+        </Popover>
 
         <!-- Stop button -->
         <div class="mt-6 flex items-center justify-center">

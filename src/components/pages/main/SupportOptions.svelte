@@ -35,7 +35,12 @@
 <div class="text-sm font-semibold underline">One-Time Contributions :</div>
 <div class="mt-2">
   <div class="flex justify-center text-center text-sm">
-    <a href={UPI_ID_LINK} target="_blank" class="ml-1 select-none" rel="noopener noreferrer">
+    <a
+      href={UPI_ID_LINK}
+      target="_blank"
+      class="ml-1 select-none outline-none"
+      rel="noopener noreferrer"
+    >
       <Icon src={UPIIcon} class="-mt-1.5 text-3xl" /> UPI :
       <span
         class="text-sm text-blue-600 outline-none hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
