@@ -17,8 +17,8 @@
 </script>
 
 <MetaTags
-  title="SvaraDarshini"
-  description="SvaraDarshini is an intuitive tool to understand Principles of Music that are common across the world."
+  title="Svara Darshini"
+  description="Svara Darshini is an intuitive tool to understand Principles of Music that are common across the world."
 />
 
 <PitchTuner
