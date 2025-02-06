@@ -67,7 +67,7 @@
       class="absolute flex items-center justify-center"
     >
       <ImageSpan
-        src={`data:image/jpeg;base64,${tsc_icon_24_base64}`}
+        src={`data:image/png;base64,${tsc_icon_24_base64}`}
         class="h-10 w-10 rounded-full bg-white p-1 shadow-md"
       />
     </div>
