@@ -10,8 +10,6 @@
   import { OiDownload24 } from 'svelte-icons-pack/oi';
   import { pwa_state } from '~/state/main.svelte';
   import { ContributeIcon } from '~/components/icons';
-  import { cl_join } from '~/tools/cl_join';
-  import SupportOptions from './pages/main/SupportOptions.svelte';
 
   let { start, headline, end }: { start?: Snippet; headline?: Snippet; end?: Snippet } = $props();
 
@@ -19,6 +17,8 @@
 
   let app_bar_popover_status = $state(false);
   let support_modal_status = $state(false);
+
+  const preload_component = () => import('~/components/pages/main/SupportOptions.svelte');
 </script>
 
 <AppBar>
@@ -43,6 +43,8 @@
         support_modal_status = true;
       }}
       class="btn m-0 select-none gap-2 rounded-md px-2 py-1 font-semibold outline-none hover:bg-gray-200 dark:hover:bg-gray-700"
+      onmouseover={preload_component}
+      onfocus={preload_component}
     >
       <Icon src={ContributeIcon} class="text-3xl" />
       <span class="hidden text-sm sm:inline">Support Our Projects</span>
@@ -103,6 +105,8 @@
   backdropBackground="backdrop-blur-sm"
 >
   {#snippet content()}
-    <SupportOptions />
+    {#await preload_component() then SupportOptions}
+      <SupportOptions.default />
+    {/await}
   {/snippet}
 </Modal>
