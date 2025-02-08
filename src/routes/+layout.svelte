@@ -5,7 +5,7 @@
   import '@fontsource/roboto/latin.css';
   import '../app.scss';
   import { pwa_state } from '~/state/main.svelte';
-  import PostHog from '~/components/tags/PostHogInit.svelte';
+  import PostHogInit from '~/components/tags/PostHogInit.svelte';
 
   let { children }: { children: Snippet } = $props();
 
@@ -25,4 +25,4 @@
     {@render children()}
   </div>
 </div>
-<PostHog />
+<PostHogInit />
