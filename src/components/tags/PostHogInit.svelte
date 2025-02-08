@@ -4,7 +4,12 @@
   import { browser } from '$app/environment';
 
   onMount(() => {
-    if (import.meta.env.PROD && import.meta.env.VITE_POSTHOG_ID && browser) {
+    if (
+      import.meta.env.PROD &&
+      import.meta.env.VITE_POSTHOG_ID &&
+      import.meta.env.VITE_SITE_URL &&
+      browser
+    ) {
       import('posthog-js').then((posthog) => {
         posthog.default.init(import.meta.env.VITE_POSTHOG_ID, {
           api_host: `${import.meta.env.VITE_SITE_URL}/ingest`,

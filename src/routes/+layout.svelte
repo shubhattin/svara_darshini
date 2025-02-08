@@ -5,7 +5,7 @@
   import '@fontsource/roboto/latin.css';
   import '../app.scss';
   import { pwa_state } from '~/state/main.svelte';
-  import PostHog from '~/components/tags/PostHog.svelte';
+  import PostHog from '~/components/tags/PostHogInit.svelte';
 
   let { children }: { children: Snippet } = $props();
 

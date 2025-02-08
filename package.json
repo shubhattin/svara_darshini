@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite dev --host",
     "dev:prod": "cross-env DB_MODE=PROD vite dev",
-    "build": "partytown copylib static/~partytown --no-debug && vite build",
+    "build": "vite build",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
@@ -45,7 +45,6 @@
   },
   "type": "module",
   "dependencies": {
-    "@builder.io/partytown": "^0.10.3",
     "@floating-ui/dom": "^1.6.13",
     "@fontsource/roboto": "^5.1.1",
     "buffer": "^6.0.3",
