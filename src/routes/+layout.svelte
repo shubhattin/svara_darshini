@@ -5,7 +5,6 @@
   import '@fontsource/roboto/latin.css';
   import '../app.scss';
   import { pwa_state } from '~/state/main.svelte';
-  import posthog from 'posthog-js';
   import { browser } from '$app/environment';
 
   let { children }: { children: Snippet } = $props();
@@ -17,9 +16,11 @@
       pwa_state.install_event_fired = true;
     });
     if (import.meta.env.PROD && import.meta.env.VITE_POSTHOG_ID && browser) {
-      posthog.init(import.meta.env.VITE_POSTHOG_ID, {
-        api_host: 'https://us.i.posthog.com',
-        person_profiles: 'identified_only' // or 'always' to create profiles for anonymous users as well
+      import('posthog-js').then((posthog) => {
+        posthog.default.init(import.meta.env.VITE_POSTHOG_ID, {
+          api_host: 'https://us.i.posthog.com',
+          person_profiles: 'identified_only' // or 'always' to create profiles for anonymous users as well
+        });
       });
     }
   });
