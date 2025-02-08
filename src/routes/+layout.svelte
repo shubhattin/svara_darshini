@@ -4,10 +4,9 @@
   import { onMount, type Snippet } from 'svelte';
   import '@fontsource/roboto/latin.css';
   import '../app.scss';
-  import PartyTown from '~/components/tags/PartyTown.svelte';
-  import GA from '~/components/tags/GA.svelte';
   import { pwa_state } from '~/state/main.svelte';
-  import GS from '~/components/tags/GS.svelte';
+  import posthog from 'posthog-js';
+  import { browser } from '$app/environment';
 
   let { children }: { children: Snippet } = $props();
 
@@ -17,6 +16,12 @@
       pwa_state.event_triggerer = event;
       pwa_state.install_event_fired = true;
     });
+    if (import.meta.env.PROD && import.meta.env.VITE_POSTHOG_ID && browser) {
+      posthog.init(import.meta.env.VITE_POSTHOG_ID, {
+        api_host: 'https://us.i.posthog.com',
+        person_profiles: 'identified_only' // or 'always' to create profiles for anonymous users as well
+      });
+    }
   });
 </script>
 
@@ -27,6 +32,3 @@
     {@render children()}
   </div>
 </div>
-<PartyTown />
-<GA />
-<GS />
