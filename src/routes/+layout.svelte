@@ -5,7 +5,7 @@
   import '@fontsource/roboto/latin.css';
   import '../app.scss';
   import { pwa_state } from '~/state/main.svelte';
-  import { browser } from '$app/environment';
+  import PostHog from '~/components/tags/PostHog.svelte';
 
   let { children }: { children: Snippet } = $props();
 
@@ -15,14 +15,6 @@
       pwa_state.event_triggerer = event;
       pwa_state.install_event_fired = true;
     });
-    if (import.meta.env.PROD && import.meta.env.VITE_POSTHOG_ID && browser) {
-      import('posthog-js').then((posthog) => {
-        posthog.default.init(import.meta.env.VITE_POSTHOG_ID, {
-          api_host: 'https://us.i.posthog.com',
-          person_profiles: 'identified_only' // or 'always' to create profiles for anonymous users as well
-        });
-      });
-    }
   });
 </script>
 
@@ -33,3 +25,4 @@
     {@render children()}
   </div>
 </div>
+<PostHog />
