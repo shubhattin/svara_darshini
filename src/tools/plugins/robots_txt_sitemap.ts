@@ -24,10 +24,7 @@ const make_robots_txt = async () => {
 };
 
 const make_sitemap = async () => {
-  const links = [
-    { url: '/', changefreq: 'weekly', priority: 1 },
-    { url: '/convert', changefreq: 'weekly', priority: 0.8 }
-  ];
+  const links = [{ url: '/', changefreq: 'weekly', priority: 1 }];
   const stream = new SitemapStream({
     hostname: BASE_URL
   });
