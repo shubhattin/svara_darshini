@@ -43,6 +43,8 @@
   let MIDDLE_CIRCLE_RADIUS = 30;
 
   let NEEDLE_LINE_LENGTH = 75;
+
+  const get_sector_path = () => {};
 </script>
 
 <div class="h-72 w-72 sm:h-80 sm:w-80 md:h-96 md:w-96">
@@ -171,7 +173,10 @@
     </g>
 
     <!-- Needle -->
-    <g transform={`rotate(${cents_to_rotation(detune, note_)})`} class="-z-10">
+    <g
+      transform={`rotate(${cents_to_rotation(detune, note_)})`}
+      class={cl_join('-z-10', 'origin-[0_0] transition-transform duration-500 ease-in-out')}
+    >
       <line
         x1="0"
         y1="0"
@@ -192,6 +197,9 @@
           : 'fill-rose-500 dark:fill-rose-500'}
       />
     </g>
+
+    <!-- Sector -->
+    <!-- <path d={get_sector_path()} class=""  /> -->
 
     <!-- Center display -->
     <circle cx="0" cy="0" r={MIDDLE_CIRCLE_RADIUS} class="fill-white opacity-60 dark:fill-black" />
