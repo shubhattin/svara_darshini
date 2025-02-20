@@ -175,10 +175,7 @@
     </g>
 
     <!-- Needle -->
-    <g
-      transform={`rotate(${cents_to_rotation(detune, note_)})`}
-      class={cl_join('-z-10', 'origin-[0_0] transition-transform duration-500 ease-in-out')}
-    >
+    <g transform={`rotate(${cents_to_rotation(detune, note_)})`} class={cl_join('-z-10')}>
       <line
         x1="0"
         y1="0"
