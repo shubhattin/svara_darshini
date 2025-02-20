@@ -44,9 +44,7 @@
 
   let NEEDLE_LINE_LENGTH = 75;
 
-  const get_sector_path = () => {
-    return `M ${OUTER_CIRCLE_SARGAM_RADIUS} 0 l `;
-  };
+  const get_sector_path = () => {};
 </script>
 
 <div class="h-72 w-72 sm:h-80 sm:w-80 md:h-96 md:w-96">
@@ -201,10 +199,10 @@
     </g>
 
     <!-- Sector -->
-    <path d={get_sector_path()} class="" style="color: red;" />
+    <!-- <path d={get_sector_path()} class=""  /> -->
 
     <!-- Center display -->
-    <!-- <circle cx="0" cy="0" r={MIDDLE_CIRCLE_RADIUS} class="fill-white opacity-60 dark:fill-black" /> -->
+    <circle cx="0" cy="0" r={MIDDLE_CIRCLE_RADIUS} class="fill-white opacity-60 dark:fill-black" />
     <text x="0" y="-5" text-anchor="middle" class="fill-black text-base font-bold dark:fill-white">
       {note_}{scale !== 0 ? scale : ''}
     </text>
