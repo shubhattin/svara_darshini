@@ -197,6 +197,18 @@
             sargam_orientation={selected_sargam_orientation}
             note_orientation={selected_note_orientation}
           />
+          <!-- <PitchDisplay
+            audio_info={{
+              clarity: 100,
+              note: 'D',
+              scale: 0,
+              detune: 0,
+              pitch: 2
+            }}
+            bind:Sa_at={selected_Sa_at}
+            sargam_orientation={selected_sargam_orientation}
+            note_orientation={selected_note_orientation}
+          /> -->
         </div>
         <div class="text-3xl">{pitch} Hz</div>
         <div class="space-y-0">
