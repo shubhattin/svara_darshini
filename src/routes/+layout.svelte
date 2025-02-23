@@ -4,9 +4,8 @@
   import { onMount, type Snippet } from 'svelte';
   import '@fontsource/roboto/latin.css';
   import '../app.scss';
-  import PartyTown from '~/components/tags/PartyTown.svelte';
-  import GA from '~/components/tags/GA.svelte';
   import { pwa_state } from '~/state/main.svelte';
+  import PostHogInit from '~/components/tags/PostHogInit.svelte';
 
   let { children }: { children: Snippet } = $props();
 
@@ -26,5 +25,4 @@
     {@render children()}
   </div>
 </div>
-<PartyTown />
-<GA />
+<PostHogInit />

@@ -5,10 +5,7 @@ import forms from '@tailwindcss/forms';
 
 const config = {
   darkMode: 'selector',
-  content: [
-    './src/**/*.{html,js,svelte,ts}',
-    contentPath(import.meta.url, 'svelte')
-  ],
+  content: ['./src/**/*.{html,js,svelte,ts}', contentPath(import.meta.url, 'svelte')],
   theme: {
     extend: {}
   },
@@ -16,8 +13,8 @@ const config = {
     forms,
     skeleton({
       // NOTE: each theme included will be added to your CSS bundle
-      themes: [ themes.wintry ]
-  })
+      themes: [themes.wintry]
+    })
   ]
 } satisfies Config;
 

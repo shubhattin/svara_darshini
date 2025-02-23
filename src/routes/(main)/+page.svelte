@@ -7,18 +7,18 @@
   let default_selected_device = persistedStore('prev_selected_device', 'default');
   let default_Sa_at = persistedStore<note_types>('prev_Sa_at', 'C');
   let default_sargam_orientation = persistedStore<'vertical' | 'radial'>(
-    'prev_sargam_orientation',
+    'saved_sargam_orientation',
     'vertical'
   );
   let default_note_orientation = persistedStore<'vertical' | 'radial'>(
-    'prev_note_orientation',
-    'radial'
+    'saved_note_orientation',
+    'vertical'
   );
 </script>
 
 <MetaTags
-  title="SvaraDarshini"
-  description="SvaraDarshini is an intuitive tool to understand Principles of Music that are common across the world."
+  title="Svara Darshini"
+  description="Svara Darshini is an intuitive tool to understand Principles of Music that are common across the world."
 />
 
 <PitchTuner

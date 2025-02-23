@@ -21,4 +21,5 @@
     <meta name="description" content={description} />
     <meta property="og:description" content={description} />
   {/if}
+  <meta property="og:type" content="app" />
 </svelte:head>

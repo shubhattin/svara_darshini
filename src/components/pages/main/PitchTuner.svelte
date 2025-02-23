@@ -6,10 +6,12 @@
   import Icon from '~/tools/Icon.svelte';
   import { BiStopCircle } from 'svelte-icons-pack/bi';
   import { slide } from 'svelte/transition';
-  import { BsMic } from 'svelte-icons-pack/bs';
+  import { BsChevronDown, BsChevronUp, BsMic } from 'svelte-icons-pack/bs';
   import { delay } from '~/tools/delay';
   import { cl_join } from '~/tools/cl_join';
   import PitchDisplay from './PitchDisplay.svelte';
+  import { Popover } from '@skeletonlabs/skeleton-svelte';
+  import { indactivity_timeout } from './inactivity';
   import ms from 'ms';
 
   let {
@@ -24,9 +26,6 @@
     selected_note_orientation: 'radial' | 'vertical';
   } = $props();
 
-  const MAX_ACTIVE_TIME_MS = ms('30mins');
-  let prev_max_timeout: NodeJS.Timeout | null = null;
-
   let audio_devices = $state<MediaDeviceInfo[]>([]);
   let device_list_loaded = $state(false);
 
@@ -34,6 +33,9 @@
   let analyzer_node: AnalyserNode | null = null;
   let update_interval: NodeJS.Timeout | null = null;
   let mic_stream: MediaStream | null = null;
+
+  let orientation_popup_status = $state(false);
+  let Sa_at_popup_status = $state(false);
 
   const FFT_SIZE = Math.pow(2, 12); // 4096
 
@@ -46,8 +48,10 @@
       selected_device = audio_devices[0].deviceId; // set to 1st available device (default)
     if (show_loading) device_list_loaded = true;
   };
+
   onMount(() => {
     get_audio_devices();
+    indactivity_timeout(ms('30mins'), Stop);
   });
 
   let audio_info = $state<{
@@ -70,7 +74,6 @@
   const Stop = () => {
     //clear interval
     clearInterval(update_interval!);
-    clearTimeout(prev_max_timeout!);
 
     // stop mic stream
     mic_stream?.getTracks().forEach((track) => track.stop());
@@ -89,7 +92,6 @@
 
   onMount(() => {
     clearInterval(update_interval!);
-    clearTimeout(prev_max_timeout!);
 
     return () => {
       Stop();
@@ -123,7 +125,6 @@
       const input = new Float32Array(detector.inputLength);
 
       clearInterval(update_interval!);
-      clearTimeout(prev_max_timeout!);
 
       // update every 100ms
       update_interval = setInterval(() => {
@@ -141,9 +142,6 @@
           detune: Math.floor((1200 * Math.log(pitch / getNoteFrequency(rawNote))) / Math.log(2))
         };
       }, 100);
-      prev_max_timeout = setTimeout(() => {
-        Stop();
-      }, MAX_ACTIVE_TIME_MS);
     } catch (error) {
       console.log('error in Start-->', error);
     }
@@ -170,23 +168,47 @@
       Start
     </button>
   {/if}
-  <div class="z-10 mb-4 select-none">
+  <div class="mb-4 select-none">
     {#if audio_info}
       {@const { clarity, pitch } = audio_info}
-      <div class="flex flex-col items-center justify-center space-y-4">
-        <div class="mb-8 mt-4 h-72 w-72 select-none sm:mt-8 sm:h-80 sm:w-80 md:h-96 md:w-96">
+      <div class="flex flex-col items-center justify-center space-y-2 sm:space-y-3">
+        <div class="mt-2 select-none outline-none sm:mt-4">
           <div class="flex items-start justify-center space-x-4">
-            <label class="space-x-1">
-              <span class="font-semibold">Sa at</span>
-              <select
-                class="select inline-block w-16 rounded-md px-2 py-1"
-                bind:value={selected_Sa_at}
-              >
-                {#each NOTES as note}
-                  <option value={note}>{note}</option>
-                {/each}
-              </select>
-            </label>
+            <Popover
+              bind:open={Sa_at_popup_status}
+              contentBase="card z-50 space-y-2 p-2 rounded-lg shadow-xl dark:bg-surface-900 bg-slate-100"
+            >
+              {#snippet trigger()}
+                <div class="text-center outline-none">
+                  <span class="mr-2 font-bold"><span>S</span> at</span>
+                  {#if !Sa_at_popup_status}
+                    <Icon src={BsChevronDown} class="text-base" />
+                  {:else}
+                    <Icon src={BsChevronUp} class="text-base" />
+                  {/if}
+                  {selected_Sa_at}
+                </div>
+              {/snippet}
+              {#snippet content()}
+                <div class="grid grid-cols-4 space-x-1.5 space-y-1 sm:grid-cols-6 sm:space-x-2">
+                  {#each NOTES as _, i}
+                    {@const note = NOTES[(i + 9) % NOTES.length]}
+                    <button
+                      class={cl_join(
+                        'm-0 gap-0 rounded-md px-1 py-1 text-sm font-semibold text-white sm:text-base',
+                        selected_Sa_at === note
+                          ? 'bg-primary-500 dark:bg-primary-600'
+                          : 'bg-slate-400 hover:bg-primary-500/80 dark:bg-slate-800 dark:hover:bg-primary-600/80'
+                      )}
+                      onclick={() => {
+                        selected_Sa_at = note as note_types;
+                        Sa_at_popup_status = false;
+                      }}>{note}</button
+                    >
+                  {/each}
+                </div>
+              {/snippet}
+            </Popover>
           </div>
           <PitchDisplay
             {audio_info}
@@ -194,32 +216,63 @@
             sargam_orientation={selected_sargam_orientation}
             note_orientation={selected_note_orientation}
           />
+          <!-- <PitchDisplay
+            audio_info={{
+              clarity: 100,
+              note: 'D',
+              scale: 0,
+              detune: 0,
+              pitch: 2
+            }}
+            bind:Sa_at={selected_Sa_at}
+            sargam_orientation={selected_sargam_orientation}
+            note_orientation={selected_note_orientation}
+          /> -->
         </div>
         <div class="text-3xl">{pitch} Hz</div>
-        <progress class="progress-success progress w-56" value={clarity} max="100"></progress>
-        <div>
-          <div class="text-center font-bold">Orientation</div>
-          <label>
-            <span class="text-sm font-semibold">Sargam</span>
-            <select
-              class="select inline-block w-20 rounded-md px-2 py-1 text-sm"
-              bind:value={selected_sargam_orientation}
-            >
-              <option value="radial">Radial</option>
-              <option value="vertical">Vertical</option>
-            </select>
-          </label>
-          <label>
-            <span class="text-sm font-semibold">Note</span>
-            <select
-              class="select inline-block w-20 rounded-md px-2 py-1 text-sm"
-              bind:value={selected_note_orientation}
-            >
-              <option value="radial">Radial</option>
-              <option value="vertical">Vertical</option>
-            </select>
-          </label>
+        <div class="space-y-0">
+          <div class="-mb-1 text-center text-sm font-semibold">Clarity</div>
+          <progress class="progress w-56" value={clarity} max="100"></progress>
         </div>
+        <Popover
+          contentBase="card z-50 space-y-2 p-2 rounded-lg shadow-xl dark:bg-surface-900 bg-slate-100"
+          bind:open={orientation_popup_status}
+        >
+          {#snippet trigger()}
+            <div class="text-center font-bold outline-none">
+              Orientation
+              {#if !orientation_popup_status}
+                <Icon src={BsChevronDown} class="text-lg" />
+              {:else}
+                <Icon src={BsChevronUp} class="text-lg" />
+              {/if}
+            </div>
+          {/snippet}
+          {#snippet content()}
+            <div class="space-x-1">
+              <span class="text-sm font-semibold">Sargam</span>
+              <label>
+                <input type="radio" bind:group={selected_sargam_orientation} value="vertical" />
+                <span class="text-sm">Vertical</span>
+              </label>
+              <label>
+                <input type="radio" bind:group={selected_sargam_orientation} value="radial" />
+                <span class="text-sm">Radial</span>
+              </label>
+            </div>
+            <div class="space-x-1">
+              <span class="text-sm font-semibold">Note</span>
+              <label>
+                <input type="radio" bind:group={selected_note_orientation} value="vertical" />
+                <span class="text-sm">Vertical</span>
+              </label>
+              <label>
+                <input type="radio" bind:group={selected_note_orientation} value="radial" />
+                <span class="text-sm">Radial</span>
+              </label>
+            </div>
+          {/snippet}
+        </Popover>
 
         <!-- Stop button -->
         <div class="mt-6 flex items-center justify-center">

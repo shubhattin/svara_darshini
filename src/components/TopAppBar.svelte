@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { AppBar, Popover } from '@skeletonlabs/skeleton-svelte';
+  import { AppBar, Modal, Popover } from '@skeletonlabs/skeleton-svelte';
   import ThemeChanger from './ThemeChanger.svelte';
   import Icon from '~/tools/Icon.svelte';
   import { SiGithub } from 'svelte-icons-pack/si';
@@ -9,12 +9,16 @@
   import type { Snippet } from 'svelte';
   import { OiDownload24 } from 'svelte-icons-pack/oi';
   import { pwa_state } from '~/state/main.svelte';
+  import { ContributeIcon } from '~/components/icons';
 
   let { start, headline, end }: { start?: Snippet; headline?: Snippet; end?: Snippet } = $props();
 
   let route_id = $derived($page.route.id as keyof typeof PAGE_TITLES);
 
   let app_bar_popover_status = $state(false);
+  let support_modal_status = $state(false);
+
+  const preload_component = () => import('~/components/pages/main/SupportOptions.svelte');
 </script>
 
 <AppBar>
@@ -32,6 +36,19 @@
   {/snippet}
   {#snippet trail()}
     {@render end?.()}
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <span
+      onclick={() => {
+        support_modal_status = true;
+      }}
+      class="btn m-0 select-none gap-2 rounded-md px-2 py-1 font-semibold outline-none hover:bg-gray-200 dark:hover:bg-gray-700"
+      onmouseover={preload_component}
+      onfocus={preload_component}
+    >
+      <Icon src={ContributeIcon} class="text-3xl" />
+      <span class="hidden text-sm sm:inline">Support Our Projects</span>
+    </span>
     <Popover
       bind:open={app_bar_popover_status}
       positioning={{ placement: 'left-start' }}
@@ -59,6 +76,7 @@
           />
           <span>Github</span>
         </a>
+        <!-- {@render support('sm:hidden block')} -->
         {#if pwa_state.install_event_fired}
           <button
             class="select-none gap-1 px-2 py-1 text-sm outline-none"
@@ -80,3 +98,15 @@
     </Popover>
   {/snippet}
 </AppBar>
+
+<Modal
+  bind:open={support_modal_status}
+  contentBase="card z-40 px-3 py-2 shadow-xl rounded-md select-none outline-none bg-slate-100 dark:bg-surface-900"
+  backdropBackground="backdrop-blur-sm"
+>
+  {#snippet content()}
+    {#await preload_component() then SupportOptions}
+      <SupportOptions.default />
+    {/await}
+  {/snippet}
+</Modal>
