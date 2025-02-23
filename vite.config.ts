@@ -17,8 +17,7 @@ export default defineConfig({
       injectRegister: 'auto',
       devOptions: {
         enabled: true,
-        type: 'module',
-        navigateFallback: '/'
+        type: 'module'
       },
       manifest: {
         name: 'SvaraDarshini',
@@ -45,26 +44,7 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg}'],
         cleanupOutdatedCaches: true,
-        sourcemap: true,
-        navigateFallback: '/',
-        navigateFallbackAllowlist: [/^\/$/],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/api\.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              networkTimeoutSeconds: 10,
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 // 24 hours
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          }
-        ]
+        sourcemap: false
       }
     })
   ],
