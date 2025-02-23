@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "dev": "vite dev --host",
-    "dev:prod": "cross-env DB_MODE=PROD vite dev",
     "build": "vite build",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",

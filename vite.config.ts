@@ -10,16 +10,25 @@ export default defineConfig({
     purgeCss(),
     generateRobotsTxtSitemap(),
     SvelteKitPWA({
+      srcDir: './src',
+      mode: 'production',
       strategies: 'generateSW',
       registerType: 'autoUpdate',
+      injectRegister: 'auto',
       devOptions: {
-        enabled: true
+        enabled: true,
+        type: 'module',
+        navigateFallback: '/'
       },
       manifest: {
         name: 'SvaraDarshini',
         short_name: 'SvaraDarshini',
+        description: 'Your app description',
+        theme_color: '#181e20',
+        background_color: '#333',
+        display: 'standalone',
         start_url: '/',
-        scope: './',
+        scope: '/',
         icons: [
           {
             src: 'img/icon_128.png',
@@ -31,13 +40,31 @@ export default defineConfig({
             sizes: '512x512',
             type: 'image/png'
           }
-        ],
-        theme_color: '#181e20',
-        background_color: '#333',
-        display: 'standalone'
+        ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg}']
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg}'],
+        cleanupOutdatedCaches: true,
+        sourcemap: true,
+        navigateFallback: '/',
+        navigateFallbackAllowlist: [/^\/$/],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/api\.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              networkTimeoutSeconds: 10,
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 // 24 hours
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          }
+        ]
       }
     })
   ],
