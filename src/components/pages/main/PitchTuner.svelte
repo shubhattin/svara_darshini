@@ -10,8 +10,9 @@
   import { delay } from '~/tools/delay';
   import { cl_join } from '~/tools/cl_join';
   import PitchDisplay from './PitchDisplay.svelte';
-  import ms from 'ms';
   import { Popover } from '@skeletonlabs/skeleton-svelte';
+  import { indactivity_timeout } from './inactivity';
+  import ms from 'ms';
 
   let {
     selected_device = $bindable(),
@@ -24,9 +25,6 @@
     selected_sargam_orientation: 'radial' | 'vertical';
     selected_note_orientation: 'radial' | 'vertical';
   } = $props();
-
-  const MAX_ACTIVE_TIME_MS = ms('30mins');
-  let prev_max_timeout: NodeJS.Timeout | null = null;
 
   let audio_devices = $state<MediaDeviceInfo[]>([]);
   let device_list_loaded = $state(false);
@@ -49,8 +47,10 @@
       selected_device = audio_devices[0].deviceId; // set to 1st available device (default)
     if (show_loading) device_list_loaded = true;
   };
+
   onMount(() => {
     get_audio_devices();
+    indactivity_timeout(ms('30mins'), Stop);
   });
 
   let audio_info = $state<{
@@ -73,7 +73,6 @@
   const Stop = () => {
     //clear interval
     clearInterval(update_interval!);
-    clearTimeout(prev_max_timeout!);
 
     // stop mic stream
     mic_stream?.getTracks().forEach((track) => track.stop());
@@ -92,7 +91,6 @@
 
   onMount(() => {
     clearInterval(update_interval!);
-    clearTimeout(prev_max_timeout!);
 
     return () => {
       Stop();
@@ -126,7 +124,6 @@
       const input = new Float32Array(detector.inputLength);
 
       clearInterval(update_interval!);
-      clearTimeout(prev_max_timeout!);
 
       // update every 100ms
       update_interval = setInterval(() => {
@@ -144,9 +141,6 @@
           detune: Math.floor((1200 * Math.log(pitch / getNoteFrequency(rawNote))) / Math.log(2))
         };
       }, 100);
-      prev_max_timeout = setTimeout(() => {
-        Stop();
-      }, MAX_ACTIVE_TIME_MS);
     } catch (error) {
       console.log('error in Start-->', error);
     }
@@ -197,6 +191,18 @@
             sargam_orientation={selected_sargam_orientation}
             note_orientation={selected_note_orientation}
           />
+          <!-- <PitchDisplay
+            audio_info={{
+              clarity: 100,
+              note: 'D',
+              scale: 0,
+              detune: 0,
+              pitch: 2
+            }}
+            bind:Sa_at={selected_Sa_at}
+            sargam_orientation={selected_sargam_orientation}
+            note_orientation={selected_note_orientation}
+          /> -->
         </div>
         <div class="text-3xl">{pitch} Hz</div>
         <div class="space-y-0">

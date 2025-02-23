@@ -18,21 +18,7 @@
 
   const { detune, note: note_, scale } = $derived(audio_info);
 
-  const cents_to_rotation = (cents: number, note: string) => {
-    // Get the base rotation for the note
-    const noteIndex = NOTES.indexOf(note);
-    const baseRotation = (noteIndex - Sa_at_index) * 30; // 360/12 = 30 degrees per note
-
-    // Add fine rotation from cents (-50 to +50 maps to ±15 degrees)
-    const centsRotation = (cents / 50) * 15;
-
-    // Return total rotation
-    return baseRotation + centsRotation;
-  };
-
-  const is_in_tune = (cents: number) => Math.abs(cents) <= 5;
-
-  const to_radians = (degrees: number) => (degrees * Math.PI) / 180;
+  let note_index = $derived(NOTES.indexOf(note_));
 
   let OUTER_CIRCLE_SARGAM_RADIUS = $derived(92 - (sargam_orientation === 'vertical' ? 1.5 : 0));
   let SARGAM_LABEL_RADIUS = $derived(80 + (sargam_orientation === 'vertical' ? 1.5 : 0));
@@ -44,8 +30,35 @@
 
   let NEEDLE_LINE_LENGTH = 75;
 
+  const cents_to_rotation = (cents: number, note: string) => {
+    // Get the base rotation for the note
+    const baseRotation = (note_index - Sa_at_index) * 30; // 360/12 = 30 degrees per note
+
+    // Add fine rotation from cents (-50 to +50 maps to ±15 degrees)
+    const centsRotation = (cents / 50) * 15;
+
+    // Return total rotation
+    return baseRotation + centsRotation;
+  };
+
+  const is_in_tune = (cents: number) => Math.abs(cents) <= 5;
+
+  const to_radians = (degrees: number) => (degrees * Math.PI) / 180;
   const get_sector_path = () => {
-    return `M ${OUTER_CIRCLE_SARGAM_RADIUS} 0 l `;
+    const radius = OUTER_CIRCLE_SARGAM_RADIUS - 2;
+    const RANGE = 15;
+
+    const arc_x = radius * Math.cos(to_radians(90 - RANGE));
+    const arc_y = radius * Math.sin(to_radians(90 + RANGE));
+    const arc = `A ${radius} ${radius} 0 0 1 ${arc_x} ${-arc_y} L`;
+    // format :- rx ry x-axis-rotation large-arc-flag sweep-flag x y
+    // sweep-flag = 0 for clockwise, 1 for anti-clockwise
+    // large-arc-flag = 0 for minor arc, 1 for major arc
+
+    const arc_start_x = radius * Math.cos(to_radians(90 + RANGE));
+    const arc_start_y = radius * Math.sin(to_radians(90 - RANGE));
+
+    return `M 0 0 L ${arc_start_x} ${-arc_start_y} ${arc} Z`;
   };
 </script>
 
@@ -175,7 +188,10 @@
     </g>
 
     <!-- Needle -->
-    <g transform={`rotate(${cents_to_rotation(detune, note_)})`} class={cl_join('-z-10')}>
+    <g
+      transform={`rotate(${cents_to_rotation(detune, note_)})`}
+      class={cl_join('-z-10', 'origin-[0_0] transition-transform duration-[300ms] ease-linear')}
+    >
       <line
         x1="0"
         y1="0"
@@ -198,7 +214,14 @@
     </g>
 
     <!-- Sector -->
-    <path d={get_sector_path()} class="" style="color: red;" />
+    <path
+      d={get_sector_path()}
+      transform={`rotate(${(note_index - Sa_at_index) * 30} 0 0)`}
+      class={cl_join(
+        'fill-black opacity-10 dark:fill-white dark:opacity-15',
+        'origin-[0_0] transition-transform duration-[300ms] ease-linear'
+      )}
+    />
 
     <!-- Center display -->
     <!-- <circle cx="0" cy="0" r={MIDDLE_CIRCLE_RADIUS} class="fill-white opacity-60 dark:fill-black" /> -->
