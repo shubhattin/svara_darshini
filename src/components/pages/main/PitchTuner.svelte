@@ -35,6 +35,7 @@
   let mic_stream: MediaStream | null = null;
 
   let orientation_popup_status = $state(false);
+  let Sa_at_popup_status = $state(false);
 
   const FFT_SIZE = Math.pow(2, 12); // 4096
 
@@ -173,17 +174,41 @@
       <div class="flex flex-col items-center justify-center space-y-2 sm:space-y-3">
         <div class="mt-2 select-none outline-none sm:mt-4">
           <div class="flex items-start justify-center space-x-4">
-            <label class="space-x-1">
-              <span class="font-semibold"><span>S</span> at</span>
-              <select
-                class="select inline-block w-16 rounded-md px-2 py-1"
-                bind:value={selected_Sa_at}
-              >
-                {#each NOTES as note}
-                  <option value={note}>{note}</option>
-                {/each}
-              </select>
-            </label>
+            <Popover
+              bind:open={Sa_at_popup_status}
+              contentBase="card z-50 space-y-2 p-2 rounded-lg shadow-xl dark:bg-surface-900 bg-slate-100"
+            >
+              {#snippet trigger()}
+                <div class="text-center outline-none">
+                  <span class="mr-2 font-bold"><span>S</span> at</span>
+                  {#if !Sa_at_popup_status}
+                    <Icon src={BsChevronDown} class="text-base" />
+                  {:else}
+                    <Icon src={BsChevronUp} class="text-base" />
+                  {/if}
+                  {selected_Sa_at}
+                </div>
+              {/snippet}
+              {#snippet content()}
+                <div class="grid grid-cols-4 space-x-1.5 space-y-1 sm:grid-cols-6 sm:space-x-2">
+                  {#each NOTES as _, i}
+                    {@const note = NOTES[(i + 9) % NOTES.length]}
+                    <button
+                      class={cl_join(
+                        'm-0 gap-0 rounded-md px-1 py-1 text-sm font-semibold text-white sm:text-base',
+                        selected_Sa_at === note
+                          ? 'bg-primary-500 dark:bg-primary-600'
+                          : 'bg-slate-400 hover:bg-primary-500/80 dark:bg-slate-800 dark:hover:bg-primary-600/80'
+                      )}
+                      onclick={() => {
+                        selected_Sa_at = note as note_types;
+                        Sa_at_popup_status = false;
+                      }}>{note}</button
+                    >
+                  {/each}
+                </div>
+              {/snippet}
+            </Popover>
           </div>
           <PitchDisplay
             {audio_info}
