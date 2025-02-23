@@ -12,7 +12,10 @@ export default defineConfig({
     SvelteKitPWA({
       strategies: 'generateSW',
       registerType: 'autoUpdate',
-      injectRegister: 'inline', // Changed to inline
+      injectRegister: 'auto',
+      srcDir: 'src',
+      outDir: 'build', // Specify the build output directory
+      filename: 'service-worker.js',
       manifest: {
         name: 'SvaraDarshini',
         short_name: 'SvaraDarshini',
@@ -39,7 +42,9 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg}'],
         cleanupOutdatedCaches: true,
         skipWaiting: true,
-        clientsClaim: true
+        clientsClaim: true,
+        navigateFallback: '/',
+        globDirectory: 'build' // Specify the directory to search for assets
       }
     })
   ]
