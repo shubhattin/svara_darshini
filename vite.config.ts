@@ -10,15 +10,9 @@ export default defineConfig({
     purgeCss(),
     generateRobotsTxtSitemap(),
     SvelteKitPWA({
-      srcDir: './src',
-      mode: 'production',
       strategies: 'generateSW',
       registerType: 'autoUpdate',
-      injectRegister: 'auto',
-      devOptions: {
-        enabled: true,
-        type: 'module'
-      },
+      injectRegister: 'inline', // Changed to inline
       manifest: {
         name: 'SvaraDarshini',
         short_name: 'SvaraDarshini',
@@ -44,11 +38,9 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg}'],
         cleanupOutdatedCaches: true,
-        sourcemap: false
+        skipWaiting: true,
+        clientsClaim: true
       }
     })
-  ],
-  worker: {
-    format: 'es'
-  }
+  ]
 });
