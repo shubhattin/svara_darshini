@@ -10,12 +10,20 @@ export default defineConfig({
     purgeCss(),
     generateRobotsTxtSitemap(),
     SvelteKitPWA({
+      srcDir: './src',
       strategies: 'generateSW',
       registerType: 'autoUpdate',
-      injectRegister: 'auto',
-      srcDir: 'src',
-      outDir: 'build', // Specify the build output directory
-      filename: 'service-worker.js',
+      injectRegister: 'script',
+      devOptions: {
+        enabled: true,
+        type: 'module'
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg}'],
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true
+      },
       manifest: {
         name: 'SvaraDarshini',
         short_name: 'SvaraDarshini',
@@ -37,14 +45,6 @@ export default defineConfig({
             type: 'image/png'
           }
         ]
-      },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg}'],
-        cleanupOutdatedCaches: true,
-        skipWaiting: true,
-        clientsClaim: true,
-        navigateFallback: '/',
-        globDirectory: 'build' // Specify the directory to search for assets
       }
     })
   ]
