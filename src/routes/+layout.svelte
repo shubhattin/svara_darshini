@@ -18,7 +18,6 @@
   });
 </script>
 
-2
 <ModeWatcher />
 <div class="contaiiner mx-auto mb-1 max-w-screen-lg">
   <TopAppBar />
