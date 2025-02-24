@@ -10,10 +10,9 @@ export default defineConfig({
     purgeCss(),
     generateRobotsTxtSitemap(),
     SvelteKitPWA({
-      srcDir: './src',
       strategies: 'generateSW',
       registerType: 'autoUpdate',
-      injectRegister: 'script',
+      injectRegister: 'auto',
       devOptions: {
         enabled: true,
         type: 'module'
