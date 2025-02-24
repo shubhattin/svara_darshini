@@ -26,7 +26,8 @@ export default defineConfig({
       manifest: {
         name: 'SvaraDarshini',
         short_name: 'SvaraDarshini',
-        description: 'Your app description',
+        description:
+          'Svara Darshini is an intuitive tool to understand Principles of Music that are common across the world',
         theme_color: '#181e20',
         background_color: '#333',
         display: 'standalone',
