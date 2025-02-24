@@ -1,12 +1,16 @@
 <script lang="ts">
   import { browser } from '$app/environment';
+  import { onMount } from 'svelte';
   import { registerSW } from 'virtual:pwa-register';
 
-  if (browser && import.meta.env.PROD) {
-    registerSW({ immediate: true });
-  }
+  onMount(() => {
+    if (browser && import.meta.env.PROD) {
+      registerSW({ immediate: true });
+    }
+  });
 </script>
 
+<!-- 
 <svelte:head>
   {#if import.meta.env.PROD}
     <script>
@@ -22,4 +26,4 @@
       }
     </script>
   {/if}
-</svelte:head>
+</svelte:head> -->
