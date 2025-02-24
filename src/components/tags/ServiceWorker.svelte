@@ -11,7 +11,7 @@
 </script>
 
 <svelte:head>
-  {#if browser && import.meta.env.PROD}
+  {#if import.meta.env.PROD}
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
