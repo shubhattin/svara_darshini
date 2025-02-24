@@ -19,10 +19,7 @@ export default defineConfig({
         type: 'module'
       },
       workbox: {
-        globPatterns: [
-          'client/**/*.{js,css,html,ico,png,svg,webp,webmanifest,jpg,jpeg,ttf,woff2,otf}',
-          'prerendered/**/*.{html,json}'
-        ],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,webmanifest,jpg,jpeg,ttf,woff2,otf}'],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true
