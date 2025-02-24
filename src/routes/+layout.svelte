@@ -6,6 +6,7 @@
   import '../app.scss';
   import { pwa_state } from '~/state/main.svelte';
   import PostHogInit from '~/components/tags/PostHogInit.svelte';
+  import ServiceWorker from '~/components/tags/ServiceWorker.svelte';
 
   let { children }: { children: Snippet } = $props();
 
@@ -26,3 +27,4 @@
   </div>
 </div>
 <PostHogInit />
+<ServiceWorker />

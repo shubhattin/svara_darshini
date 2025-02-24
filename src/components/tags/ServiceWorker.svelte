@@ -10,6 +10,7 @@
   });
 </script>
 
+<!-- 
 <svelte:head>
   {#if import.meta.env.PROD}
     <script>
@@ -25,4 +26,4 @@
       }
     </script>
   {/if}
-</svelte:head>
+</svelte:head> -->
