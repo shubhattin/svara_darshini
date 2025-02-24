@@ -1,11 +1,18 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
-  import { registerSW } from 'virtual:pwa-register';
 
-  onMount(() => {
+  onMount(async () => {
     if (browser && import.meta.env.PROD) {
+      const { registerSW } = await import('virtual:pwa-register');
       registerSW({ immediate: true });
+    }
+  });
+</script>
+
+<svelte:head>
+  {#if browser && import.meta.env.PROD}
+    <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker
@@ -16,6 +23,6 @@
             });
         });
       }
-    }
-  });
-</script>
+    </script>
+  {/if}
+</svelte:head>
