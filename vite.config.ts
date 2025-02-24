@@ -12,13 +12,14 @@ export default defineConfig({
     SvelteKitPWA({
       strategies: 'generateSW',
       registerType: 'autoUpdate',
-      injectRegister: 'auto',
+      injectRegister: 'script',
+      // ^ The option does not seem top work so we are adding it manually in +layout.svelte
       devOptions: {
         enabled: true,
         type: 'module'
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg,ttf,woff2,otf}'],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true
