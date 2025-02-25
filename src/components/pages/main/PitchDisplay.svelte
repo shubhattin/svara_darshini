@@ -20,12 +20,12 @@
 
   let note_index = $derived(NOTES.indexOf(note_));
 
-  let OUTER_CIRCLE_SARGAM_RADIUS = $derived(92 - (sargam_orientation === 'vertical' ? 1.5 : 0));
-  let SARGAM_LABEL_RADIUS = $derived(80 + (sargam_orientation === 'vertical' ? 1.5 : 0));
+  let OUTER_CIRCLE_SARGAM_RADIUS = $derived(92 - (sargam_orientation === 'vertical' ? 0 : 1.1));
+  let SARGAM_LABEL_RADIUS = $derived(80 + (sargam_orientation === 'vertical' ? 0.55 : 1.52));
   let INNER_CIRCLE_NOTE_RADIUS = 70;
   let NOTE_TICK_LENGTH = 5;
   let FREQUENCY_CIRCLE_RADIUS = 43;
-  let NOTE_LABEL_RADIUS = $derived(54 + (note_orientation === 'vertical' ? 1.5 : 0));
+  let NOTE_LABEL_RADIUS = $derived(54 + (note_orientation === 'vertical' ? 1.5 : 0.8));
   let MIDDLE_CIRCLE_RADIUS = 30;
 
   let NEEDLE_LINE_LENGTH = 75;
@@ -40,9 +40,7 @@
     // Return total rotation
     return baseRotation + centsRotation;
   };
-
-  const is_in_tune = (cents: number) => Math.abs(cents) <= 5;
-
+  const is_in_tune = (cents: number) => Math.abs(cents) <= 6;
   const to_radians = (degrees: number) => (degrees * Math.PI) / 180;
   const get_sector_path = () => {
     const radius = OUTER_CIRCLE_SARGAM_RADIUS - 2;
@@ -225,10 +223,13 @@
 
     <!-- Center display -->
     <!-- <circle cx="0" cy="0" r={MIDDLE_CIRCLE_RADIUS} class="fill-white opacity-60 dark:fill-black" /> -->
-    <text x="0" y="-5" text-anchor="middle" class="fill-black text-base font-bold dark:fill-white">
-      {note_}{scale !== 0 ? scale : ''}
-    </text>
-    <text x="0" y="12" text-anchor="middle" class="fill-black text-[0.7rem] dark:fill-white">
+    <g x="0" y="-5">
+      <text text-anchor="middle" class="fill-black text-base font-bold dark:fill-white">
+        {note_}
+        <tspan class="text-[0.6em]" dy="-0.1em">{scale !== 0 ? scale : ''}</tspan>
+      </text>
+    </g>
+    <text x="0" y="12" text-anchor="middle" class="fill-black text-[0.52rem] dark:fill-white">
       {detune > 0 ? '+' : ''}{detune} cents
     </text>
   </svg>
