@@ -187,8 +187,12 @@
 
     <!-- Needle -->
     <g
-      transform={`rotate(${cents_to_rotation(detune, note_)})`}
-      class={cl_join('-z-10', 'origin-[0_0] transition-transform duration-[300ms] ease-linear')}
+      transform={`rotate(${detune ? cents_to_rotation(detune, note_) : 0})`}
+      class={cl_join(
+        '-z-10',
+        'origin-[0_0] transition-transform duration-[300ms] ease-linear',
+        !detune && 'opacity-50'
+      )}
     >
       <line
         x1="0"
@@ -214,23 +218,26 @@
     <!-- Sector -->
     <path
       d={get_sector_path()}
-      transform={`rotate(${(note_index - Sa_at_index) * 30} 0 0)`}
+      transform={`rotate(${detune ? (note_index - Sa_at_index) * 30 : 0} 0 0)`}
       class={cl_join(
         'fill-black opacity-10 dark:fill-white dark:opacity-15',
-        'origin-[0_0] transition-transform duration-[300ms] ease-linear'
+        'origin-[0_0] transition-transform duration-[300ms] ease-linear',
+        !detune && 'hidden'
       )}
     />
 
     <!-- Center display -->
     <!-- <circle cx="0" cy="0" r={MIDDLE_CIRCLE_RADIUS} class="fill-white opacity-60 dark:fill-black" /> -->
-    <g x="0" y="-5">
-      <text text-anchor="middle" class="fill-black text-base font-bold dark:fill-white">
-        {note_}
-        <tspan class="text-[0.6em]" dy="-0.1em">{scale !== 0 ? scale : ''}</tspan>
+    {#if detune}
+      <g x="0" y="-5">
+        <text text-anchor="middle" class="fill-black text-base font-bold dark:fill-white">
+          {note_}
+          <tspan class="text-[0.6em]" dy="-0.1em">{scale !== 0 ? scale : ''}</tspan>
+        </text>
+      </g>
+      <text x="0" y="12" text-anchor="middle" class="fill-black text-[0.52rem] dark:fill-white">
+        {detune > 0 ? '+' : ''}{detune} cents
       </text>
-    </g>
-    <text x="0" y="12" text-anchor="middle" class="fill-black text-[0.52rem] dark:fill-white">
-      {detune > 0 ? '+' : ''}{detune} cents
-    </text>
+    {/if}
   </svg>
 </div>
