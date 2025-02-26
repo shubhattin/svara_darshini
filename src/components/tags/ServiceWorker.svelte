@@ -6,15 +6,8 @@
   const { needRefresh, updateServiceWorker } = useRegisterSW({
     immediate: true
   });
-
-  $effect(() => {
-    console.log(1343, [$needRefresh, popup_open]);
-    if ($needRefresh) updateServiceWorker(false);
-    // updating the service worker as soon as available so that new content is accessiblw after refresh
-  });
 </script>
 
-23
 {#if $needRefresh && popup_open}
   <div
     class="fixed top-20 flex w-full select-none items-center justify-center outline-none"
