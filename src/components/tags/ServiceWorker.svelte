@@ -6,6 +6,10 @@
   const { needRefresh, updateServiceWorker } = useRegisterSW({
     immediate: true
   });
+
+  $effect(() => {
+    console.log(3412, [$needRefresh, popup_open]);
+  });
 </script>
 
 {#if $needRefresh && popup_open}
