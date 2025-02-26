@@ -6,7 +6,7 @@
   import '../app.scss';
   import { pwa_state } from '~/state/main.svelte';
   import PostHogInit from '~/components/tags/PostHogInit.svelte';
-  import ServiceWorker from '~/components/tags/ServiceWorker.svelte';
+  import { browser } from '$app/environment';
 
   let { children }: { children: Snippet } = $props();
 
@@ -27,4 +27,9 @@
   </div>
 </div>
 <PostHogInit />
-<ServiceWorker />
+
+{#if browser && import.meta.env.PROD}
+  {#await import("~/components/tags/ServiceWorker.svelte") then ServiceWorker}
+    <ServiceWorker.default />
+  {/await}
+{/if}
