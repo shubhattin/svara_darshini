@@ -9,12 +9,12 @@
 
   $effect(() => {
     console.log(1343, [$needRefresh, popup_open]);
-    // if ($needRefresh) updateServiceWorker(false);
+    if ($needRefresh) updateServiceWorker(false);
     // updating the service worker as soon as available so that new content is accessiblw after refresh
   });
 </script>
 
-3
+21
 {#if $needRefresh && popup_open}
   <div
     class="fixed top-20 flex w-full select-none items-center justify-center outline-none"
