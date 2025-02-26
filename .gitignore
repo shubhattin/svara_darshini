@@ -17,5 +17,6 @@ src/db/scripts/out/
 static/~partytown
 static/robots.txt
 static/sitemap.xml
+dev-dist
 
 **/a.ts
