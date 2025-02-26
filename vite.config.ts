@@ -22,7 +22,7 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,webmanifest,jpg,jpeg,ttf,woff2,otf}'],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
-        skipWaiting: true
+        skipWaiting: false
       },
       manifest: {
         name: 'SvaraDarshini',
