@@ -24,7 +24,8 @@
 </script>
 
 <Popover
-  bind:open={popup_state}
+  open={popup_state}
+  onOpenChange={(e) => (popup_state = e.open)}
   positioning={{ placement: placement }}
   arrow={false}
   contentBase={cl_join(

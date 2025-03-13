@@ -42,7 +42,7 @@
       onclick={() => {
         support_modal_status = true;
       }}
-      class="btn outline-hidden m-0 select-none gap-2 rounded-md px-2 py-1 font-semibold hover:bg-gray-200 dark:hover:bg-gray-700"
+      class="m-0 -mt-1 mr-2 btn gap-2 rounded-md px-2 py-1 font-semibold outline-hidden select-none hover:bg-gray-200 sm:mr-3 dark:hover:bg-gray-700"
       onmouseover={preload_component}
       onfocus={preload_component}
     >
@@ -50,7 +50,8 @@
       <span class="hidden text-sm sm:inline">Support Our Projects</span>
     </span>
     <Popover
-      bind:open={app_bar_popover_status}
+      open={app_bar_popover_status}
+      onOpenChange={(e) => (app_bar_popover_status = e.open)}
       positioning={{ placement: 'left-start' }}
       arrow={false}
       contentBase="card z-50 space-y-2 rounded-lg px-3 py-2 shadow-xl bg-surface-100-900"
@@ -79,7 +80,7 @@
         <!-- {@render support('sm:hidden block')} -->
         {#if pwa_state.install_event_fired}
           <button
-            class="outline-hidden select-none gap-1 px-2 py-1 text-sm"
+            class="gap-1 px-2 py-1 text-sm outline-hidden select-none"
             onclick={async () => {
               app_bar_popover_status = false;
               if (pwa_state.install_event_fired && pwa_state.event_triggerer)
@@ -100,7 +101,8 @@
 </AppBar>
 
 <Modal
-  bind:open={support_modal_status}
+  open={support_modal_status}
+  onOpenChange={(e) => (support_modal_status = e.open)}
   contentBase="card z-40 px-3 py-2 shadow-xl rounded-md select-none outline-hidden bg-slate-100 dark:bg-surface-900"
   backdropBackground="backdrop-blur-xs"
 >
