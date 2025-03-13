@@ -10,12 +10,12 @@
 
 {#if $needRefresh && popup_open}
   <div
-    class="fixed top-20 flex w-full select-none items-center justify-center outline-none"
+    class="outline-hidden fixed top-20 flex w-full select-none items-center justify-center"
     in:slide
     out:fade
   >
     <div
-      class="card z-50 rounded-lg bg-zinc-100 px-2 py-1.5 opacity-90 shadow-2xl dark:bg-surface-800"
+      class="card dark:bg-surface-800 z-50 rounded-lg bg-zinc-100 px-2 py-1.5 opacity-90 shadow-2xl"
     >
       <span class="font-semibold">New Version Available</span>
       <span class="ml-1 space-x-1">
@@ -23,9 +23,9 @@
           onclick={async () => {
             await updateServiceWorker(true);
           }}
-          class="btn px-2 py-1 font-bold preset-tonal-primary">Reload</button
+          class="btn preset-tonal-primary px-2 py-1 font-bold">Reload</button
         >
-        <button onclick={() => (popup_open = false)} class="btn font-bold preset-tonal-error"
+        <button onclick={() => (popup_open = false)} class="btn preset-tonal-error font-bold"
           >Dismiss</button
         >
       </span>

@@ -3,6 +3,7 @@
   import TopAppBar from '~/components/TopAppBar.svelte';
   import { onMount, type Snippet } from 'svelte';
   import '@fontsource/roboto/latin.css';
+  import '../app.css';
   import '../app.scss';
   import { pwa_state } from '~/state/main.svelte';
   import PostHogInit from '~/components/tags/PostHogInit.svelte';
@@ -20,7 +21,7 @@
 </script>
 
 <ModeWatcher />
-<div class="contaiiner mx-auto mb-1 max-w-screen-lg">
+<div class="contaiiner max-w-(--breakpoint-lg) mx-auto mb-1">
   <TopAppBar />
   <div class="mx-2">
     {@render children()}

@@ -161,7 +161,7 @@
     <button
       in:slide
       out:slide
-      class="btn mt-40 gap-1 rounded-lg bg-primary-600 px-3 py-1 text-xl font-bold text-white dark:bg-primary-500"
+      class="mt-40 btn gap-1 rounded-lg bg-primary-600 px-2.5 py-1 text-xl font-bold text-white dark:bg-primary-500"
       onclick={Start}
     >
       <Icon src={FiPlay} class="text-2xl" />
@@ -172,14 +172,15 @@
     {#if audio_info}
       {@const { clarity, pitch } = audio_info}
       <div class="flex flex-col items-center justify-center space-y-2 sm:space-y-3">
-        <div class="mt-2 select-none outline-none sm:mt-4">
+        <div class="mt-2 outline-hidden select-none sm:mt-4">
           <div class="flex items-start justify-center space-x-4">
             <Popover
-              bind:open={Sa_at_popup_status}
+              open={Sa_at_popup_status}
+              onOpenChange={(e) => (Sa_at_popup_status = e.open)}
               contentBase="card z-50 space-y-2 p-2 rounded-lg shadow-xl dark:bg-surface-900 bg-slate-100"
             >
               {#snippet trigger()}
-                <div class="text-center outline-none">
+                <div class="text-center outline-hidden">
                   <span class="mr-2 font-bold"><span>S</span> at</span>
                   {#if !Sa_at_popup_status}
                     <Icon src={BsChevronDown} class="text-base" />
@@ -190,7 +191,7 @@
                 </div>
               {/snippet}
               {#snippet content()}
-                <div class="grid grid-cols-4 space-x-1.5 space-y-1 sm:grid-cols-6 sm:space-x-2">
+                <div class="grid grid-cols-4 gap-x-2 gap-y-1 sm:grid-cols-6 sm:gap-x-2">
                   {#each NOTES as _, i}
                     {@const note = NOTES[(i + 9) % NOTES.length]}
                     <button
@@ -236,10 +237,11 @@
         </div>
         <Popover
           contentBase="card z-50 space-y-2 p-2 rounded-lg shadow-xl dark:bg-surface-900 bg-slate-100"
-          bind:open={orientation_popup_status}
+          open={orientation_popup_status}
+          onOpenChange={(e) => (orientation_popup_status = e.open)}
         >
           {#snippet trigger()}
-            <div class="text-center font-bold outline-none">
+            <div class="text-center font-bold outline-hidden">
               Orientation
               {#if !orientation_popup_status}
                 <Icon src={BsChevronDown} class="text-lg" />
@@ -275,7 +277,7 @@
         </Popover>
 
         <!-- Stop button -->
-        <div class="mt-6 flex items-center justify-center">
+        <div class="mt-4 flex items-center justify-center sm:mt-5">
           <button
             class="btn gap-1 rounded-lg bg-error-600 px-2 py-1 text-xl font-bold text-white dark:bg-error-500"
             onclick={Stop}
@@ -291,7 +293,7 @@
     <Icon src={BsMic} class="text-2xl sm:text-3xl" />
     {#if !device_list_loaded}
       <span
-        class="placeholder -mt-1 inline-block h-10 w-44 animate-pulse rounded-md sm:w-56 md:w-60 lg:w-64"
+        class="-mt-1 inline-block h-10 placeholder w-44 animate-pulse rounded-md sm:w-56 md:w-60 lg:w-64"
       ></span>
     {:else}
       <select
@@ -308,7 +310,7 @@
     {/if}
     <button
       title="Refresh Device List"
-      class={cl_join('btn m-0 select-none p-0 pl-2 outline-none')}
+      class={cl_join('m-0 btn p-0 pl-2 outline-hidden select-none')}
       onclick={() => get_audio_devices()}
       disabled={!device_list_loaded}
     >

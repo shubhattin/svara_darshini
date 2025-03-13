@@ -99,7 +99,7 @@
     <div
       in:scale={{ duration: animationDuration }}
       out:slide={{ duration: animationDuration }}
-      class="mx-3 max-w-screen-lg"
+      class="max-w-(--breakpoint-lg) mx-3"
     >
       <article class="rounded-lg bg-white p-3 pt-0 shadow-lg dark:bg-gray-800">
         <div class="flex justify-end">
