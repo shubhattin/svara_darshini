@@ -161,7 +161,7 @@
     <button
       in:slide
       out:slide
-      class="btn mt-40 gap-1 rounded-lg bg-primary-600 px-3 py-1 text-xl font-bold text-white dark:bg-primary-500"
+      class="btn bg-primary-600 dark:bg-primary-500 mt-40 gap-1 rounded-lg px-3 py-1 text-xl font-bold text-white"
       onclick={Start}
     >
       <Icon src={FiPlay} class="text-2xl" />
@@ -172,7 +172,7 @@
     {#if audio_info}
       {@const { clarity, pitch } = audio_info}
       <div class="flex flex-col items-center justify-center space-y-2 sm:space-y-3">
-        <div class="mt-2 select-none outline-hidden sm:mt-4">
+        <div class="mt-2 outline-hidden select-none sm:mt-4">
           <div class="flex items-start justify-center space-x-4">
             <Popover
               bind:open={Sa_at_popup_status}
@@ -190,7 +190,7 @@
                 </div>
               {/snippet}
               {#snippet content()}
-                <div class="grid grid-cols-4 space-x-1.5 space-y-1 sm:grid-cols-6 sm:space-x-2">
+                <div class="grid grid-cols-4 space-y-1 space-x-1.5 sm:grid-cols-6 sm:space-x-2">
                   {#each NOTES as _, i}
                     {@const note = NOTES[(i + 9) % NOTES.length]}
                     <button
@@ -198,7 +198,7 @@
                         'm-0 gap-0 rounded-md px-1 py-1 text-sm font-semibold text-white sm:text-base',
                         selected_Sa_at === note
                           ? 'bg-primary-500 dark:bg-primary-600'
-                          : 'bg-slate-400 hover:bg-primary-500/80 dark:bg-slate-800 dark:hover:bg-primary-600/80'
+                          : 'hover:bg-primary-500/80 dark:hover:bg-primary-600/80 bg-slate-400 dark:bg-slate-800'
                       )}
                       onclick={() => {
                         selected_Sa_at = note as note_types;
@@ -277,7 +277,7 @@
         <!-- Stop button -->
         <div class="mt-6 flex items-center justify-center">
           <button
-            class="btn gap-1 rounded-lg bg-error-600 px-2 py-1 text-xl font-bold text-white dark:bg-error-500"
+            class="btn bg-error-600 dark:bg-error-500 gap-1 rounded-lg px-2 py-1 text-xl font-bold text-white"
             onclick={Stop}
           >
             <Icon src={BiStopCircle} class="text-2xl" />
@@ -308,7 +308,7 @@
     {/if}
     <button
       title="Refresh Device List"
-      class={cl_join('btn m-0 select-none p-0 pl-2 outline-hidden')}
+      class={cl_join('btn m-0 p-0 pl-2 outline-hidden select-none')}
       onclick={() => get_audio_devices()}
       disabled={!device_list_loaded}
     >

@@ -42,7 +42,7 @@
       onclick={() => {
         support_modal_status = true;
       }}
-      class="btn m-0 select-none gap-2 rounded-md px-2 py-1 font-semibold outline-hidden hover:bg-gray-200 dark:hover:bg-gray-700"
+      class="btn m-0 gap-2 rounded-md px-2 py-1 font-semibold outline-hidden select-none hover:bg-gray-200 dark:hover:bg-gray-700"
       onmouseover={preload_component}
       onfocus={preload_component}
     >
@@ -79,7 +79,7 @@
         <!-- {@render support('sm:hidden block')} -->
         {#if pwa_state.install_event_fired}
           <button
-            class="select-none gap-1 px-2 py-1 text-sm outline-hidden"
+            class="gap-1 px-2 py-1 text-sm outline-hidden select-none"
             onclick={async () => {
               app_bar_popover_status = false;
               if (pwa_state.install_event_fired && pwa_state.event_triggerer)
