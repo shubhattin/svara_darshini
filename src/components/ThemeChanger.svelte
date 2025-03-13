@@ -6,26 +6,26 @@
 </script>
 
 <button
-  class="btn-xl group mr-0 -mb-1 ml-0 inline-flex items-center p-0"
+  class="btn-xl group -mb-1 ml-0 mr-0 inline-flex items-center p-0"
   on:click={() => setMode('system')}
 >
   <Icon
     src={SlScreenDesktop}
-    class="h-5 w-5 scale-100 rotate-0 group-hover:text-blue-500 dark:group-hover:text-sky-500"
+    class="h-5 w-5 rotate-0 scale-100 group-hover:text-blue-500 dark:group-hover:text-sky-500"
   />
 </button>
 <button
-  class="btn-xl group mr-0 -mb-1 ml-0 inline-flex items-center p-0"
+  class="btn-xl group -mb-1 ml-0 mr-0 inline-flex items-center p-0"
   on:click={() => setMode('light')}
 >
-  <Icon src={LuSun} class="h-5 w-5 scale-100 rotate-0 dark:group-hover:text-yellow-300" />
+  <Icon src={LuSun} class="h-5 w-5 rotate-0 scale-100 dark:group-hover:text-yellow-300" />
 </button>
 <button
-  class="btn-xl group mr-0 -mb-1 ml-0 inline-flex items-center p-0"
+  class="btn-xl group -mb-1 ml-0 mr-0 inline-flex items-center p-0"
   on:click={() => setMode('dark')}
 >
   <Icon
     src={LuMoon}
-    class="h-5 w-5 scale-100 rotate-0 group-hover:text-purple-600 dark:group-hover:text-white"
+    class="h-5 w-5 rotate-0 scale-100 group-hover:text-purple-600 dark:group-hover:text-white"
   />
 </button>

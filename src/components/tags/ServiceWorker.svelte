@@ -10,7 +10,7 @@
 
 {#if $needRefresh && popup_open}
   <div
-    class="fixed top-20 flex w-full items-center justify-center outline-hidden select-none"
+    class="outline-hidden fixed top-20 flex w-full select-none items-center justify-center"
     in:slide
     out:fade
   >

@@ -41,12 +41,12 @@
     <a
       href={UPI_ID_LINK}
       target="_blank"
-      class="ml-1 outline-hidden select-none"
+      class="outline-hidden ml-1 select-none"
       rel="noopener noreferrer"
     >
       <Icon src={UPIIcon} class="-mt-1.5 text-3xl" /> UPI :
       <span
-        class="text-sm text-blue-600 outline-hidden hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+        class="outline-hidden text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
         >{UPI_ID}</span
       ></a
     >
@@ -78,7 +78,7 @@
     >
       <Icon src={RazorpayIcon} class="-my-12 -mt-3 text-7xl" />
       <span
-        class="mt-2 ml-1 text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+        class="ml-1 mt-2 text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
         >rzp.com/thesanskritchannel</span
       >
     </a>
