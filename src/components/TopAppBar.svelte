@@ -42,7 +42,7 @@
       onclick={() => {
         support_modal_status = true;
       }}
-      class="btn m-0 select-none gap-2 rounded-md px-2 py-1 font-semibold outline-none hover:bg-gray-200 dark:hover:bg-gray-700"
+      class="btn m-0 select-none gap-2 rounded-md px-2 py-1 font-semibold outline-hidden hover:bg-gray-200 dark:hover:bg-gray-700"
       onmouseover={preload_component}
       onfocus={preload_component}
     >
@@ -54,7 +54,7 @@
       positioning={{ placement: 'left-start' }}
       arrow={false}
       contentBase="card z-50 space-y-2 rounded-lg px-3 py-2 shadow-xl bg-surface-100-900"
-      triggerBase="btn m-0 p-0 gap-0 outline-none select-none"
+      triggerBase="btn m-0 p-0 gap-0 outline-hidden select-none"
     >
       {#snippet trigger()}
         <Icon
@@ -79,7 +79,7 @@
         <!-- {@render support('sm:hidden block')} -->
         {#if pwa_state.install_event_fired}
           <button
-            class="select-none gap-1 px-2 py-1 text-sm outline-none"
+            class="select-none gap-1 px-2 py-1 text-sm outline-hidden"
             onclick={async () => {
               app_bar_popover_status = false;
               if (pwa_state.install_event_fired && pwa_state.event_triggerer)
@@ -101,8 +101,8 @@
 
 <Modal
   bind:open={support_modal_status}
-  contentBase="card z-40 px-3 py-2 shadow-xl rounded-md select-none outline-none bg-slate-100 dark:bg-surface-900"
-  backdropBackground="backdrop-blur-sm"
+  contentBase="card z-40 px-3 py-2 shadow-xl rounded-md select-none outline-hidden bg-slate-100 dark:bg-surface-900"
+  backdropBackground="backdrop-blur-xs"
 >
   {#snippet content()}
     {#await preload_component() then SupportOptions}

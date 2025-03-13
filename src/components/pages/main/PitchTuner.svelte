@@ -172,14 +172,14 @@
     {#if audio_info}
       {@const { clarity, pitch } = audio_info}
       <div class="flex flex-col items-center justify-center space-y-2 sm:space-y-3">
-        <div class="mt-2 select-none outline-none sm:mt-4">
+        <div class="mt-2 select-none outline-hidden sm:mt-4">
           <div class="flex items-start justify-center space-x-4">
             <Popover
               bind:open={Sa_at_popup_status}
               contentBase="card z-50 space-y-2 p-2 rounded-lg shadow-xl dark:bg-surface-900 bg-slate-100"
             >
               {#snippet trigger()}
-                <div class="text-center outline-none">
+                <div class="text-center outline-hidden">
                   <span class="mr-2 font-bold"><span>S</span> at</span>
                   {#if !Sa_at_popup_status}
                     <Icon src={BsChevronDown} class="text-base" />
@@ -239,7 +239,7 @@
           bind:open={orientation_popup_status}
         >
           {#snippet trigger()}
-            <div class="text-center font-bold outline-none">
+            <div class="text-center font-bold outline-hidden">
               Orientation
               {#if !orientation_popup_status}
                 <Icon src={BsChevronDown} class="text-lg" />
@@ -308,7 +308,7 @@
     {/if}
     <button
       title="Refresh Device List"
-      class={cl_join('btn m-0 select-none p-0 pl-2 outline-none')}
+      class={cl_join('btn m-0 select-none p-0 pl-2 outline-hidden')}
       onclick={() => get_audio_devices()}
       disabled={!device_list_loaded}
     >
