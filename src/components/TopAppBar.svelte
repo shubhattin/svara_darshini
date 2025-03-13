@@ -42,7 +42,7 @@
       onclick={() => {
         support_modal_status = true;
       }}
-      class="m-0 -mt-1 mr-2 btn gap-2 rounded-md px-2 py-1 font-semibold outline-hidden select-none hover:bg-gray-200 sm:mr-3 dark:hover:bg-gray-700"
+      class="-mt-1 mr-2 btn gap-2 rounded-md px-2 py-1 font-semibold outline-hidden select-none hover:bg-gray-200 sm:mr-3 dark:hover:bg-gray-700"
       onmouseover={preload_component}
       onfocus={preload_component}
     >
@@ -55,7 +55,7 @@
       positioning={{ placement: 'left-start' }}
       arrow={false}
       contentBase="card z-50 space-y-2 rounded-lg px-3 py-2 shadow-xl bg-surface-100-900"
-      triggerBase="btn m-0 p-0 gap-0 outline-hidden select-none"
+      triggerBase="btn p-0 gap-0 outline-hidden select-none"
     >
       {#snippet trigger()}
         <Icon

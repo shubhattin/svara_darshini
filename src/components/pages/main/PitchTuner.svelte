@@ -196,7 +196,7 @@
                     {@const note = NOTES[(i + 9) % NOTES.length]}
                     <button
                       class={cl_join(
-                        'm-0 gap-0 rounded-md px-1 py-1 text-sm font-semibold text-white sm:text-base',
+                        'gap-0 rounded-md px-1 py-1 text-sm font-semibold text-white sm:text-base',
                         selected_Sa_at === note
                           ? 'bg-primary-500 dark:bg-primary-600'
                           : 'bg-slate-400 hover:bg-primary-500/80 dark:bg-slate-800 dark:hover:bg-primary-600/80'
@@ -310,7 +310,7 @@
     {/if}
     <button
       title="Refresh Device List"
-      class={cl_join('m-0 btn p-0 pl-2 outline-hidden select-none')}
+      class={cl_join('btn p-0 pl-2 outline-hidden select-none')}
       onclick={() => get_audio_devices()}
       disabled={!device_list_loaded}
     >
