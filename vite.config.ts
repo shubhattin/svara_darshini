@@ -34,6 +34,8 @@ export default defineConfig({
         display: 'standalone',
         start_url: '/',
         scope: '/',
+        id: '/?svara_darshini=1',
+        display_override: ['standalone'],
         icons: [
           {
             src: 'img/icon_128.png',
