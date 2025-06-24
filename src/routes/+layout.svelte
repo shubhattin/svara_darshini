@@ -21,10 +21,16 @@
 </script>
 
 <ModeWatcher />
-<div class="contaiiner max-w-(--breakpoint-lg) mx-auto mb-1">
-  <TopAppBar />
-  <div class="mx-2">
-    {@render children()}
+<!-- Full viewport background -->
+<div
+  class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-950"
+>
+  <!-- Content container -->
+  <div class="container mx-auto mb-1 max-w-7xl">
+    <TopAppBar />
+    <div class="mx-2">
+      {@render children()}
+    </div>
   </div>
 </div>
 <PostHogInit />

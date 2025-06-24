@@ -11,7 +11,7 @@
 {#if !remove_when_hidden || show}
   <span
     class={cl_join(
-      '-my-1.5 mx-1 box-border inline-block h-6 w-6 rounded-full border-[3.5px] border-solid border-white border-b-transparent',
+      'mx-1 -my-1.5 box-border inline-block h-6 w-6 rounded-full border-[3.5px] border-solid border-white border-b-transparent',
       'animate-spin transition-opacity duration-100 ease-in',
       'text-white',
       show ? 'opacity-100' : 'opacity-0',

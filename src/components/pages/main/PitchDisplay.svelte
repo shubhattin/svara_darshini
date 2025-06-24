@@ -63,7 +63,7 @@
 <div class="h-72 w-72 sm:h-80 sm:w-80 md:h-96 md:w-96">
   <svg
     viewBox={`-${100} -${100} ${200} ${200}`}
-    class="outline-hidden block h-full w-full select-none"
+    class="block h-full w-full outline-hidden select-none"
   >
     <!-- Outer circle for Sargam -->
     <circle
@@ -126,7 +126,7 @@
           dominant-baseline="middle"
           class={cl_join(
             'fill-zinc-700 text-[0.7rem] font-semibold dark:fill-zinc-300',
-            'duration-600 origin-[0_0] transition-transform ease-in-out'
+            'origin-[0_0] transition-transform duration-600 ease-in-out'
           )}
           transform={note_orientation === 'radial'
             ? `rotate(${angle + 90} ${x} ${y})`
@@ -150,7 +150,7 @@
           dominant-baseline="middle"
           class={cl_join(
             'fill-gray-800 text-xs font-semibold opacity-90 dark:fill-gray-200',
-            'duration-600 origin-[0_0] transition-transform ease-in-out'
+            'origin-[0_0] transition-transform duration-600 ease-in-out'
           )}
           font-family="ome_bhatkhande_en"
           {...sargam_orientation === 'radial'
