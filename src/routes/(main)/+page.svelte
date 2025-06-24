@@ -60,10 +60,11 @@
     </div>
   </div>
 </div> -->
-
-<PitchTuner
-  bind:selected_device={$default_selected_device}
-  bind:selected_Sa_at={$default_Sa_at}
-  bind:selected_sargam_orientation={$default_sargam_orientation}
-  bind:selected_note_orientation={$default_note_orientation}
-/>
+<div class="flex h-full w-full flex-col items-center pt-2 pb-10">
+  <PitchTuner
+    bind:selected_device={$default_selected_device}
+    bind:selected_Sa_at={$default_Sa_at}
+    bind:selected_sargam_orientation={$default_sargam_orientation}
+    bind:selected_note_orientation={$default_note_orientation}
+  />
+</div>

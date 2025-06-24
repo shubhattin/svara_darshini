@@ -10,12 +10,12 @@
 
 {#if $needRefresh && popup_open}
   <div
-    class="outline-hidden fixed top-20 flex w-full select-none items-center justify-center"
+    class="fixed top-20 flex w-full items-center justify-center outline-hidden select-none"
     in:slide
     out:fade
   >
     <div
-      class="card dark:bg-surface-800 z-50 rounded-lg bg-zinc-100 px-2 py-1.5 opacity-90 shadow-2xl"
+      class="z-50 card rounded-lg bg-zinc-100 px-2 py-1.5 opacity-90 shadow-2xl dark:bg-surface-800"
     >
       <span class="font-semibold">New Version Available</span>
       <span class="ml-1 space-x-1">
