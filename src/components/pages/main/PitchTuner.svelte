@@ -156,10 +156,13 @@
   };
 </script>
 
-<!-- flex h-full min-h-screen w-full flex-col items-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-950 -->
 <div class="flex h-full w-full flex-col items-center">
   {#if !audio_info}
-    <div class="mt-20 flex flex-col items-center justify-center space-y-8" in:fade out:slide>
+    <div
+      class="mt-12 flex flex-col items-center justify-center space-y-8 sm:mt-15 md:mt-18 xl:mt-20"
+      in:fade
+      out:slide
+    >
       <div class="space-y-4 text-center">
         <h1
           class="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-4xl font-bold text-transparent md:text-5xl"
