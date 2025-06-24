@@ -161,10 +161,11 @@
         <Popover
           open={app_bar_popover_status}
           onOpenChange={(e) => (app_bar_popover_status = e.open)}
-          positioning={{ placement: 'left-start' }}
+          positioning={{ placement: 'bottom-start' }}
           arrow={false}
           contentBase="w-80 p-0 border-slate-200/80 bg-white/95 backdrop-blur-md dark:border-slate-700/80 dark:bg-slate-800/95 rounded-xl shadow-2xl"
           triggerBase="btn p-1.5 gap-0 outline-hidden select-none rounded-lg bg-gray-100/80 dark:bg-slate-700/80 hover:bg-gray-200/80 dark:hover:bg-slate-600/80 hover:scale-105 active:scale-95 transition-all duration-200"
+          zIndex="z-100"
         >
           {#snippet trigger()}
             <Icon
