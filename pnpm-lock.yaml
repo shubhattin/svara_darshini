@@ -20,6 +20,9 @@ importers:
       '@fontsource/roboto':
         specifier: ^5.2.5
         version: 5.2.5
+      '@mozartec/capacitor-microphone':
+        specifier: ^7.1.0
+        version: 7.1.0(@capacitor/core@7.4.0)
       buffer:
         specifier: ^6.0.3
         version: 6.0.3
@@ -1019,6 +1022,11 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.25':
     resolution: {integrity: sha512-vNk6aEwybGtawWmy/PzwnGDOjCkLWSD2wqvjGGAgOAwCGWySYXfYoxt00IJkTF+8Lb57DwOb3Aa0o9CApepiYQ==}
+
+  '@mozartec/capacitor-microphone@7.1.0':
+    resolution: {integrity: sha512-7adiK4UKGOPQbKbPlFNLFFT756EwTv8viFlU0FDLqxzDsMWIIk6+I3RWMhhgQPPIJrPxYS4Wf9O6phtRfmcTnw==}
+    peerDependencies:
+      '@capacitor/core': '>=7.0.0'
 
   '@parcel/watcher-android-arm64@2.5.1':
     resolution: {integrity: sha512-KF8+j9nNbUN8vzOFDpRMsaKBHZ/mcjEjMToVMJOhTozkDonQFFrRcfdLWn6yWKCmJKmdVxSgHiYvTCef4/qcBA==}
@@ -4445,6 +4453,10 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
+
+  '@mozartec/capacitor-microphone@7.1.0(@capacitor/core@7.4.0)':
+    dependencies:
+      '@capacitor/core': 7.4.0
 
   '@parcel/watcher-android-arm64@2.5.1':
     optional: true
