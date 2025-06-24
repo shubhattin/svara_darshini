@@ -120,7 +120,7 @@
             <div
               class="text-xl font-bold tracking-wide text-gray-800 drop-shadow-sm dark:text-white"
             >
-              {PAGE_TITLES[route_id as keyof typeof PAGE_TITLES][0]}
+              {PAGE_TITLES[route_id]}
             </div>
           </div>
         {/if}
