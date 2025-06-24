@@ -111,15 +111,28 @@
         {#if start}
           {@render start()}
         {/if}
+        {#if route_id === '/(main)'}
+          <div class="flex items-center space-x-3 sm:space-x-4">
+            <div
+              class="flex size-8 items-center justify-center shadow-lg"
+              style={`background-image: url('/img/icon_128.png'); background-size: cover; background-position: center;`}
+            ></div>
+            <div
+              class="text-xl font-bold tracking-wide text-gray-800 drop-shadow-sm dark:text-white"
+            >
+              {PAGE_TITLES[route_id as keyof typeof PAGE_TITLES][0]}
+            </div>
+          </div>
+        {/if}
         {#if headline}
           {@render headline()}
-        {:else if route_id in PAGE_TITLES}
+        {/if}
+        <!-- {:else if route_id in PAGE_TITLES}
           <span
             class="text-xl font-bold tracking-wide text-gray-800 drop-shadow-sm dark:text-white"
           >
             {PAGE_TITLES[route_id as keyof typeof PAGE_TITLES][0]}
-          </span>
-        {/if}
+          </span> -->
       {/snippet}
       {#snippet trail()}
         {@render end?.()}
