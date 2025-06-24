@@ -229,7 +229,7 @@
 
               <div class="my-4 h-px bg-slate-200 dark:bg-slate-700"></div>
 
-              {#if !pwa_state.install_event_fired}
+              {#if pwa_state.install_event_fired}
                 <!-- App Installation Section -->
                 <div class="space-y-3">
                   <div class="flex items-center gap-2">
