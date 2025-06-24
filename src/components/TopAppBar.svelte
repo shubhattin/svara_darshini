@@ -102,7 +102,7 @@
   ];
 </script>
 
-<div class="sticky top-0 z-50 mb-4">
+<div class="z-50 mb-4">
   <div
     class="border-b border-gray-200/50 bg-gradient-to-r from-slate-200 via-blue-100 to-zinc-200 shadow-lg backdrop-blur-sm dark:border-slate-600/50 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800"
   >

@@ -156,7 +156,7 @@
   };
 </script>
 
-<div class="flex h-full w-full flex-col items-center">
+<div class="flex h-full w-full flex-col items-center pt-2 pb-10">
   {#if !audio_info}
     <div
       class="mt-12 flex flex-col items-center justify-center space-y-8 sm:mt-15 md:mt-18 xl:mt-20"
