@@ -38,12 +38,12 @@ export default defineConfig({
         display_override: ['standalone'],
         icons: [
           {
-            src: 'img/icon_128.png',
+            src: 'img/pwa/icon_128.png',
             sizes: '128x128',
             type: 'image/png'
           },
           {
-            src: 'img/icon_512.png',
+            src: 'img/pwa/icon_512.png',
             sizes: '512x512',
             type: 'image/png'
           }

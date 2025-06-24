@@ -41,9 +41,11 @@ for density in "${!DENSITIES[@]}"; do
     magick "$SOURCE_ICON" -resize "${size}x${size}" "$target_dir/ic_launcher.png"
     
     # Generate round launcher icon (ic_launcher_round.png)
-    # Create a circular mask and apply it
-    echo "  Creating ic_launcher_round.png (${size}x${size})"
-    magick "$SOURCE_ICON" -resize "${size}x${size}" \
+    # Add padding (80% of original size) and create a circular mask
+    padded_size=$((size * 80 / 100))  # 80% of target size for padding
+    echo "  Creating ic_launcher_round.png (${size}x${size}) with padding"
+    magick "$SOURCE_ICON" -resize "${padded_size}x${padded_size}" \
+        -background transparent -gravity center -extent "${size}x${size}" \
         \( +clone -threshold 50% -negate -fill white -draw "circle $((size/2)),$((size/2)) $((size/2)),0" \) \
         -alpha off -compose copy_opacity -composite \
         "$target_dir/ic_launcher_round.png"
