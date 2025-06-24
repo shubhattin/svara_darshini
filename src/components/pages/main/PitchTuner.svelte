@@ -14,7 +14,6 @@
   import { indactivity_timeout } from './inactivity';
   import ms from 'ms';
   import { Microphone } from '@mozartec/capacitor-microphone';
-  import { Capacitor } from '@capacitor/core';
 
   let {
     selected_device = $bindable(),
@@ -104,33 +103,29 @@
   });
 
   const checkAndRequestMicrophonePermission = async () => {
-    if (Capacitor.isNativePlatform()) {
-      try {
-        // Check current permission status
-        const permissionStatus = await Microphone.checkPermissions();
-        console.log('Current microphone permission:', permissionStatus.microphone);
+    // if (Capacitor.isNativePlatform()) {
+    try {
+      // Check current permission status
+      const permissionStatus = await Microphone.checkPermissions();
+      console.log('Current microphone permission:', permissionStatus.microphone);
 
-        if (permissionStatus.microphone === 'granted') {
-          return true;
-        } else if (permissionStatus.microphone === 'denied') {
-          // Permission was denied, show message to user
-          alert(
-            'Microphone permission was denied. Please enable it in your device settings to use the pitch tuner.'
-          );
-          return false;
-        } else {
-          // Permission not yet requested or prompt
-          const requestResult = await Microphone.requestPermissions();
-          console.log('Permission request result:', requestResult.microphone);
-          return requestResult.microphone === 'granted';
-        }
-      } catch (error) {
-        console.error('Error checking/requesting microphone permission:', error);
+      if (permissionStatus.microphone === 'granted') {
+        return true;
+      } else if (permissionStatus.microphone === 'denied') {
+        // Permission was denied, show message to user
+        alert(
+          'Microphone permission was denied. Please enable it in your device settings to use the pitch tuner.'
+        );
         return false;
+      } else {
+        // Permission not yet requested or prompt
+        const requestResult = await Microphone.requestPermissions();
+        console.log('Permission request result:', requestResult.microphone);
+        return requestResult.microphone === 'granted';
       }
-    } else {
-      // For web, we'll rely on getUserMedia's built-in permission handling
-      return true;
+    } catch (error) {
+      console.error('Error checking/requesting microphone permission:', error);
+      return false;
     }
   };
 
@@ -138,6 +133,7 @@
     try {
       // Check and request microphone permissions first
       const hasPermission = await checkAndRequestMicrophonePermission();
+      // console.log('hasPermission', hasPermission);
       if (!hasPermission) {
         console.error('Microphone permission not granted');
         return;
