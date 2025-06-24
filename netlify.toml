@@ -1,6 +1,8 @@
 [build]
   command = "pnpm run build"
   publish = "build"
+[build.environment]
+  NODE_VERSION = "20"
 [[headers]]
   for = "/manifest.webmanifest"
   [headers.values]
