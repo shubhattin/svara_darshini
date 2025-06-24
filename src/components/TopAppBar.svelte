@@ -254,6 +254,7 @@
                     </div>
                     <div class="flex-1">
                       <div class="font-semibold">Install App</div>
+                      <div class="text-xs text-gray-500">Install for quick & offline access</div>
                     </div>
                   </button>
                 </div>
