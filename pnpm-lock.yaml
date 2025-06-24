@@ -14,6 +14,9 @@ importers:
       '@capacitor/core':
         specifier: ^7.4.0
         version: 7.4.0
+      '@capacitor/status-bar':
+        specifier: ^7.0.1
+        version: 7.0.1(@capacitor/core@7.4.0)
       '@floating-ui/dom':
         specifier: ^1.6.13
         version: 1.6.13
@@ -657,6 +660,11 @@ packages:
 
   '@capacitor/core@7.4.0':
     resolution: {integrity: sha512-P6NnjoHyobZgTjynlZSn27d0SUj6j38inlNxFnKZr9qwU7/r6+0Sg2nWkGkIH/pMmXHsvGD8zVe6KUq1UncIjA==}
+
+  '@capacitor/status-bar@7.0.1':
+    resolution: {integrity: sha512-iDv3mXYo9CdxYRVwt3/pRyuk25p7Sn4GfaS/zMZyVIqTzsvKLCIIH3GdKK+ta+nsNcAVpCw/t5jFEBt1D18ctA==}
+    peerDependencies:
+      '@capacitor/core': '>=7.0.0'
 
   '@esbuild/aix-ppc64@0.21.5':
     resolution: {integrity: sha512-1SDgH6ZSPTlggy1yI6+Dbkiz8xzpHJEVAlF/AM1tHPLsf5STom9rwtjE4hKAF20FfXXNTFqEYXyJNWh1GiZedQ==}
@@ -4183,6 +4191,10 @@ snapshots:
   '@capacitor/core@7.4.0':
     dependencies:
       tslib: 2.8.1
+
+  '@capacitor/status-bar@7.0.1(@capacitor/core@7.4.0)':
+    dependencies:
+      '@capacitor/core': 7.4.0
 
   '@esbuild/aix-ppc64@0.21.5':
     optional: true
