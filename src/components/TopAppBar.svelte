@@ -5,7 +5,7 @@
   import Icon from '~/tools/Icon.svelte';
   import { SiGithub } from 'svelte-icons-pack/si';
   import { AiOutlineMenu, AiOutlineYoutube, AiOutlineInstagram } from 'svelte-icons-pack/ai';
-  import { IoSettingsSharp } from 'svelte-icons-pack/io';
+  import { IoExtensionPuzzle, IoSettingsSharp } from 'svelte-icons-pack/io';
   import {
     BsPalette,
     BsDownload,
@@ -93,10 +93,10 @@
       iconClass: 'bg-gradient-to-br from-green-500 to-emerald-600'
     },
     {
-      href: 'https://svara.thesanskritchannel.org/',
-      icon: BsMusicNote,
-      title: 'Svara Darshini',
-      subtitle: 'Understand Principles of Music',
+      href: 'https://krida.thesanskritchannel.org/padavali',
+      icon: IoExtensionPuzzle,
+      title: 'Padavali',
+      subtitle: 'A Sanskrit Word Game',
       iconClass: 'bg-gradient-to-br from-indigo-500 to-purple-600'
     }
   ];
