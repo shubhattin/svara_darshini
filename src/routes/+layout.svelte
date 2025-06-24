@@ -8,20 +8,33 @@
   import { pwa_state } from '~/state/main.svelte';
   import PostHogInit from '~/components/tags/PostHogInit.svelte';
   import { browser } from '$app/environment';
+  import { Capacitor } from '@capacitor/core';
+  import { StatusBar, Style } from '@capacitor/status-bar';
 
   let { children }: { children: Snippet } = $props();
 
-  onMount(() => {
+  onMount(async () => {
     window.addEventListener('beforeinstallprompt', (event) => {
       event.preventDefault();
       pwa_state.event_triggerer = event;
       pwa_state.install_event_fired = true;
     });
+
+    // Configure status bar for mobile platforms
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await StatusBar.setStyle({ style: Style.Dark });
+        await StatusBar.setBackgroundColor({ color: '#1e293b' }); // slate-800
+        await StatusBar.setOverlaysWebView({ overlay: false });
+      } catch (error) {
+        console.log('Status bar configuration error:', error);
+      }
+    }
   });
 </script>
 
 <ModeWatcher />
-<!-- Full viewport background -->
+<!-- Full viewport background with safe area support -->
 <div
   class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-950"
 >

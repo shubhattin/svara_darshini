@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Svara Darshini</string>
+    <string name="title_activity_main">Svara Darshini</string>
+    <string name="package_name">com.svara_darshini_tsc.app</string>
+    <string name="custom_url_scheme">com.svara_darshini_tsc.app</string>
+</resources>
