@@ -114,13 +114,13 @@
         {#if route_id === '/(main)'}
           <div class="flex items-center space-x-3 sm:space-x-4">
             <div
-              class="flex size-8 items-center justify-center shadow-lg"
+              class="flex size-7.5 items-center justify-center shadow-lg sm:size-8"
               style={`background-image: url('/img/icon_128.png'); background-size: cover; background-position: center;`}
             ></div>
             <div
-              class="text-xl font-bold tracking-wide text-gray-800 drop-shadow-sm dark:text-white"
+              class="text-xl font-semibold tracking-wide text-gray-800 drop-shadow-sm dark:text-white"
             >
-              {PAGE_TITLES[route_id]}
+              {PAGE_TITLES[route_id][0]}
             </div>
           </div>
         {/if}
