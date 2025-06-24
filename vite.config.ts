@@ -25,8 +25,8 @@ export default defineConfig({
         skipWaiting: false
       },
       manifest: {
-        name: 'SvaraDarshini',
-        short_name: 'SvaraDarshini',
+        name: 'Svara Darshini',
+        short_name: 'Svara Darshini',
         description:
           'Svara Darshini is an intuitive tool to understand Principles of Music that are common across the world',
         theme_color: '#181e20',
