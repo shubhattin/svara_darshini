@@ -158,6 +158,12 @@
             >Support Our Projects</span
           >
         </span>
+        <!-- style={{
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          scrollbarWidth: 'none', // Firefox
+          msOverflowStyle: 'none' // IE and Edge
+        }} -->
         <Popover
           open={app_bar_popover_status}
           onOpenChange={(e) => (app_bar_popover_status = e.open)}
@@ -174,7 +180,10 @@
             />
           {/snippet}
           {#snippet content()}
-            <div class="max-h-[90vh] overflow-y-auto p-4">
+            <div
+              class="p-4"
+              style="max-height: 90vh; overflow-y: auto; scrollbar-width: none; ms-overflow-style: none"
+            >
               <!-- Header -->
               <div class="mb-4 flex items-center gap-2">
                 <div
@@ -190,7 +199,7 @@
               <!-- Theme Section -->
               <div class="space-y-3">
                 <div class="flex items-center gap-2">
-                  <Icon src={BsPalette} class="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                  <Icon src={BsPalette} class="-mt-1 size-4 text-slate-600 dark:text-slate-400" />
                   <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Theme</span>
                 </div>
 
@@ -257,7 +266,7 @@
                 <div class="flex items-center gap-2">
                   <Icon
                     src={BsBoxArrowUpRight}
-                    class="h-4 w-4 text-slate-600 dark:text-slate-400"
+                    class="-mt-1 size-4 text-slate-600 dark:text-slate-400"
                   />
                   <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Links</span>
                 </div>
