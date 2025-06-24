@@ -196,7 +196,7 @@
             src={FiPlay}
             class="text-2xl transition-transform duration-200 group-hover:scale-110"
           />
-          <span>Start Listening</span>
+          <span>Start</span>
         </div>
       </button>
     </div>
