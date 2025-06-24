@@ -5,7 +5,7 @@
   import { FiPlay, FiRefreshCcw } from 'svelte-icons-pack/fi';
   import Icon from '~/tools/Icon.svelte';
   import { BiStopCircle } from 'svelte-icons-pack/bi';
-  import { slide } from 'svelte/transition';
+  import { fade, scale, slide } from 'svelte/transition';
   import { BsChevronDown, BsChevronUp, BsMic } from 'svelte-icons-pack/bs';
   import { delay } from '~/tools/delay';
   import { cl_join } from '~/tools/cl_join';
@@ -156,17 +156,50 @@
   };
 </script>
 
+<!-- flex h-full min-h-screen w-full flex-col items-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-950 -->
 <div class="flex h-full w-full flex-col items-center">
   {#if !audio_info}
-    <button
-      in:slide
-      out:slide
-      class="mt-40 btn gap-1 rounded-lg bg-primary-600 px-2.5 py-1 text-xl font-bold text-white dark:bg-primary-500"
-      onclick={Start}
-    >
-      <Icon src={FiPlay} class="text-2xl" />
-      Start
-    </button>
+    <div class="mt-20 flex flex-col items-center justify-center space-y-8" in:fade out:slide>
+      <div class="space-y-4 text-center">
+        <h1
+          class="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-4xl font-bold text-transparent md:text-5xl"
+        >
+          Welcome to Svara Darshini
+        </h1>
+        <p
+          class="mx-auto max-w-2xl text-lg leading-relaxed text-gray-600 md:text-xl dark:text-gray-300"
+        >
+          An intuitive tool to understand the principles of music that are common across the world.
+          Discover the beauty of musical notes and their relationships through our interactive pitch
+          tuner.
+        </p>
+        <p class="mx-auto max-w-xl text-base text-gray-500 dark:text-gray-400">
+          Click the button below to start analyzing your voice or instrument. The circular display
+          will show you exactly which note you're playing and how in-tune it is.
+        </p>
+      </div>
+      <button
+        in:slide
+        out:slide
+        class="group relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600
+             px-8 py-4 text-xl font-bold text-white shadow-xl
+             transition-all duration-300 ease-out
+             hover:scale-105 hover:from-blue-600
+             hover:via-purple-600 hover:to-indigo-700 hover:shadow-2xl active:scale-95"
+        onclick={Start}
+      >
+        <div
+          class="absolute inset-0 translate-x-[-100%] bg-gradient-to-r from-white/0 via-white/20 to-white/0 transition-transform duration-700 ease-out group-hover:translate-x-[100%]"
+        ></div>
+        <div class="relative flex items-center gap-3">
+          <Icon
+            src={FiPlay}
+            class="text-2xl transition-transform duration-200 group-hover:scale-110"
+          />
+          <span>Start Listening</span>
+        </div>
+      </button>
+    </div>
   {/if}
   <div class="mb-4 select-none">
     {#if audio_info}

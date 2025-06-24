@@ -21,7 +21,7 @@
 </script>
 
 <ModeWatcher />
-<div class="contaiiner max-w-(--breakpoint-lg) mx-auto mb-1">
+<div class="container mx-auto mb-1 max-w-7xl">
   <TopAppBar />
   <div class="mx-2">
     {@render children()}
