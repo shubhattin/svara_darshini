@@ -102,7 +102,7 @@
   ];
 </script>
 
-<div class="z-50 mb-4">
+<div class="pt-safe-top z-50 mb-4">
   <div
     class="border-b border-gray-200/50 bg-gradient-to-r from-slate-200 via-blue-100 to-zinc-200 shadow-lg backdrop-blur-sm dark:border-slate-600/50 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800"
   >
@@ -335,3 +335,30 @@
     {/await}
   {/snippet}
 </Modal>
+
+<style global>
+  /* Safe area utilities for mobile devices */
+  .pt-safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .pb-safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .pl-safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .pr-safe-right {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .pt-safe {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+
+  .pb-safe {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+</style>
