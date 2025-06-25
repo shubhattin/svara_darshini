@@ -1,19 +1,5 @@
-const NOTES_ = {
-  C: null,
-  'C#': null,
-  D: null,
-  'D#': null,
-  E: null,
-  F: null,
-  'F#': null,
-  G: null,
-  'G#': null,
-  A: null,
-  'A#': null,
-  B: null
-};
-export type note_types = keyof typeof NOTES_;
-export const NOTES = Object.keys(NOTES_);
+export const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
+export type note_types = (typeof NOTES)[number];
 
 export const PURE_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 
@@ -46,7 +32,7 @@ export const PURE_SARGAM = ['Sa', 'Re', 'Ga', 'Ma', 'Pa', 'Dha', 'Ni'];
 //eg : notesToSargam("A") => ["A", "B", "C#", "D", "E", "F#", "G#"]
 
 export const notesToSargam = (baseNote: string) => {
-  const baseNoteIndex = NOTES.indexOf(baseNote);
+  const baseNoteIndex = NOTES.indexOf(baseNote as note_types);
   const sargam = [];
   sargam.push(NOTES[baseNoteIndex]);
   sargam.push(NOTES[(baseNoteIndex + 2) % 12]);

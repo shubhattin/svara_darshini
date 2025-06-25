@@ -18,7 +18,7 @@
 
   const { detune, note: note_, scale } = $derived(audio_info);
 
-  let note_index = $derived(NOTES.indexOf(note_));
+  let note_index = $derived(NOTES.indexOf(note_ as note_types));
 
   let OUTER_CIRCLE_SARGAM_RADIUS = $derived(92 - (sargam_orientation === 'vertical' ? 0 : 1.1));
   let SARGAM_LABEL_RADIUS = $derived(80 + (sargam_orientation === 'vertical' ? 0.55 : 1.52));
