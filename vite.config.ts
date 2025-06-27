@@ -3,11 +3,13 @@ import { defineConfig } from 'vite';
 import { generateRobotsTxtSitemap } from './src/tools/plugins/robots_txt_sitemap';
 import { SvelteKitPWA } from '@vite-pwa/sveltekit';
 import tailwindcss from '@tailwindcss/vite';
+import devtoolsJson from 'vite-plugin-devtools-json';
 
 export default defineConfig({
   plugins: [
     tailwindcss(),
     sveltekit(),
+    devtoolsJson(),
     generateRobotsTxtSitemap(),
     SvelteKitPWA({
       strategies: 'generateSW',

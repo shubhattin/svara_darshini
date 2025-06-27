@@ -14,6 +14,10 @@
     'saved_note_orientation',
     'vertical'
   );
+  let default_pitch_display_type = persistedStore<'circular_scale' | 'time_graph'>(
+    'saved_pitch_display_type',
+    'circular_scale'
+  );
 </script>
 
 <MetaTags
@@ -66,5 +70,6 @@
     bind:selected_Sa_at={$default_Sa_at}
     bind:selected_sargam_orientation={$default_sargam_orientation}
     bind:selected_note_orientation={$default_note_orientation}
+    bind:selected_pitch_display_type={$default_pitch_display_type}
   />
 </div>
