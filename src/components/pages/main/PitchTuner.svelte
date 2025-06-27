@@ -310,6 +310,17 @@
     </button>
   </div>
 {/if}
+{#snippet stop_button()}
+  <div class="mt-4 flex items-center justify-center sm:mt-5">
+    <button
+      class="btn gap-1 rounded-lg bg-error-600 px-2 py-1 text-xl font-bold text-white dark:bg-error-500"
+      onclick={Stop}
+    >
+      <Icon src={BiStopCircle} class="text-2xl" />
+      Stop
+    </button>
+  </div>
+{/snippet}
 
 {#if audio_info && started}
   {@const { clarity, pitch } = audio_info}
@@ -325,7 +336,7 @@
     {/snippet}
     {#snippet content()}
       <Tabs.Panel value="circular_scale">
-        <div class="select-none">
+        <div class="mb-4 select-none">
           <div class="flex flex-col items-center justify-center space-y-2 sm:space-y-3">
             <div class="mt-2 outline-hidden select-none sm:mt-4">
               <div class="flex items-start justify-center space-x-4">
@@ -432,6 +443,7 @@
             </Popover>
 
             <!-- Stop button -->
+            {@render stop_button()}
           </div>
         </div>
       </Tabs.Panel>
@@ -547,6 +559,7 @@
                 </text> -->
               </svg>
             </div>
+            {@render stop_button()}
             <!-- {:else}
             <div class="flex h-full items-center justify-center text-gray-500">
               <div class="text-center">
@@ -559,15 +572,6 @@
       </Tabs.Panel>
     {/snippet}
   </Tabs>
-  <div class="mt-4 mb-4 flex items-center justify-center sm:mt-5">
-    <button
-      class="btn gap-1 rounded-lg bg-error-600 px-2 py-1 text-xl font-bold text-white dark:bg-error-500"
-      onclick={Stop}
-    >
-      <Icon src={BiStopCircle} class="text-2xl" />
-      Stop
-    </button>
-  </div>
 {/if}
 <label class="mt-3 flex space-x-1">
   <Icon src={BsMic} class="text-2xl sm:text-3xl" />
