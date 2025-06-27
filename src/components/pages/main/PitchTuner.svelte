@@ -247,127 +247,143 @@
   </div>
 {/if}
 
-<div class="mb-4 select-none">
-  {#if audio_info && started}
-    {@const { clarity, pitch } = audio_info}
-    <div class="flex flex-col items-center justify-center space-y-2 sm:space-y-3">
-      <div class="mt-2 outline-hidden select-none sm:mt-4">
-        <div class="flex items-start justify-center space-x-4">
-          <Popover
-            open={Sa_at_popup_status}
-            onOpenChange={(e) => (Sa_at_popup_status = e.open)}
-            contentBase="card z-50 space-y-2 p-2 rounded-lg shadow-xl dark:bg-surface-900 bg-slate-100"
-          >
-            {#snippet trigger()}
-              <div class="text-center outline-hidden">
-                <span class="mr-2 font-bold"><span>S</span> at</span>
-                {#if !Sa_at_popup_status}
-                  <Icon src={BsChevronDown} class="text-base" />
-                {:else}
-                  <Icon src={BsChevronUp} class="text-base" />
-                {/if}
-                {selected_Sa_at}
+{#if audio_info && started}
+  {@const { clarity, pitch } = audio_info}
+  <Tabs
+    value={selected_pitch_display_type}
+    onValueChange={(e) =>
+      (selected_pitch_display_type = e.value as 'circular_scale' | 'time_graph')}
+    listJustify="justify-center"
+  >
+    {#snippet list()}
+      <Tabs.Control value="circular_scale">Circular Scale</Tabs.Control>
+      <Tabs.Control value="time_graph">Time Graph</Tabs.Control>
+    {/snippet}
+    {#snippet content()}
+      <Tabs.Panel value="circular_scale">
+        <div class="mb-4 select-none">
+          <div class="flex flex-col items-center justify-center space-y-2 sm:space-y-3">
+            <div class="mt-2 outline-hidden select-none sm:mt-4">
+              <div class="flex items-start justify-center space-x-4">
+                <Popover
+                  open={Sa_at_popup_status}
+                  onOpenChange={(e) => (Sa_at_popup_status = e.open)}
+                  contentBase="card z-50 space-y-2 p-2 rounded-lg shadow-xl dark:bg-surface-900 bg-slate-100"
+                >
+                  {#snippet trigger()}
+                    <div class="text-center outline-hidden">
+                      <span class="mr-2 font-bold"><span>S</span> at</span>
+                      {#if !Sa_at_popup_status}
+                        <Icon src={BsChevronDown} class="text-base" />
+                      {:else}
+                        <Icon src={BsChevronUp} class="text-base" />
+                      {/if}
+                      {selected_Sa_at}
+                    </div>
+                  {/snippet}
+                  {#snippet content()}
+                    <div class="grid grid-cols-4 gap-x-2 gap-y-1 sm:grid-cols-6 sm:gap-x-2">
+                      {#each NOTES as _, i}
+                        {@const note = NOTES[(i + 9) % NOTES.length]}
+                        <button
+                          class={cl_join(
+                            'gap-0 rounded-md px-1 py-1 text-sm font-semibold text-white sm:text-base',
+                            selected_Sa_at === note
+                              ? 'bg-primary-500 dark:bg-primary-600'
+                              : 'bg-slate-400 hover:bg-primary-500/80 dark:bg-slate-800 dark:hover:bg-primary-600/80'
+                          )}
+                          onclick={() => {
+                            selected_Sa_at = note as note_types;
+                            Sa_at_popup_status = false;
+                          }}>{note}</button
+                        >
+                      {/each}
+                    </div>
+                  {/snippet}
+                </Popover>
               </div>
-            {/snippet}
-            {#snippet content()}
-              <div class="grid grid-cols-4 gap-x-2 gap-y-1 sm:grid-cols-6 sm:gap-x-2">
-                {#each NOTES as _, i}
-                  {@const note = NOTES[(i + 9) % NOTES.length]}
-                  <button
-                    class={cl_join(
-                      'gap-0 rounded-md px-1 py-1 text-sm font-semibold text-white sm:text-base',
-                      selected_Sa_at === note
-                        ? 'bg-primary-500 dark:bg-primary-600'
-                        : 'bg-slate-400 hover:bg-primary-500/80 dark:bg-slate-800 dark:hover:bg-primary-600/80'
-                    )}
-                    onclick={() => {
-                      selected_Sa_at = note as note_types;
-                      Sa_at_popup_status = false;
-                    }}>{note}</button
-                  >
-                {/each}
-              </div>
-            {/snippet}
-          </Popover>
-        </div>
-        <PitchDisplay
-          {audio_info}
-          bind:Sa_at={selected_Sa_at}
-          sargam_orientation={selected_sargam_orientation}
-          note_orientation={selected_note_orientation}
-        />
-        <!-- <PitchDisplay
-            audio_info={{
-              clarity: 100,
-              note: 'D',
-              scale: 0,
-              detune: 0,
-              pitch: 2
-            }}
-            bind:Sa_at={selected_Sa_at}
-            sargam_orientation={selected_sargam_orientation}
-            note_orientation={selected_note_orientation}
-          /> -->
-      </div>
-      <div class="text-3xl">{pitch} Hz</div>
-      <div class="space-y-0">
-        <div class="-mb-1 text-center text-sm font-semibold">Clarity</div>
-        <progress class="progress w-56" value={clarity} max="100"></progress>
-      </div>
-      <Popover
-        contentBase="card z-50 space-y-2 p-2 rounded-lg shadow-xl dark:bg-surface-900 bg-slate-100"
-        open={orientation_popup_status}
-        onOpenChange={(e) => (orientation_popup_status = e.open)}
-      >
-        {#snippet trigger()}
-          <div class="text-center font-bold outline-hidden">
-            Orientation
-            {#if !orientation_popup_status}
-              <Icon src={BsChevronDown} class="text-lg" />
-            {:else}
-              <Icon src={BsChevronUp} class="text-lg" />
-            {/if}
-          </div>
-        {/snippet}
-        {#snippet content()}
-          <div class="space-x-1">
-            <span class="text-sm font-semibold">Sargam</span>
-            <label>
-              <input type="radio" bind:group={selected_sargam_orientation} value="vertical" />
-              <span class="text-sm">Vertical</span>
-            </label>
-            <label>
-              <input type="radio" bind:group={selected_sargam_orientation} value="radial" />
-              <span class="text-sm">Radial</span>
-            </label>
-          </div>
-          <div class="space-x-1">
-            <span class="text-sm font-semibold">Note</span>
-            <label>
-              <input type="radio" bind:group={selected_note_orientation} value="vertical" />
-              <span class="text-sm">Vertical</span>
-            </label>
-            <label>
-              <input type="radio" bind:group={selected_note_orientation} value="radial" />
-              <span class="text-sm">Radial</span>
-            </label>
-          </div>
-        {/snippet}
-      </Popover>
+              <PitchDisplay
+                audio_info={audio_info!}
+                bind:Sa_at={selected_Sa_at}
+                sargam_orientation={selected_sargam_orientation}
+                note_orientation={selected_note_orientation}
+              />
+              <!-- <PitchDisplay
+                  audio_info={{
+                    clarity: 100,
+                    note: 'D',
+                    scale: 0,
+                    detune: 0,
+                    pitch: 2
+                  }}
+                  bind:Sa_at={selected_Sa_at}
+                  sargam_orientation={selected_sargam_orientation}
+                  note_orientation={selected_note_orientation}
+                /> -->
+            </div>
+            <div class="text-3xl">{pitch} Hz</div>
+            <div class="space-y-0">
+              <div class="-mb-1 text-center text-sm font-semibold">Clarity</div>
+              <progress class="progress w-56" value={clarity} max="100"></progress>
+            </div>
+            <Popover
+              contentBase="card z-50 space-y-2 p-2 rounded-lg shadow-xl dark:bg-surface-900 bg-slate-100"
+              open={orientation_popup_status}
+              onOpenChange={(e) => (orientation_popup_status = e.open)}
+            >
+              {#snippet trigger()}
+                <div class="text-center font-bold outline-hidden">
+                  Orientation
+                  {#if !orientation_popup_status}
+                    <Icon src={BsChevronDown} class="text-lg" />
+                  {:else}
+                    <Icon src={BsChevronUp} class="text-lg" />
+                  {/if}
+                </div>
+              {/snippet}
+              {#snippet content()}
+                <div class="space-x-1">
+                  <span class="text-sm font-semibold">Sargam</span>
+                  <label>
+                    <input type="radio" bind:group={selected_sargam_orientation} value="vertical" />
+                    <span class="text-sm">Vertical</span>
+                  </label>
+                  <label>
+                    <input type="radio" bind:group={selected_sargam_orientation} value="radial" />
+                    <span class="text-sm">Radial</span>
+                  </label>
+                </div>
+                <div class="space-x-1">
+                  <span class="text-sm font-semibold">Note</span>
+                  <label>
+                    <input type="radio" bind:group={selected_note_orientation} value="vertical" />
+                    <span class="text-sm">Vertical</span>
+                  </label>
+                  <label>
+                    <input type="radio" bind:group={selected_note_orientation} value="radial" />
+                    <span class="text-sm">Radial</span>
+                  </label>
+                </div>
+              {/snippet}
+            </Popover>
 
-      <!-- Stop button -->
-      <div class="mt-4 flex items-center justify-center sm:mt-5">
-        <button
-          class="btn gap-1 rounded-lg bg-error-600 px-2 py-1 text-xl font-bold text-white dark:bg-error-500"
-          onclick={Stop}
-        >
-          <Icon src={BiStopCircle} class="text-2xl" />
-          Stop
-        </button>
-      </div>
-    </div>
-  {/if}
-</div>
+            <!-- Stop button -->
+            <div class="mt-4 flex items-center justify-center sm:mt-5">
+              <button
+                class="btn gap-1 rounded-lg bg-error-600 px-2 py-1 text-xl font-bold text-white dark:bg-error-500"
+                onclick={Stop}
+              >
+                <Icon src={BiStopCircle} class="text-2xl" />
+                Stop
+              </button>
+            </div>
+          </div>
+        </div>
+      </Tabs.Panel>
+      <Tabs.Panel value="time_graph">Time Graph</Tabs.Panel>
+    {/snippet}
+  </Tabs>
+{/if}
 <label class="mt-3 flex space-x-1">
   <Icon src={BsMic} class="text-2xl sm:text-3xl" />
   {#if !device_list_loaded}
