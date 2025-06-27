@@ -94,22 +94,17 @@
     return 440 * Math.pow(2, (note - 69) / 12);
   };
 
-  // Convert frequency to y-position for graph (normalized to fit within G# range)
+  // Convert frequency to y-position for graph based on semitone offset within one octave
   const frequencyToYPosition = (frequency: number) => {
-    // Get the frequency of A0 and G#8 to establish our range
-    const A0_freq = 27.5; // A0 frequency
-    const GSharp8_freq = 6644.88; // G#8 frequency
-
-    // Clamp frequency to our range
-    const clampedFreq = Math.max(A0_freq, Math.min(GSharp8_freq, frequency));
-
-    // Convert to logarithmic scale (since musical notes are logarithmic)
-    const logMin = Math.log(A0_freq);
-    const logMax = Math.log(GSharp8_freq);
-    const logFreq = Math.log(clampedFreq);
-
-    // Normalize to 0-100 range (inverted so high frequencies are at top)
-    return 100 - ((logFreq - logMin) / (logMax - logMin)) * 100;
+    const A0_freq = 27.5;
+    // Compute continuous semitone offset from A0
+    const semitoneOffset = 12 * (Math.log(frequency / A0_freq) / Math.log(2));
+    // Fractional semitone within one octave
+    const semitoneInOctave = ((semitoneOffset % 12) + 12) % 12;
+    // Normalize so semitone 0 (A) maps just above axis, and semitone 11 (G#) maps to top
+    const normalized = ((semitoneInOctave + 1) / 12) * 100;
+    // Clamp to [0,100]
+    return Math.min(Math.max(normalized, 0), 100);
   };
 
   const Stop = () => {
@@ -529,7 +524,7 @@
                     y={lastY - 10}
                     class="fill-gray-800 text-sm font-medium dark:fill-gray-200"
                   >
-                    {lastPoint.pitch.toFixed(1)} Hz ({lastPoint.note})
+                    {lastPoint.pitch.toFixed(1)} Hz ({lastPoint.note}{audio_info?.scale})
                   </text>
                 {/if}
 
