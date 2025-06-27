@@ -41,7 +41,24 @@
   let orientation_popup_status = $state(false);
   let Sa_at_popup_status = $state(false);
 
+  const AUDIO_INFO_UPDATE_INTERVAL = 100;
+  const GRAPH_TOTAL_TIME_MS = 8000;
+
   const FFT_SIZE = Math.pow(2, 12); // 4096
+
+  // Pitch history for time graph
+  const MAX_PITCH_HISTORY_POINTS = Math.floor(GRAPH_TOTAL_TIME_MS / AUDIO_INFO_UPDATE_INTERVAL); // 25 points
+  let pitch_history = $state<
+    Array<{
+      time: number;
+      pitch: number;
+      note: string;
+      clarity: number;
+    }>
+  >([]);
+
+  // Note order with A at top (instead of C)
+  const NOTE_ORDER_A_FIRST = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'];
 
   const get_audio_devices = async (show_loading = true) => {
     if (show_loading) device_list_loaded = false;
@@ -77,6 +94,24 @@
     return 440 * Math.pow(2, (note - 69) / 12);
   };
 
+  // Convert frequency to y-position for graph (normalized to fit within G# range)
+  const frequencyToYPosition = (frequency: number) => {
+    // Get the frequency of A0 and G#8 to establish our range
+    const A0_freq = 27.5; // A0 frequency
+    const GSharp8_freq = 6644.88; // G#8 frequency
+
+    // Clamp frequency to our range
+    const clampedFreq = Math.max(A0_freq, Math.min(GSharp8_freq, frequency));
+
+    // Convert to logarithmic scale (since musical notes are logarithmic)
+    const logMin = Math.log(A0_freq);
+    const logMax = Math.log(GSharp8_freq);
+    const logFreq = Math.log(clampedFreq);
+
+    // Normalize to 0-100 range (inverted so high frequencies are at top)
+    return 100 - ((logFreq - logMin) / (logMax - logMin)) * 100;
+  };
+
   const Stop = () => {
     started = false;
     //clear interval
@@ -95,6 +130,7 @@
     audio_context = null;
     analyzer_node = null;
     mic_stream = null;
+    pitch_history = []; // Clear pitch history
   };
 
   onMount(() => {
@@ -167,6 +203,7 @@
       const input = new Float32Array(detector.inputLength);
 
       clearInterval(update_interval!);
+      pitch_history = []; // Reset pitch history when starting
 
       // update every 100ms
       update_interval = setInterval(() => {
@@ -176,14 +213,30 @@
         const rawNote = getNoteNumberFromPitch(pitch);
         const noteName = NOTES[rawNote % 12];
         // console.log(pitch);
-        audio_info = {
+        const currentAudioInfo = {
           pitch: Math.round(pitch * 10) / 10,
           clarity: Math.round(clarity * 100),
           note: noteName,
           scale: Math.floor(rawNote / 12) - 1,
           detune: Math.floor((1200 * Math.log(pitch / getNoteFrequency(rawNote))) / Math.log(2))
         };
-      }, 100);
+
+        audio_info = currentAudioInfo;
+
+        // Add to pitch history for time graph
+        const currentTime = Date.now();
+        pitch_history.push({
+          time: currentTime,
+          pitch: currentAudioInfo.pitch,
+          note: currentAudioInfo.note,
+          clarity: currentAudioInfo.clarity
+        });
+
+        // Keep only the last MAX_PITCH_HISTORY_POINTS entries
+        if (pitch_history.length > MAX_PITCH_HISTORY_POINTS) {
+          pitch_history = pitch_history.slice(-MAX_PITCH_HISTORY_POINTS);
+        }
+      }, AUDIO_INFO_UPDATE_INTERVAL);
       started = true;
     } catch (error) {
       console.log('error in Start-->', error);
@@ -197,6 +250,17 @@
       Start(); // Restart with new device if already running
     }
   };
+
+  // Prepare data for LayerChart time graph
+  const graphData = $derived(
+    pitch_history.map((point, index) => ({
+      x: index * AUDIO_INFO_UPDATE_INTERVAL, // Time in milliseconds from start
+      y: frequencyToYPosition(point.pitch), // Y position (0-100)
+      pitch: point.pitch,
+      note: point.note,
+      clarity: point.clarity
+    }))
+  );
 </script>
 
 {#if !started}
@@ -261,7 +325,7 @@
     {/snippet}
     {#snippet content()}
       <Tabs.Panel value="circular_scale">
-        <div class="mb-4 select-none">
+        <div class="select-none">
           <div class="flex flex-col items-center justify-center space-y-2 sm:space-y-3">
             <div class="mt-2 outline-hidden select-none sm:mt-4">
               <div class="flex items-start justify-center space-x-4">
@@ -368,21 +432,142 @@
             </Popover>
 
             <!-- Stop button -->
-            <div class="mt-4 flex items-center justify-center sm:mt-5">
-              <button
-                class="btn gap-1 rounded-lg bg-error-600 px-2 py-1 text-xl font-bold text-white dark:bg-error-500"
-                onclick={Stop}
-              >
-                <Icon src={BiStopCircle} class="text-2xl" />
-                Stop
-              </button>
-            </div>
           </div>
         </div>
       </Tabs.Panel>
-      <Tabs.Panel value="time_graph">Time Graph</Tabs.Panel>
+      <Tabs.Panel value="time_graph">
+        <div class="mt-4 h-96 w-full">
+          {#if graphData.length > 1}
+            <div class="">
+              <!-- <h3 class="mb-4 text-lg font-semibold">Pitch Over Time</h3> -->
+              <svg class="h-80 w-full" viewBox="0 0 800 300">
+                <!-- Background -->
+                <rect width="800" height="300" fill="transparent" />
+
+                <!-- Grid lines for notes -->
+                {#each Array.from({ length: 13 }, (_, i) => i) as noteIndex}
+                  {@const y = (noteIndex / 12) * 240 + 30}
+                  <line
+                    x1="60"
+                    y1={y}
+                    x2="780"
+                    y2={y}
+                    stroke="#e5e7eb"
+                    stroke-width="1"
+                    opacity="0.5"
+                  />
+                  <text
+                    x="50"
+                    y={y + 4}
+                    text-anchor="end"
+                    class="fill-gray-600 text-xs dark:fill-gray-400"
+                  >
+                    {NOTE_ORDER_A_FIRST[12 - noteIndex - 1] || ''}
+                  </text>
+                {/each}
+
+                <!-- Time grid lines -->
+                {#each Array.from({ length: 6 }, (_, i) => i) as timeIndex}
+                  {@const x = (timeIndex / 5) * 720 + 60}
+                  <line
+                    x1={x}
+                    y1="30"
+                    x2={x}
+                    y2="270"
+                    stroke="#e5e7eb"
+                    stroke-width="1"
+                    opacity="0.3"
+                  />
+                  <!-- <text
+                    {x}
+                    y="290"
+                    text-anchor="middle"
+                    class="fill-gray-600 text-xs dark:fill-gray-400"
+                  >
+                    {(timeIndex * 0.5).toFixed(1)}s
+                  </text> -->
+                {/each}
+
+                <!-- Data line -->
+                {#if graphData.length > 1}
+                  {@const pathData = graphData
+                    .map((point, index) => {
+                      const x = (index / (MAX_PITCH_HISTORY_POINTS - 1)) * 720 + 60;
+                      const y = 270 - (point.y / 100) * 240;
+                      return index === 0 ? `M ${x} ${y}` : `L ${x} ${y}`;
+                    })
+                    .join(' ')}
+                  <path d={pathData} stroke="#3b82f6" stroke-width="2" fill="none" />
+
+                  <!-- Data points -->
+                  {#each graphData as point, index}
+                    {@const x = (index / (MAX_PITCH_HISTORY_POINTS - 1)) * 720 + 60}
+                    {@const y = 270 - (point.y / 100) * 240}
+                    <circle cx={x} cy={y} r="2" fill="#3b82f6" />
+                  {/each}
+
+                  <!-- Current frequency display -->
+                  {@const lastPoint = graphData[graphData.length - 1]}
+                  {@const lastX =
+                    ((graphData.length - 1) / (MAX_PITCH_HISTORY_POINTS - 1)) * 720 + 60}
+                  {@const lastY = 270 - (lastPoint.y / 100) * 240}
+                  <circle cx={lastX} cy={lastY} r="4" fill="#ef4444" />
+                  <text
+                    x={lastX + 10}
+                    y={lastY - 10}
+                    class="fill-gray-800 text-sm font-medium dark:fill-gray-200"
+                  >
+                    {lastPoint.pitch.toFixed(1)} Hz ({lastPoint.note})
+                  </text>
+                {/if}
+
+                <!-- Axes -->
+                <line x1="60" y1="30" x2="60" y2="270" stroke="#374151" stroke-width="2" />
+                <line x1="60" y1="270" x2="780" y2="270" stroke="#374151" stroke-width="2" />
+
+                <!-- Y-axis label -->
+                <text
+                  x="20"
+                  y="150"
+                  text-anchor="middle"
+                  transform="rotate(-90 20 150)"
+                  class="fill-gray-700 text-sm font-medium dark:fill-gray-300"
+                >
+                  Musical Notes
+                </text>
+
+                <!-- X-axis label -->
+                <!-- <text
+                  x="420"
+                  y="320"
+                  text-anchor="middle"
+                  class="fill-gray-700 text-sm font-medium dark:fill-gray-300"
+                >
+                  Time (seconds)
+                </text> -->
+              </svg>
+            </div>
+            <!-- {:else}
+            <div class="flex h-full items-center justify-center text-gray-500">
+              <div class="text-center">
+                <p class="text-lg font-medium">No data yet</p>
+                <p class="text-sm">Start recording to see the pitch graph</p>
+              </div>
+            </div> -->
+          {/if}
+        </div>
+      </Tabs.Panel>
     {/snippet}
   </Tabs>
+  <div class="mt-4 mb-4 flex items-center justify-center sm:mt-5">
+    <button
+      class="btn gap-1 rounded-lg bg-error-600 px-2 py-1 text-xl font-bold text-white dark:bg-error-500"
+      onclick={Stop}
+    >
+      <Icon src={BiStopCircle} class="text-2xl" />
+      Stop
+    </button>
+  </div>
 {/if}
 <label class="mt-3 flex space-x-1">
   <Icon src={BsMic} class="text-2xl sm:text-3xl" />
