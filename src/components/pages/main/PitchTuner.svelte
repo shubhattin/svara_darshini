@@ -212,8 +212,8 @@
         class="mx-auto max-w-2xl text-lg leading-relaxed text-gray-600 md:text-xl dark:text-gray-300"
       >
         An intuitive tool to understand the principles of music that are common across the world.
-        Discover the beauty of musical notes and their relationships through our interactive pitch
-        tuner.
+        Discover the beauty of musical notes and their relationships through our interactive Pitch
+        visualizer.
       </p>
       <p class="mx-auto max-w-xl text-base text-gray-500 dark:text-gray-400">
         Click the button below to start analyzing your voice or instrument. The circular display
