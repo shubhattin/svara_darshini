@@ -443,6 +443,13 @@
         </div>
       </Tabs.Panel>
       <Tabs.Panel value="time_graph">
+        <div class="flex items-center justify-center">
+          <div
+            class="dow-md mr-4 rounded-lg bg-gradient-to-r from-amber-600 via-orange-700 to-red-600 px-3 py-1 text-base font-bold text-white select-none"
+          >
+            Alpha
+          </div>
+        </div>
         <div class="mt-4 h-96 w-full">
           {#if graphData.length > 1}
             <div class="">
