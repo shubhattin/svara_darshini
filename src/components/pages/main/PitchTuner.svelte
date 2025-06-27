@@ -14,17 +14,20 @@
   import { indactivity_timeout } from './inactivity';
   import ms from 'ms';
   import { Microphone } from '@mozartec/capacitor-microphone';
+  import { Tabs } from '@skeletonlabs/skeleton-svelte';
 
   let {
     selected_device = $bindable(),
     selected_Sa_at = $bindable(),
     selected_sargam_orientation = $bindable(),
-    selected_note_orientation = $bindable()
+    selected_note_orientation = $bindable(),
+    selected_pitch_display_type = $bindable()
   }: {
     selected_device: string;
     selected_Sa_at: note_types;
     selected_sargam_orientation: 'radial' | 'vertical';
     selected_note_orientation: 'radial' | 'vertical';
+    selected_pitch_display_type: 'circular_scale' | 'time_graph';
   } = $props();
 
   let audio_devices = $state<MediaDeviceInfo[]>([]);
@@ -243,6 +246,7 @@
     </button>
   </div>
 {/if}
+
 <div class="mb-4 select-none">
   {#if audio_info && started}
     {@const { clarity, pitch } = audio_info}
