@@ -22,7 +22,7 @@
 
 <MetaTags
   title="Svara Darshini"
-  description="Svara Darshini(Interactive Music Pitch Tuner & Note Analyzer) is an intuitive tool to understand Principles of Music that are common across the world. Analyze pitch, tune instruments, and explore musical relationships with our interactive circular display."
+  description="Svara Darshini(Interactive Music Pitch Tuner & Note Analyzer) is an intuitive tool to understand Principles of Music that are common across the world."
 />
 
 <!-- <div class="mb-6 space-y-4 text-center">
