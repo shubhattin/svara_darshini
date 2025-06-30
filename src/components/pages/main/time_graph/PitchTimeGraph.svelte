@@ -57,7 +57,20 @@
       .filter((point): point is NonNullable<typeof point> => point !== null)
   );
 
-  const Y_AXIS_LABEL_TITLE_POS = { y: 150, x: 20 };
+  const Y_AXIS_LABEL_TITLE_POS = { y: 150, x: 20 } as const;
+  const SVG_BACKGROUND = {
+    width: 800,
+    height: 300
+  } as const;
+
+  const GRAPH_INFO = {
+    width: 720,
+    height: 240
+  } as const; // without padding
+  const GRAPH_PADDING = {
+    top: 30,
+    left: 60
+  } as const;
 </script>
 
 <div class="flex items-center justify-center">
@@ -71,31 +84,57 @@
   {#if graphData.length > 1}
     <div class="">
       <!-- <h3 class="mb-4 text-lg font-semibold">Pitch Over Time</h3> -->
-      <svg class="h-80 w-full" viewBox="0 0 800 300">
+      <svg
+        class="h-80 w-full select-none"
+        viewBox={`0 0 ${SVG_BACKGROUND.width} ${SVG_BACKGROUND.height}`}
+      >
         <!-- Background -->
-        <rect width="800" height="300" fill="transparent" />
+        <rect width={SVG_BACKGROUND.width} height={SVG_BACKGROUND.height} fill="transparent" />
 
         <!-- Grid lines for notes -->
         {#each Array.from({ length: 13 }, (_, i) => i) as noteIndex}
-          {@const y = (noteIndex / 12) * 240 + 30}
-          <line x1="60" y1={y} x2="780" y2={y} stroke="#e5e7eb" stroke-width="1" opacity="0.5" />
-          <text x="50" y={y + 4} text-anchor="end" class="fill-gray-600 text-xs dark:fill-gray-400">
+          {@const y = (noteIndex / 12) * GRAPH_INFO.height + GRAPH_PADDING.top}
+          <line
+            x1={GRAPH_PADDING.left}
+            y1={y}
+            x2={GRAPH_PADDING.left + GRAPH_INFO.width}
+            y2={y}
+            stroke="#e5e7eb"
+            stroke-width="1"
+            opacity="0.5"
+          />
+          <text
+            x={GRAPH_PADDING.left - 10}
+            y={y + 4}
+            text-anchor="end"
+            class="fill-gray-600 text-xs dark:fill-gray-400"
+          >
             {NOTES_STARTING_WITH_A[12 - noteIndex - 1] || ''}
           </text>
         {/each}
 
         <!-- Time grid lines -->
         {#each Array.from({ length: 6 }, (_, i) => i) as timeIndex}
-          {@const x = (timeIndex / 5) * 720 + 60}
-          <line x1={x} y1="30" x2={x} y2="270" stroke="#e5e7eb" stroke-width="1" opacity="0.3" />
+          {@const x = (timeIndex / 5) * GRAPH_INFO.width + GRAPH_PADDING.left}
+          <line
+            x1={x}
+            y1={GRAPH_PADDING.top}
+            x2={x}
+            y2={GRAPH_INFO.height + GRAPH_PADDING.top}
+            stroke="#e5e7eb"
+            stroke-width="1"
+            opacity="0.3"
+          />
         {/each}
 
         <!-- Data line -->
         {#if graphData.length > 1}
           {@const pathData = graphData
             .map((point, index) => {
-              const x = (point.originalIndex / (MAX_PITCH_HISTORY_POINTS - 1)) * 720 + 60;
-              const y = 270 - (point.y / 100) * 240;
+              const x =
+                (point.originalIndex / (MAX_PITCH_HISTORY_POINTS - 1)) * GRAPH_INFO.width +
+                GRAPH_PADDING.left;
+              const y = GRAPH_INFO.height + GRAPH_PADDING.top - (point.y / 100) * GRAPH_INFO.height; // inversion
               return index === 0 ? `M ${x} ${y}` : `L ${x} ${y}`;
             })
             .join(' ')}
@@ -103,8 +142,11 @@
 
           <!-- Current frequency display -->
           {@const lastPoint = graphData[graphData.length - 1]}
-          {@const lastX = (lastPoint.originalIndex / (MAX_PITCH_HISTORY_POINTS - 1)) * 720 + 60}
-          {@const lastY = 270 - (lastPoint.y / 100) * 240}
+          {@const lastX =
+            (lastPoint.originalIndex / (MAX_PITCH_HISTORY_POINTS - 1)) * GRAPH_INFO.width +
+            GRAPH_PADDING.left}
+          {@const lastY =
+            GRAPH_INFO.height + GRAPH_PADDING.top - (lastPoint.y / 100) * GRAPH_INFO.height}
           <circle cx={lastX} cy={lastY} r="4" fill="#ef4444" />
           <text
             x={lastX + 10}
@@ -116,8 +158,22 @@
         {/if}
 
         <!-- Axes -->
-        <line x1="60" y1="30" x2="60" y2="270" stroke="#374151" stroke-width="2" />
-        <line x1="60" y1="270" x2="780" y2="270" stroke="#374151" stroke-width="2" />
+        <line
+          x1={GRAPH_PADDING.left}
+          y1={GRAPH_PADDING.top}
+          x2={GRAPH_PADDING.left}
+          y2={GRAPH_INFO.height + GRAPH_PADDING.top}
+          stroke="#374151"
+          stroke-width="2"
+        />
+        <line
+          x1={GRAPH_PADDING.left}
+          y1={GRAPH_INFO.height + GRAPH_PADDING.top}
+          x2={GRAPH_INFO.width + GRAPH_PADDING.left}
+          y2={GRAPH_INFO.height + GRAPH_PADDING.top}
+          stroke="#374151"
+          stroke-width="1"
+        />
 
         <!-- Y-axis label -->
         <text

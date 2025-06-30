@@ -127,7 +127,7 @@ detune_cents = floor(1200 × log₂(actual_pitch / expected_note_frequency))
 **Mathematical Background**:
 
 - **1 octave** = 1200 cents
-- **1 semitone** = 100 cents  
+- **1 semitone** = 100 cents
 - **Perfect tuning** = 0 cents deviation
 - **Sharp** = positive cents (+50 cents = quarter-tone sharp)
 - **Flat** = negative cents (-50 cents = quarter-tone flat)
@@ -196,3 +196,53 @@ Both functions implement the **12-tone equal temperament** system where:
 - Human pitch perception is logarithmic, not linear
 - Equal frequency ratios sound like equal musical intervals
 - This is why we use logarithms in the conversion formulas
+
+## [`PitchTimeGraph.svelte`](./time_graph/PitchTimeGraph.svelte)
+
+### `frequencyToYPosition`
+
+**Purpose**: Converts a frequency (Hz) to a Y-axis position (0-100%) for pitch visualization on a graph, mapping frequencies to positions within one octave range.
+
+**Function Signature**:
+
+```typescript
+const frequencyToYPosition = (frequency: number) => number | null;
+```
+
+**Mathematical Formula**:
+
+```
+semitoneOffset = 12 × log₂(frequency / A0_frequency)
+semitoneInOctave = ((semitoneOffset % 12) + 12) % 12
+normalized = ((semitoneInOctave + 1) / 12) × 100
+position = clamp(normalized, 0, 100)
+```
+
+**Step-by-Step Breakdown**:
+
+1. **Reference Point**: Uses A0 = 27.5 Hz as the base frequency
+2. **Semitone Calculation**: `12 × log₂(frequency / 27.5)`
+   - Calculates how many semitones the input frequency is above A0
+   - Uses the same logarithmic relationship as equal temperament tuning
+3. **Octave Mapping**: `((semitoneOffset % 12) + 12) % 12`
+   - Maps the semitone offset to a position within one octave (0-11)
+   - The double modulo handles negative values correctly
+4. **Normalization**: `((semitoneInOctave + 1) / 12) × 100`
+   - Converts 0-11 semitone range to 0-100% display range
+   - The `+1` offset ensures A (semitone 0) maps slightly above the bottom axis
+5. **Clamping**: Ensures result stays within 0-100% bounds
+
+**Key Design Decisions**:
+
+- **A0 Reference**: Uses A0 (27.5 Hz) instead of A4 (440 Hz) to provide a lower reference point
+- **Octave Compression**: All frequencies map to the same relative position within their octave
+  - A4 (440 Hz), A5 (880 Hz), A6 (1760 Hz) all map to the same Y position
+  - This creates a "piano roll" style visualization focused on note names rather than absolute pitch
+- **+1 Offset**: Prevents notes from mapping exactly to the bottom edge (y=0), improving visual clarity
+
+**Use Case**:
+This function enables the pitch-time graph to display all frequencies in a consistent visual format, where:
+
+- Different octaves of the same note appear at the same height
+- The full chromatic scale is visible within a single octave range
+- Visual spacing matches musical intervals (equal temperament)
