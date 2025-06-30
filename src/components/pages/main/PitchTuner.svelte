@@ -46,7 +46,7 @@
   let update_interval: NodeJS.Timeout | null = null;
   let mic_stream: MediaStream | null = null;
 
-  const AUDIO_INFO_UPDATE_INTERVAL = 50;
+  const AUDIO_INFO_UPDATE_INTERVAL = 80;
   const GRAPH_TOTAL_TIME_MS = 8000;
 
   const FFT_SIZE = Math.pow(2, 12); // 4096

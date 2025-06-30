@@ -71,6 +71,67 @@ note_number = 12 × log₂(frequency / 440) + 69
 frequency = 440 × 2^((note - 69) / 12)
 ```
 
+#### `getScaleFromNoteNumber`
+
+**Purpose**: Converts MIDI note number to octave/scale number.
+
+**Mathematical Formula**:
+
+```
+scale = floor(noteNumber / 12) - 1
+```
+
+**Derivation**:
+
+- **12 semitones per octave**: Each octave contains exactly 12 semitones
+- **Division by 12**: `noteNumber / 12` gives the raw octave position
+- **Floor function**: Removes fractional part to get whole octave number
+- **Subtract 1**: Adjusts for MIDI convention where C4 (Middle C) = note 60
+
+**Examples**:
+
+- Note 60 (C4): `floor(60/12) - 1 = 5 - 1 = 4` → Octave 4 ✓
+- Note 69 (A4): `floor(69/12) - 1 = 5 - 1 = 4` → Octave 4 ✓
+
+**MIDI Octave Mapping**:
+
+```
+Notes 0-11   → Octave -1
+Notes 12-23  → Octave 0
+Notes 24-35  → Octave 1
+Notes 36-47  → Octave 2
+Notes 48-59  → Octave 3
+Notes 60-71  → Octave 4 (Middle C range)
+Notes 72-83  → Octave 5
+...
+```
+
+#### `getDetuneFromPitch`
+
+**Purpose**: Calculates how many cents a frequency is detuned from its expected MIDI note frequency.
+
+**Mathematical Formula**:
+
+```
+detune_cents = floor(1200 × log₂(actual_pitch / expected_note_frequency))
+```
+
+**Derivation**:
+
+- **Cent Definition**: 1 cent = 1/100 of a semitone = 1/1200 of an octave
+- **Frequency Ratio**: `actual_pitch / expected_note_frequency` gives the frequency ratio
+- **Logarithmic Conversion**: `log₂(ratio)` converts ratio to octaves
+- **Cents Conversion**: Multiply by 1200 to convert octaves to cents
+- **Floor Function**: Rounds down to nearest integer cent
+
+**Mathematical Background**:
+
+- **1 octave** = 1200 cents
+- **1 semitone** = 100 cents  
+- **Perfect tuning** = 0 cents deviation
+- **Sharp** = positive cents (+50 cents = quarter-tone sharp)
+- **Flat** = negative cents (-50 cents = quarter-tone flat)
+
 ### MIDI and the Significance of Note 69
 
 #### What is MIDI?
