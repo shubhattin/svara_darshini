@@ -23,6 +23,11 @@
 
   // Convert frequency to y-position for graph based on semitone offset within one octave
   const frequencyToYPosition = (frequency: number) => {
+    // Validate input: must be a positive finite number
+    if (!Number.isFinite(frequency) || frequency <= 0) {
+      return null; // Return null for invalid frequencies
+    }
+
     const A0_freq = 27.5;
     // Compute continuous semitone offset from A0
     const semitoneOffset = 12 * (Math.log(frequency / A0_freq) / Math.log(2));
@@ -34,16 +39,25 @@
     return Math.min(Math.max(normalized, 0), 100);
   };
 
-  // Prepare data for LayerChart time graph
   const graphData = $derived(
-    pitch_history.map((point, index) => ({
-      x: index * AUDIO_INFO_UPDATE_INTERVAL, // Time in milliseconds from start
-      y: frequencyToYPosition(point.pitch), // Y position (0-100)
-      pitch: point.pitch,
-      note: point.note,
-      clarity: point.clarity
-    }))
+    pitch_history
+      .map((point, index) => {
+        const yPos = frequencyToYPosition(point.pitch);
+        return yPos !== null
+          ? {
+              x: index * AUDIO_INFO_UPDATE_INTERVAL, // Time in milliseconds from start
+              y: yPos,
+              pitch: point.pitch,
+              note: point.note,
+              clarity: point.clarity,
+              originalIndex: index
+            }
+          : null;
+      })
+      .filter((point): point is NonNullable<typeof point> => point !== null)
   );
+
+  const Y_AXIS_LABEL_TITLE_POS = { y: 150, x: 20 };
 </script>
 
 <div class="flex items-center justify-center">
@@ -74,37 +88,22 @@
         {#each Array.from({ length: 6 }, (_, i) => i) as timeIndex}
           {@const x = (timeIndex / 5) * 720 + 60}
           <line x1={x} y1="30" x2={x} y2="270" stroke="#e5e7eb" stroke-width="1" opacity="0.3" />
-          <!-- <text
-              {x}
-              y="290"
-              text-anchor="middle"
-              class="fill-gray-600 text-xs dark:fill-gray-400"
-            >
-              {(timeIndex * 0.5).toFixed(1)}s
-            </text> -->
         {/each}
 
         <!-- Data line -->
         {#if graphData.length > 1}
           {@const pathData = graphData
             .map((point, index) => {
-              const x = (index / (MAX_PITCH_HISTORY_POINTS - 1)) * 720 + 60;
+              const x = (point.originalIndex / (MAX_PITCH_HISTORY_POINTS - 1)) * 720 + 60;
               const y = 270 - (point.y / 100) * 240;
               return index === 0 ? `M ${x} ${y}` : `L ${x} ${y}`;
             })
             .join(' ')}
           <path d={pathData} stroke="#3b82f6" stroke-width="2" fill="none" />
 
-          <!-- Data points -->
-          {#each graphData as point, index}
-            {@const x = (index / (MAX_PITCH_HISTORY_POINTS - 1)) * 720 + 60}
-            {@const y = 270 - (point.y / 100) * 240}
-            <circle cx={x} cy={y} r="2" fill="#3b82f6" />
-          {/each}
-
           <!-- Current frequency display -->
           {@const lastPoint = graphData[graphData.length - 1]}
-          {@const lastX = ((graphData.length - 1) / (MAX_PITCH_HISTORY_POINTS - 1)) * 720 + 60}
+          {@const lastX = (lastPoint.originalIndex / (MAX_PITCH_HISTORY_POINTS - 1)) * 720 + 60}
           {@const lastY = 270 - (lastPoint.y / 100) * 240}
           <circle cx={lastX} cy={lastY} r="4" fill="#ef4444" />
           <text
@@ -122,33 +121,16 @@
 
         <!-- Y-axis label -->
         <text
-          x="20"
-          y="150"
+          x={Y_AXIS_LABEL_TITLE_POS.x}
+          y={Y_AXIS_LABEL_TITLE_POS.y}
           text-anchor="middle"
-          transform="rotate(-90 20 150)"
+          transform="rotate(-90 {Y_AXIS_LABEL_TITLE_POS.x} {Y_AXIS_LABEL_TITLE_POS.y})"
           class="fill-gray-700 text-sm font-medium dark:fill-gray-300"
         >
-          Musical Notes
+          Notes
         </text>
-
-        <!-- X-axis label -->
-        <!-- <text
-            x="420"
-            y="320"
-            text-anchor="middle"
-            class="fill-gray-700 text-sm font-medium dark:fill-gray-300"
-          >
-            Time (seconds)
-          </text> -->
       </svg>
     </div>
     {@render stop_button()}
-    <!-- {:else}
-      <div class="flex h-full items-center justify-center text-gray-500">
-        <div class="text-center">
-          <p class="text-lg font-medium">No data yet</p>
-          <p class="text-sm">Start recording to see the pitch graph</p>
-        </div>
-      </div> -->
   {/if}
 </div>

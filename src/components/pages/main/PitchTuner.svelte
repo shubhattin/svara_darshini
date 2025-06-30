@@ -121,7 +121,7 @@
     try {
       // Check current permission status
       const permissionStatus = await Microphone.checkPermissions();
-      console.log('Current microphone permission:', permissionStatus.microphone);
+      // console.log('Current microphone permission:', permissionStatus.microphone);
 
       if (permissionStatus.microphone === 'granted') {
         return true;
