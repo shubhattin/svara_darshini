@@ -129,16 +129,47 @@
 
         <!-- Data line -->
         {#if graphData.length > 1}
-          {@const pathData = graphData
-            .map((point, index) => {
+          {@const [normalSegments, faintSegments] = graphData.reduce<[string[], string[]]>(
+            ([norm, faint], point, index) => {
               const x =
                 (point.originalIndex / (MAX_PITCH_HISTORY_POINTS - 1)) * GRAPH_INFO.width +
                 GRAPH_PADDING.left;
-              const y = GRAPH_INFO.height + GRAPH_PADDING.top - (point.y / 100) * GRAPH_INFO.height; // inversion
-              return index === 0 ? `M ${x} ${y}` : `L ${x} ${y}`;
-            })
-            .join(' ')}
-          <path d={pathData} stroke="#3b82f6" stroke-width="2" fill="none" />
+              const y = GRAPH_INFO.height + GRAPH_PADDING.top - (point.y / 100) * GRAPH_INFO.height;
+
+              if (index === 0) {
+                norm.push(`M ${x} ${y}`);
+              } else {
+                const prev = graphData[index - 1];
+                const prevX =
+                  (prev.originalIndex / (MAX_PITCH_HISTORY_POINTS - 1)) * GRAPH_INFO.width +
+                  GRAPH_PADDING.left;
+                const prevY =
+                  GRAPH_INFO.height + GRAPH_PADDING.top - (prev.y / 100) * GRAPH_INFO.height;
+                const deltaPitch = point.pitch - prev.pitch;
+                const deltaY = y - prevY;
+                const isJump = (deltaPitch > 0 && deltaY > 0) || (deltaPitch < 0 && deltaY < 0);
+                if (isJump) {
+                  // break the normal line and add a faint jump segment
+                  norm.push(`M ${x} ${y}`);
+                  faint.push(`M ${prevX} ${prevY}`, `L ${x} ${y}`);
+                } else {
+                  norm.push(`L ${x} ${y}`);
+                }
+              }
+              return [norm, faint];
+            },
+            [[], []] as [string[], string[]]
+          )}
+          {#if faintSegments.length}
+            <path
+              d={faintSegments.join(' ')}
+              stroke="#3b82f6"
+              stroke-width="2"
+              fill="none"
+              opacity="0.3"
+            />
+          {/if}
+          <path d={normalSegments.join(' ')} stroke="#3b82f6" stroke-width="2" fill="none" />
 
           <!-- Current frequency display -->
           {@const lastPoint = graphData[graphData.length - 1]}
