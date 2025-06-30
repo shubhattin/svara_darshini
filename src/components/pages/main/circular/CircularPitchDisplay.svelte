@@ -1,6 +1,6 @@
 <script lang="ts">
   import { cl_join } from '~/tools/cl_join';
-  import { NOTES, SARGAM, type note_types } from './constants';
+  import { NOTES, SARGAM, type note_types } from '../constants';
 
   let {
     audio_info,

@@ -1,0 +1,154 @@
+<script lang="ts">
+  import type { Snippet } from 'svelte';
+  import { NOTES_STARTING_WITH_A } from '../constants';
+
+  let {
+    pitch_history,
+    stop_button,
+    MAX_PITCH_HISTORY_POINTS,
+    AUDIO_INFO_UPDATE_INTERVAL,
+    audio_info_scale
+  }: {
+    pitch_history: Array<{
+      time: number;
+      pitch: number;
+      note: string;
+      clarity: number;
+    }>;
+    stop_button: Snippet;
+    MAX_PITCH_HISTORY_POINTS: number;
+    AUDIO_INFO_UPDATE_INTERVAL: number;
+    audio_info_scale?: number;
+  } = $props();
+
+  // Convert frequency to y-position for graph based on semitone offset within one octave
+  const frequencyToYPosition = (frequency: number) => {
+    const A0_freq = 27.5;
+    // Compute continuous semitone offset from A0
+    const semitoneOffset = 12 * (Math.log(frequency / A0_freq) / Math.log(2));
+    // Fractional semitone within one octave
+    const semitoneInOctave = ((semitoneOffset % 12) + 12) % 12;
+    // Normalize so semitone 0 (A) maps just above axis, and semitone 11 (G#) maps to top
+    const normalized = ((semitoneInOctave + 1) / 12) * 100;
+    // Clamp to [0,100]
+    return Math.min(Math.max(normalized, 0), 100);
+  };
+
+  // Prepare data for LayerChart time graph
+  const graphData = $derived(
+    pitch_history.map((point, index) => ({
+      x: index * AUDIO_INFO_UPDATE_INTERVAL, // Time in milliseconds from start
+      y: frequencyToYPosition(point.pitch), // Y position (0-100)
+      pitch: point.pitch,
+      note: point.note,
+      clarity: point.clarity
+    }))
+  );
+</script>
+
+<div class="flex items-center justify-center">
+  <div
+    class=" mr-4 rounded-lg bg-gradient-to-r from-amber-600 via-orange-700 to-red-600 px-3 py-1 text-sm font-bold text-white select-none"
+  >
+    Alpha
+  </div>
+</div>
+<div class="mt-4 h-96 w-full">
+  {#if graphData.length > 1}
+    <div class="">
+      <!-- <h3 class="mb-4 text-lg font-semibold">Pitch Over Time</h3> -->
+      <svg class="h-80 w-full" viewBox="0 0 800 300">
+        <!-- Background -->
+        <rect width="800" height="300" fill="transparent" />
+
+        <!-- Grid lines for notes -->
+        {#each Array.from({ length: 13 }, (_, i) => i) as noteIndex}
+          {@const y = (noteIndex / 12) * 240 + 30}
+          <line x1="60" y1={y} x2="780" y2={y} stroke="#e5e7eb" stroke-width="1" opacity="0.5" />
+          <text x="50" y={y + 4} text-anchor="end" class="fill-gray-600 text-xs dark:fill-gray-400">
+            {NOTES_STARTING_WITH_A[12 - noteIndex - 1] || ''}
+          </text>
+        {/each}
+
+        <!-- Time grid lines -->
+        {#each Array.from({ length: 6 }, (_, i) => i) as timeIndex}
+          {@const x = (timeIndex / 5) * 720 + 60}
+          <line x1={x} y1="30" x2={x} y2="270" stroke="#e5e7eb" stroke-width="1" opacity="0.3" />
+          <!-- <text
+              {x}
+              y="290"
+              text-anchor="middle"
+              class="fill-gray-600 text-xs dark:fill-gray-400"
+            >
+              {(timeIndex * 0.5).toFixed(1)}s
+            </text> -->
+        {/each}
+
+        <!-- Data line -->
+        {#if graphData.length > 1}
+          {@const pathData = graphData
+            .map((point, index) => {
+              const x = (index / (MAX_PITCH_HISTORY_POINTS - 1)) * 720 + 60;
+              const y = 270 - (point.y / 100) * 240;
+              return index === 0 ? `M ${x} ${y}` : `L ${x} ${y}`;
+            })
+            .join(' ')}
+          <path d={pathData} stroke="#3b82f6" stroke-width="2" fill="none" />
+
+          <!-- Data points -->
+          {#each graphData as point, index}
+            {@const x = (index / (MAX_PITCH_HISTORY_POINTS - 1)) * 720 + 60}
+            {@const y = 270 - (point.y / 100) * 240}
+            <circle cx={x} cy={y} r="2" fill="#3b82f6" />
+          {/each}
+
+          <!-- Current frequency display -->
+          {@const lastPoint = graphData[graphData.length - 1]}
+          {@const lastX = ((graphData.length - 1) / (MAX_PITCH_HISTORY_POINTS - 1)) * 720 + 60}
+          {@const lastY = 270 - (lastPoint.y / 100) * 240}
+          <circle cx={lastX} cy={lastY} r="4" fill="#ef4444" />
+          <text
+            x={lastX + 10}
+            y={lastY - 10}
+            class="fill-gray-800 text-sm font-medium dark:fill-gray-200"
+          >
+            {lastPoint.pitch.toFixed(1)} Hz ({lastPoint.note}{audio_info_scale})
+          </text>
+        {/if}
+
+        <!-- Axes -->
+        <line x1="60" y1="30" x2="60" y2="270" stroke="#374151" stroke-width="2" />
+        <line x1="60" y1="270" x2="780" y2="270" stroke="#374151" stroke-width="2" />
+
+        <!-- Y-axis label -->
+        <text
+          x="20"
+          y="150"
+          text-anchor="middle"
+          transform="rotate(-90 20 150)"
+          class="fill-gray-700 text-sm font-medium dark:fill-gray-300"
+        >
+          Musical Notes
+        </text>
+
+        <!-- X-axis label -->
+        <!-- <text
+            x="420"
+            y="320"
+            text-anchor="middle"
+            class="fill-gray-700 text-sm font-medium dark:fill-gray-300"
+          >
+            Time (seconds)
+          </text> -->
+      </svg>
+    </div>
+    {@render stop_button()}
+    <!-- {:else}
+      <div class="flex h-full items-center justify-center text-gray-500">
+        <div class="text-center">
+          <p class="text-lg font-medium">No data yet</p>
+          <p class="text-sm">Start recording to see the pitch graph</p>
+        </div>
+      </div> -->
+  {/if}
+</div>
