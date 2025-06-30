@@ -71,5 +71,26 @@
     bind:selected_sargam_orientation={$default_sargam_orientation}
     bind:selected_note_orientation={$default_note_orientation}
     bind:selected_pitch_display_type={$default_pitch_display_type}
-  />
+  >
+    {#snippet welcome_msg()}
+      <div class="space-y-4 text-center">
+        <h1
+          class="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-4xl font-bold text-transparent md:text-5xl"
+        >
+          Welcome to Svara Darshini
+        </h1>
+        <p
+          class="mx-auto max-w-2xl text-lg leading-relaxed text-gray-600 md:text-xl dark:text-gray-300"
+        >
+          An intuitive tool to understand the principles of music that are common across the world.
+          Discover the beauty of musical notes and their relationships through our interactive Pitch
+          visualizer.
+        </p>
+        <p class="mx-auto max-w-xl text-base text-gray-500 dark:text-gray-400">
+          Click the button below to start analyzing your voice or instrument. The circular display
+          will show you exactly which note you're playing and how in-tune it is.
+        </p>
+      </div>
+    {/snippet}
+  </PitchTuner>
 </div>
