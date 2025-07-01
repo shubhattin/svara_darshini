@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import { NOTES_STARTING_WITH_A } from '../constants';
+  import { NOTES_STARTING_WITH_A, type note_types } from '../constants';
 
   let {
     pitch_history,
@@ -21,6 +21,51 @@
     audio_info_scale?: number;
   } = $props();
 
+  const Y_AXIS_LABEL_TITLE_POS = { y: 150, x: 20 } as const;
+  const SVG_BACKGROUND = {
+    width: 800,
+    height: 300
+  } as const;
+
+  const GRAPH_INFO = {
+    width: 720,
+    height: 280
+  } as const; // without padding
+  const GRAPH_PADDING = {
+    top: 10,
+    left: 60
+  } as const;
+
+  let bottom_start_note = $state<note_types>('C');
+  const NOTES_CUSTOM_START = $derived(
+    NOTES_STARTING_WITH_A.slice(NOTES_STARTING_WITH_A.indexOf(bottom_start_note)).concat(
+      NOTES_STARTING_WITH_A.slice(0, NOTES_STARTING_WITH_A.indexOf(bottom_start_note))
+    )
+  );
+
+  // Mapping of each note to a custom color for gradient encoding
+  const NOTE_COLORS: Record<note_types, string> = {
+    A: 'hsla(0, 100%, 50%, 1)',
+    'A#': 'hsla(30, 100%, 50%, 1)',
+    B: 'hsla(60, 100%, 50%, 1)',
+    C: 'hsla(90, 100%, 50%, 1)',
+    'C#': 'hsla(120, 100%, 50%, 1)',
+    D: 'hsla(150, 100%, 50%, 1)',
+    'D#': 'hsla(180, 100%, 50%, 1)',
+    E: 'hsla(210, 100%, 50%, 1)',
+    F: 'hsla(240, 100%, 50%, 1)',
+    'F#': 'hsla(270, 100%, 50%, 1)',
+    G: 'hsla(300, 100%, 50%, 1)',
+    'G#': 'hsla(330, 100%, 50%, 1)'
+  };
+
+  const get_x_pos_on_graph = (index: number) => {
+    return (index / (MAX_PITCH_HISTORY_POINTS - 1)) * GRAPH_INFO.width + GRAPH_PADDING.left;
+  };
+  const get_y_pos_on_graph = (yRatio: number) => {
+    return GRAPH_INFO.height + GRAPH_PADDING.top - yRatio * GRAPH_INFO.height;
+  };
+
   // Convert frequency to y-position for graph based on semitone offset within one octave
   const frequencyToYPositionRatio = (frequency: number) => {
     // Validate input: must be a positive finite number
@@ -33,8 +78,11 @@
     const semitoneOffset = 12 * (Math.log(frequency / A0_freq) / Math.log(2));
     // Fractional semitone within one octave
     const semitoneInOctave = ((semitoneOffset % 12) + 12) % 12;
-    // Normalize so semitone 0 (A) maps just above axis, and semitone 11 (G#) maps to top
-    const normalized = ((semitoneInOctave + 1) / 12) * 100;
+    // Shift semitone based on bottom_start_note baseline
+    const baseIndex = NOTES_STARTING_WITH_A.indexOf(bottom_start_note);
+    const semitoneRelative = (semitoneInOctave - baseIndex + 12) % 12;
+    // Normalize so semitoneRelative 0 maps just above bottom axis, and max maps to top
+    const normalized = ((semitoneRelative + 1) / 12) * 100;
     // Clamp to [0,100]
     return Math.min(Math.max(normalized, 0), 100) / 100;
   };
@@ -56,44 +104,6 @@
       })
       .filter((point): point is NonNullable<typeof point> => point !== null)
   );
-
-  const Y_AXIS_LABEL_TITLE_POS = { y: 150, x: 20 } as const;
-  const SVG_BACKGROUND = {
-    width: 800,
-    height: 300
-  } as const;
-
-  const GRAPH_INFO = {
-    width: 720,
-    height: 280
-  } as const; // without padding
-  const GRAPH_PADDING = {
-    top: 10,
-    left: 60
-  } as const;
-
-  const get_x_pos_on_graph = (index: number) => {
-    return (index / (MAX_PITCH_HISTORY_POINTS - 1)) * GRAPH_INFO.width + GRAPH_PADDING.left;
-  };
-  const get_y_pos_on_graph = (yRatio: number) => {
-    return GRAPH_INFO.height + GRAPH_PADDING.top - yRatio * GRAPH_INFO.height;
-  };
-
-  // Mapping of each note to a custom color for gradient encoding
-  const NOTE_COLORS: Record<string, string> = {
-    A: '#ff0000',
-    'A#': '#ff7f00',
-    B: '#ffff00',
-    C: '#7fff00',
-    'C#': '#00ff00',
-    D: '#00ff7f',
-    'D#': '#00ffff',
-    E: '#007fff',
-    F: '#0000ff',
-    'F#': '#7f00ff',
-    G: '#ff00ff',
-    'G#': '#ff007f'
-  };
 
   // Compute normal and faint segments for jump highlights
   const [normalSegments, faintSegments] = $derived(
@@ -156,7 +166,7 @@
 
       <!-- Grid lines for notes -->
       {#each Array.from({ length: 13 }, (_, i) => i) as noteIndex}
-        {@const noteName = NOTES_STARTING_WITH_A[12 - noteIndex - 1]}
+        {@const noteName = NOTES_CUSTOM_START[12 - noteIndex - 1]}
         {@const y = (noteIndex / 12) * GRAPH_INFO.height + GRAPH_PADDING.top}
         <line
           x1={GRAPH_PADDING.left}
@@ -215,8 +225,8 @@
           x2="0"
           y2={GRAPH_PADDING.top}
         >
-          {#each NOTES_STARTING_WITH_A as note, idx}
-            {@const offset = (idx / (NOTES_STARTING_WITH_A.length - 1)) * 100}
+          {#each NOTES_CUSTOM_START as note, idx}
+            {@const offset = (idx / (NOTES_CUSTOM_START.length - 1)) * 100}
             <stop offset={`${offset}%`} stop-color={NOTE_COLORS[note]} />
           {/each}
         </linearGradient>
