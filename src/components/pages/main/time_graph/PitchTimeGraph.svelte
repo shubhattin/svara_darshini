@@ -156,6 +156,7 @@
 
       <!-- Grid lines for notes -->
       {#each Array.from({ length: 13 }, (_, i) => i) as noteIndex}
+        {@const noteName = NOTES_STARTING_WITH_A[12 - noteIndex - 1]}
         {@const y = (noteIndex / 12) * GRAPH_INFO.height + GRAPH_PADDING.top}
         <line
           x1={GRAPH_PADDING.left}
@@ -166,13 +167,16 @@
           stroke-width="1"
           opacity="0.5"
         />
+        {#if noteName}
+          <circle cx={GRAPH_PADDING.left - 5} cy={y} r="2" fill={NOTE_COLORS[noteName] || '#ccc'} />
+        {/if}
         <text
           x={GRAPH_PADDING.left - 10}
           y={y + 4}
           text-anchor="end"
           class="fill-gray-600 text-xs dark:fill-gray-400"
         >
-          {NOTES_STARTING_WITH_A[12 - noteIndex - 1] || ''}
+          {noteName}
         </text>
       {/each}
 
