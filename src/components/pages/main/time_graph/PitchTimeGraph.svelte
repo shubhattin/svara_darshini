@@ -301,20 +301,6 @@
         {/each}
       </g>
 
-      <!-- Time grid lines -->
-      <!-- {#each Array.from({ length: 6 }, (_, i) => i) as timeIndex}
-        {@const x = (timeIndex / 5) * GRAPH_INFO.width + GRAPH_PADDING.left}
-        <line
-          x1={x}
-          y1={GRAPH_PADDING.top}
-          x2={x}
-          y2={GRAPH_INFO.height + GRAPH_PADDING.top}
-          stroke="#e5e7eb"
-          stroke-width="1"
-          opacity="0.3"
-        />
-      {/each} -->
-
       <!-- Data line & jump highlights -->
       <g>
         {#if faintSegments.length}
@@ -382,17 +368,6 @@
           stroke-width="1"
         />
       </g>
-
-      <!-- Y-axis label -->
-      <!-- <text
-        x={Y_AXIS_LABEL_TITLE_POS.x}
-        y={Y_AXIS_LABEL_TITLE_POS.y}
-        text-anchor="middle"
-        transform="rotate(-90 {Y_AXIS_LABEL_TITLE_POS.x} {Y_AXIS_LABEL_TITLE_POS.y})"
-        class="fill-gray-700 text-sm font-medium dark:fill-gray-300"
-      >
-        Notes
-      </text> -->
     </svg>
   {/if}
 </div>
