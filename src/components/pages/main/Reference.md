@@ -269,13 +269,13 @@ yRatio = clamp(normalized, 0, 100) / 100
 
 Assuming `bottom_start_note = 'C'`:
 
-| Input Note | semitoneInOctave | baseIndex | semitoneRelative | yRatio |
-|------------|------------------|-----------|------------------|---------|
-| C (any octave) | 3 | 3 | 0 | 0.083 (8.3% from bottom) |
-| C# | 4 | 3 | 1 | 0.167 (16.7% from bottom) |
-| G# | 11 | 3 | 8 | 0.75 (75% from bottom) |
-| A | 0 | 3 | 9 | 0.833 (83.3% from bottom) |
-| B | 2 | 3 | 11 | 1.0 (100% from bottom) |
+| Input Note     | semitoneInOctave | baseIndex | semitoneRelative | yRatio                    |
+| -------------- | ---------------- | --------- | ---------------- | ------------------------- |
+| C (any octave) | 3                | 3         | 0                | 0.083 (8.3% from bottom)  |
+| C#             | 4                | 3         | 1                | 0.167 (16.7% from bottom) |
+| G#             | 11               | 3         | 8                | 0.75 (75% from bottom)    |
+| A              | 0                | 3         | 9                | 0.833 (83.3% from bottom) |
+| B              | 2                | 3         | 11               | 1.0 (100% from bottom)    |
 
 **Key Mathematical Properties**:
 

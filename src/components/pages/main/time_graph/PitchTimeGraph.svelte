@@ -130,6 +130,7 @@
     y2: number,
     smoothing = 0.3
   ) => {
+    // cubic bezier curve
     const dx = x2 - x1;
     const dy = y2 - y1;
     const controlPoint1X = x1 + dx * smoothing;
@@ -153,6 +154,10 @@
           const prevY = get_y_pos_on_graph(prev.yRatio);
           const deltaPitch = point.pitch - prev.pitch;
           const deltaY = y - prevY;
+          // +ve deltaY : graph moved down
+          // -ve deltaY : graph moved up
+          // as in svg, y increases as we go down
+
           const isJump = (deltaPitch > 0 && deltaY > 0) || (deltaPitch < 0 && deltaY < 0);
 
           if (isJump) {
