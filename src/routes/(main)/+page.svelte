@@ -18,6 +18,11 @@
     'saved_pitch_display_type',
     'circular_scale'
   );
+  let default_timegraph_Sa_at = persistedStore<note_types>('prev_timegraph_Sa_at', 'C');
+  let default_timegraph_bottom_start_note = persistedStore<note_types>(
+    'prev_timegraph_bottom_start_note',
+    'C'
+  );
 </script>
 
 <MetaTags
@@ -71,6 +76,8 @@
     bind:selected_sargam_orientation={$default_sargam_orientation}
     bind:selected_note_orientation={$default_note_orientation}
     bind:selected_pitch_display_type={$default_pitch_display_type}
+    bind:selected_timegraph_Sa_at={$default_timegraph_Sa_at}
+    bind:selected_timegraph_bottom_start_note={$default_timegraph_bottom_start_note}
   >
     {#snippet welcome_msg()}
       <div class="space-y-4 text-center">

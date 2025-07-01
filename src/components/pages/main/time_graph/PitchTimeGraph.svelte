@@ -1,13 +1,16 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import { NOTES_STARTING_WITH_A, type note_types } from '../constants';
+  import { NOTES, NOTES_STARTING_WITH_A, type note_types, SARGAM } from '../constants';
+  import { cl_join } from '~/tools/cl_join';
 
   let {
     pitch_history,
     stop_button,
     MAX_PITCH_HISTORY_POINTS,
     AUDIO_INFO_UPDATE_INTERVAL,
-    audio_info_scale
+    audio_info_scale,
+    bottom_start_note = $bindable(),
+    selected_Sa_at = $bindable()
   }: {
     pitch_history: Array<{
       time: number;
@@ -19,9 +22,10 @@
     MAX_PITCH_HISTORY_POINTS: number;
     AUDIO_INFO_UPDATE_INTERVAL: number;
     audio_info_scale?: number;
+    bottom_start_note: note_types;
+    selected_Sa_at: note_types;
   } = $props();
 
-  const Y_AXIS_LABEL_TITLE_POS = { y: 150, x: 20 } as const;
   const SVG_BACKGROUND = {
     width: 800,
     height: 300
@@ -36,12 +40,21 @@
     left: 60
   } as const;
 
-  let bottom_start_note = $state<note_types>('C');
   const NOTES_CUSTOM_START = $derived(
-    NOTES_STARTING_WITH_A.slice(NOTES_STARTING_WITH_A.indexOf(bottom_start_note)).concat(
-      NOTES_STARTING_WITH_A.slice(0, NOTES_STARTING_WITH_A.indexOf(bottom_start_note))
+    NOTES.slice(NOTES.indexOf(bottom_start_note)).concat(
+      NOTES.slice(0, NOTES.indexOf(bottom_start_note))
     )
   );
+  const SARGAM_KEYS = SARGAM.map((sargam) => sargam.key);
+
+  const SARGAM_CUSTOM_START = $derived.by(() => {
+    const NOTES_INDEX = NOTES_CUSTOM_START.indexOf(selected_Sa_at);
+    const new_arr: string[] = Array.from({ length: NOTES.length });
+    for (let i = 0; i < NOTES.length; i++) {
+      new_arr[(i + NOTES_INDEX) % NOTES.length] = SARGAM_KEYS[i];
+    }
+    return new_arr;
+  });
 
   // Mapping of each note to a custom color for gradient encoding
   const NOTE_COLORS: Record<note_types, string> = {
@@ -146,13 +159,31 @@
   const textAnchor = $derived(isRightSide ? 'end' : 'start');
 </script>
 
-<!-- <div class="flex items-center justify-center">
-  <div
-    class="mr-4 rounded-lg bg-gradient-to-r from-amber-600 via-orange-700 to-red-600 px-2 py-1 text-xs font-bold text-white select-none"
-  >
-    Beta
+<div class="flex items-center justify-center gap-x-8 sm:gap-x-12 md:gap-x-16 lg:gap-x-20">
+  <div class="flex items-center gap-x-2">
+    <span class="text-xs font-semibold sm:text-sm">Sa at</span>
+    <select
+      class="select w-12 rounded-md border border-gray-300 px-2 py-0.5 text-xs sm:py-1 sm:text-sm"
+      bind:value={selected_Sa_at}
+    >
+      {#each NOTES_STARTING_WITH_A as note}
+        <option value={note}>{note}</option>
+      {/each}
+    </select>
   </div>
-</div> -->
+  <div class="flex items-center gap-x-2">
+    <span class="text-xs font-semibold sm:text-sm">Bottom Start Note</span>
+    <select
+      class="select w-12 rounded-md border border-gray-300 px-2 py-0.5 text-xs sm:py-1 sm:text-sm"
+      bind:value={bottom_start_note}
+    >
+      {#each NOTES_STARTING_WITH_A as note}
+        <option value={note}>{note}</option>
+      {/each}
+    </select>
+  </div>
+</div>
+
 <div class="mt-1 h-[250px] w-full sm:h-[350px] md:h-[500px] lg:h-[600px]">
   {#if graphData.length > 1}
     <!-- <h3 class="mb-4 text-lg font-semibold">Pitch Over Time</h3> -->
@@ -166,7 +197,7 @@
 
       <!-- Grid lines for notes -->
       {#each Array.from({ length: 13 }, (_, i) => i) as noteIndex}
-        {@const noteName = NOTES_CUSTOM_START[12 - noteIndex - 1]}
+        {@const noteName = NOTES_CUSTOM_START[NOTES_CUSTOM_START.length - noteIndex - 1]}
         {@const y = (noteIndex / 12) * GRAPH_INFO.height + GRAPH_PADDING.top}
         <line
           x1={GRAPH_PADDING.left}
@@ -187,6 +218,20 @@
           class="fill-gray-600 text-xs dark:fill-gray-400"
         >
           {noteName}
+        </text>
+        <!-- Sargam  -->
+        {@const sargam_key = SARGAM_CUSTOM_START[SARGAM_CUSTOM_START.length - noteIndex - 1]}
+        <text
+          x={GRAPH_PADDING.left - 30}
+          y={y + 4}
+          text-anchor="end"
+          class={cl_join(
+            'fill-gray-600 text-xs dark:fill-gray-400',
+            sargam_key === 's' && 'fill-slate-500 font-semibold dark:fill-slate-200'
+          )}
+          font-family="ome_bhatkhande_en"
+        >
+          {sargam_key}
         </text>
       {/each}
 
@@ -262,7 +307,7 @@
       />
 
       <!-- Y-axis label -->
-      <text
+      <!-- <text
         x={Y_AXIS_LABEL_TITLE_POS.x}
         y={Y_AXIS_LABEL_TITLE_POS.y}
         text-anchor="middle"
@@ -270,7 +315,7 @@
         class="fill-gray-700 text-sm font-medium dark:fill-gray-300"
       >
         Notes
-      </text>
+      </text> -->
     </svg>
   {/if}
 </div>

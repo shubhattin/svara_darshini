@@ -28,6 +28,8 @@
     selected_sargam_orientation = $bindable(),
     selected_note_orientation = $bindable(),
     selected_pitch_display_type = $bindable(),
+    selected_timegraph_Sa_at = $bindable(),
+    selected_timegraph_bottom_start_note = $bindable(),
     welcome_msg
   }: {
     selected_device: string;
@@ -35,6 +37,8 @@
     selected_sargam_orientation: 'radial' | 'vertical';
     selected_note_orientation: 'radial' | 'vertical';
     selected_pitch_display_type: 'circular_scale' | 'time_graph';
+    selected_timegraph_Sa_at: note_types;
+    selected_timegraph_bottom_start_note: note_types;
     welcome_msg: Snippet;
   } = $props();
 
@@ -299,6 +303,8 @@
           {MAX_PITCH_HISTORY_POINTS}
           {AUDIO_INFO_UPDATE_INTERVAL}
           audio_info_scale={audio_info?.scale}
+          bind:selected_Sa_at={selected_timegraph_Sa_at}
+          bind:bottom_start_note={selected_timegraph_bottom_start_note}
         />
       </Tabs.Panel>
     {/snippet}

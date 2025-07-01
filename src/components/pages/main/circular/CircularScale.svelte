@@ -3,7 +3,7 @@
   import { BsChevronDown, BsChevronUp } from 'svelte-icons-pack/bs';
   import Icon from '~/tools/Icon.svelte';
   import { cl_join } from '~/tools/cl_join';
-  import { NOTES, type note_types } from '../constants';
+  import { NOTES_STARTING_WITH_A, type note_types } from '../constants';
   import CircularPitchDisplay from './CircularPitchDisplay.svelte';
   import type { Snippet } from 'svelte';
 
@@ -48,8 +48,7 @@
           {/snippet}
           {#snippet content()}
             <div class="grid grid-cols-4 gap-x-2 gap-y-1 sm:grid-cols-6 sm:gap-x-2">
-              {#each NOTES as _, i}
-                {@const note = NOTES[(i + 9) % NOTES.length]}
+              {#each NOTES_STARTING_WITH_A as note}
                 <button
                   class={cl_join(
                     'gap-0 rounded-md px-1 py-1 text-sm font-semibold text-white sm:text-base',
