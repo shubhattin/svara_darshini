@@ -78,6 +78,55 @@
   const get_y_pos_on_graph = (yRatio: number) => {
     return GRAPH_INFO.height + GRAPH_PADDING.top - yRatio * GRAPH_INFO.height;
   };
+
+  // Mapping of each note to a custom color for gradient encoding
+  const NOTE_COLORS: Record<string, string> = {
+    A: '#ff0000',
+    'A#': '#ff7f00',
+    B: '#ffff00',
+    C: '#7fff00',
+    'C#': '#00ff00',
+    D: '#00ff7f',
+    'D#': '#00ffff',
+    E: '#007fff',
+    F: '#0000ff',
+    'F#': '#7f00ff',
+    G: '#ff00ff',
+    'G#': '#ff007f'
+  };
+
+  // Compute normal and faint segments for jump highlights
+  const [normalSegments, faintSegments] = $derived(
+    graphData.reduce<[string[], string[]]>(
+      ([norm, faint], point, index) => {
+        const x = get_x_pos_on_graph(point.originalIndex);
+        const y = get_y_pos_on_graph(point.yRatio);
+        if (index === 0) {
+          norm.push(`M ${x} ${y}`);
+        } else {
+          const prev = graphData[index - 1];
+          const prevX = get_x_pos_on_graph(prev.originalIndex);
+          const prevY = get_y_pos_on_graph(prev.yRatio);
+          const deltaPitch = point.pitch - prev.pitch;
+          const deltaY = y - prevY;
+          const isJump = (deltaPitch > 0 && deltaY > 0) || (deltaPitch < 0 && deltaY < 0);
+          if (isJump) {
+            norm.push(`M ${x} ${y}`);
+            faint.push(`M ${prevX} ${prevY}`, `L ${x} ${y}`);
+          } else {
+            norm.push(`L ${x} ${y}`);
+          }
+        }
+        return [norm, faint];
+      },
+      [[], []] as [string[], string[]]
+    )
+  );
+
+  // Reactive last point and its coordinates
+  const lastPoint = $derived(graphData[graphData.length - 1]);
+  const lastX = $derived(get_x_pos_on_graph(lastPoint.originalIndex));
+  const lastY = $derived(get_y_pos_on_graph(lastPoint.yRatio));
 </script>
 
 <div class="flex items-center justify-center">
@@ -134,58 +183,48 @@
           />
         {/each}
 
-        <!-- Data line -->
-        {#if graphData.length > 1}
-          {@const [normalSegments, faintSegments] = graphData.reduce<[string[], string[]]>(
-            ([norm, faint], point, index) => {
-              const x = get_x_pos_on_graph(point.originalIndex);
-              const y = get_y_pos_on_graph(point.yRatio);
-
-              if (index === 0) {
-                norm.push(`M ${x} ${y}`);
-              } else {
-                const prev = graphData[index - 1];
-                const prevX = get_x_pos_on_graph(prev.originalIndex);
-                const prevY = get_y_pos_on_graph(prev.yRatio);
-                const deltaPitch = point.pitch - prev.pitch;
-                const deltaY = y - prevY;
-                const isJump = (deltaPitch > 0 && deltaY > 0) || (deltaPitch < 0 && deltaY < 0);
-                if (isJump) {
-                  // break the normal line and add a faint jump segment
-                  norm.push(`M ${x} ${y}`);
-                  faint.push(`M ${prevX} ${prevY}`, `L ${x} ${y}`);
-                } else {
-                  norm.push(`L ${x} ${y}`);
-                }
-              }
-              return [norm, faint];
-            },
-            [[], []] as [string[], string[]]
-          )}
-          {#if faintSegments.length}
-            <path
-              d={faintSegments.join(' ')}
-              stroke="#3b82f6"
-              stroke-width="2"
-              fill="none"
-              opacity="0.3"
-            />
-          {/if}
-          <path d={normalSegments.join(' ')} stroke="#3b82f6" stroke-width="2" fill="none" />
-
-          <!-- Current frequency display -->
-          {@const lastPoint = graphData[graphData.length - 1]}
-          {@const lastX = get_x_pos_on_graph(lastPoint.originalIndex)}
-          {@const lastY = get_y_pos_on_graph(lastPoint.yRatio)}
-          <circle cx={lastX} cy={lastY} r="4" fill="#ef4444" />
-          <text
-            x={lastX + 10}
-            y={lastY - 10}
-            class="fill-gray-800 text-sm font-medium dark:fill-gray-200"
-          >
-            {lastPoint.pitch.toFixed(1)} Hz ({lastPoint.note}{audio_info_scale})
-          </text>
+        <!-- Data line & jump highlights -->
+        {#if faintSegments.length}
+          <path
+            d={faintSegments.join(' ')}
+            stroke="url(#noteGradient)"
+            stroke-width="2"
+            fill="none"
+            opacity="0.25"
+          />
         {/if}
+        <path
+          d={normalSegments.join(' ')}
+          stroke="url(#noteGradient)"
+          stroke-width="2"
+          fill="none"
+        />
+
+        <defs>
+          <linearGradient
+            id="noteGradient"
+            gradientUnits="userSpaceOnUse"
+            x1="0"
+            y1={GRAPH_PADDING.top + GRAPH_INFO.height}
+            x2="0"
+            y2={GRAPH_PADDING.top}
+          >
+            {#each NOTES_STARTING_WITH_A as note, idx}
+              {@const offset = (idx / (NOTES_STARTING_WITH_A.length - 1)) * 100}
+              <stop offset={`${offset}%`} stop-color={NOTE_COLORS[note]} />
+            {/each}
+          </linearGradient>
+        </defs>
+
+        <!-- Current frequency display -->
+        <circle cx={lastX} cy={lastY} r="4" fill="#ef4444" />
+        <text
+          x={lastX + 10}
+          y={lastY - 10}
+          class="fill-gray-800 text-sm font-medium dark:fill-gray-200"
+        >
+          {lastPoint.pitch.toFixed(1)} Hz ({lastPoint.note}{audio_info_scale})
+        </text>
 
         <!-- Axes -->
         <line
