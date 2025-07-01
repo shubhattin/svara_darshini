@@ -22,7 +22,7 @@
   } = $props();
 
   // Convert frequency to y-position for graph based on semitone offset within one octave
-  const frequencyToYPosition = (frequency: number) => {
+  const frequencyToYPositionRatio = (frequency: number) => {
     // Validate input: must be a positive finite number
     if (!Number.isFinite(frequency) || frequency <= 0) {
       return null; // Return null for invalid frequencies
@@ -36,17 +36,17 @@
     // Normalize so semitone 0 (A) maps just above axis, and semitone 11 (G#) maps to top
     const normalized = ((semitoneInOctave + 1) / 12) * 100;
     // Clamp to [0,100]
-    return Math.min(Math.max(normalized, 0), 100);
+    return Math.min(Math.max(normalized, 0), 100) / 100;
   };
 
   const graphData = $derived(
     pitch_history
       .map((point, index) => {
-        const yPos = frequencyToYPosition(point.pitch);
+        const yPos = frequencyToYPositionRatio(point.pitch);
         return yPos !== null
           ? {
-              x: index * AUDIO_INFO_UPDATE_INTERVAL, // Time in milliseconds from start
-              y: yPos,
+              // x: index * AUDIO_INFO_UPDATE_INTERVAL, // Time in milliseconds from start
+              yRatio: yPos,
               pitch: point.pitch,
               note: point.note,
               clarity: point.clarity,
@@ -71,6 +71,13 @@
     top: 30,
     left: 60
   } as const;
+
+  const get_x_pos_on_graph = (index: number) => {
+    return (index / (MAX_PITCH_HISTORY_POINTS - 1)) * GRAPH_INFO.width + GRAPH_PADDING.left;
+  };
+  const get_y_pos_on_graph = (yRatio: number) => {
+    return GRAPH_INFO.height + GRAPH_PADDING.top - yRatio * GRAPH_INFO.height;
+  };
 </script>
 
 <div class="flex items-center justify-center">
@@ -131,20 +138,15 @@
         {#if graphData.length > 1}
           {@const [normalSegments, faintSegments] = graphData.reduce<[string[], string[]]>(
             ([norm, faint], point, index) => {
-              const x =
-                (point.originalIndex / (MAX_PITCH_HISTORY_POINTS - 1)) * GRAPH_INFO.width +
-                GRAPH_PADDING.left;
-              const y = GRAPH_INFO.height + GRAPH_PADDING.top - (point.y / 100) * GRAPH_INFO.height;
+              const x = get_x_pos_on_graph(point.originalIndex);
+              const y = get_y_pos_on_graph(point.yRatio);
 
               if (index === 0) {
                 norm.push(`M ${x} ${y}`);
               } else {
                 const prev = graphData[index - 1];
-                const prevX =
-                  (prev.originalIndex / (MAX_PITCH_HISTORY_POINTS - 1)) * GRAPH_INFO.width +
-                  GRAPH_PADDING.left;
-                const prevY =
-                  GRAPH_INFO.height + GRAPH_PADDING.top - (prev.y / 100) * GRAPH_INFO.height;
+                const prevX = get_x_pos_on_graph(prev.originalIndex);
+                const prevY = get_y_pos_on_graph(prev.yRatio);
                 const deltaPitch = point.pitch - prev.pitch;
                 const deltaY = y - prevY;
                 const isJump = (deltaPitch > 0 && deltaY > 0) || (deltaPitch < 0 && deltaY < 0);
@@ -173,11 +175,8 @@
 
           <!-- Current frequency display -->
           {@const lastPoint = graphData[graphData.length - 1]}
-          {@const lastX =
-            (lastPoint.originalIndex / (MAX_PITCH_HISTORY_POINTS - 1)) * GRAPH_INFO.width +
-            GRAPH_PADDING.left}
-          {@const lastY =
-            GRAPH_INFO.height + GRAPH_PADDING.top - (lastPoint.y / 100) * GRAPH_INFO.height}
+          {@const lastX = get_x_pos_on_graph(lastPoint.originalIndex)}
+          {@const lastY = get_y_pos_on_graph(lastPoint.yRatio)}
           <circle cx={lastX} cy={lastY} r="4" fill="#ef4444" />
           <text
             x={lastX + 10}
