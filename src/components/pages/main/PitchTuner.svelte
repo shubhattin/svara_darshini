@@ -301,7 +301,6 @@
           {pitch_history}
           {stop_button}
           {MAX_PITCH_HISTORY_POINTS}
-          {AUDIO_INFO_UPDATE_INTERVAL}
           audio_info_scale={audio_info?.scale}
           bind:selected_Sa_at={selected_timegraph_Sa_at}
           bind:bottom_start_note={selected_timegraph_bottom_start_note}

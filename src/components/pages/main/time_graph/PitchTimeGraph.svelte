@@ -2,12 +2,17 @@
   import type { Snippet } from 'svelte';
   import { NOTES, NOTES_STARTING_WITH_A, type note_types, SARGAM } from '../constants';
   import { cl_join } from '~/tools/cl_join';
+  import { Popover } from '@skeletonlabs/skeleton-svelte';
+  import { BsChevronDown, BsChevronUp } from 'svelte-icons-pack/bs';
+  import Icon from '~/tools/Icon.svelte';
+
+  let Sa_at_popup_status = $state(false);
+  let bottom_start_note_popup_status = $state(false);
 
   let {
     pitch_history,
     stop_button,
     MAX_PITCH_HISTORY_POINTS,
-    AUDIO_INFO_UPDATE_INTERVAL,
     audio_info_scale,
     bottom_start_note = $bindable(),
     selected_Sa_at = $bindable()
@@ -20,7 +25,6 @@
     }>;
     stop_button: Snippet;
     MAX_PITCH_HISTORY_POINTS: number;
-    AUDIO_INFO_UPDATE_INTERVAL: number;
     audio_info_scale?: number;
     bottom_start_note: note_types;
     selected_Sa_at: note_types;
@@ -161,26 +165,78 @@
 
 <div class="flex items-center justify-center gap-x-8 sm:gap-x-12 md:gap-x-16 lg:gap-x-20">
   <div class="flex items-center gap-x-2">
-    <span class="text-xs font-semibold sm:text-sm">Sa at</span>
-    <select
-      class="select w-12 rounded-md border border-gray-300 px-2 py-0.5 text-xs sm:py-1 sm:text-sm"
-      bind:value={selected_Sa_at}
+    <span class="text-xs font-semibold sm:text-sm md:text-base">Sa at</span>
+    <Popover
+      open={Sa_at_popup_status}
+      onOpenChange={(e) => (Sa_at_popup_status = e.open)}
+      contentBase="card z-50 space-y-2 p-2 rounded-lg shadow-xl dark:bg-surface-900 bg-slate-100"
     >
-      {#each NOTES_STARTING_WITH_A as note}
-        <option value={note}>{note}</option>
-      {/each}
-    </select>
+      {#snippet trigger()}
+        <div class="flex items-center justify-center gap-x-1 outline-hidden">
+          {#if !Sa_at_popup_status}
+            <Icon src={BsChevronDown} class="-mt-1 size-4 sm:size-5" />
+          {:else}
+            <Icon src={BsChevronUp} class="-mt-1 size-4 sm:size-5" />
+          {/if}
+          <span class="text-xs sm:text-sm md:text-base">{selected_Sa_at}</span>
+        </div>
+      {/snippet}
+      {#snippet content()}
+        <div class="grid grid-cols-4 gap-x-2 gap-y-1 sm:grid-cols-6 sm:gap-x-2">
+          {#each NOTES_STARTING_WITH_A as note}
+            <button
+              class={cl_join(
+                'gap-0 rounded-md px-1 py-1 text-sm font-semibold text-white sm:text-base',
+                selected_Sa_at === note
+                  ? 'bg-primary-500 dark:bg-primary-600'
+                  : 'bg-slate-400 hover:bg-primary-500/80 dark:bg-slate-800 dark:hover:bg-primary-600/80'
+              )}
+              onclick={() => {
+                selected_Sa_at = note;
+                Sa_at_popup_status = false;
+              }}>{note}</button
+            >
+          {/each}
+        </div>
+      {/snippet}
+    </Popover>
   </div>
   <div class="flex items-center gap-x-2">
-    <span class="text-xs font-semibold sm:text-sm">Bottom Start Note</span>
-    <select
-      class="select w-12 rounded-md border border-gray-300 px-2 py-0.5 text-xs sm:py-1 sm:text-sm"
-      bind:value={bottom_start_note}
+    <span class="text-xs font-semibold sm:text-sm md:text-base">Bottom Start Note</span>
+    <Popover
+      open={bottom_start_note_popup_status}
+      onOpenChange={(e) => (bottom_start_note_popup_status = e.open)}
+      contentBase="card z-50 space-y-2 p-2 rounded-lg shadow-xl dark:bg-surface-900 bg-slate-100"
     >
-      {#each NOTES_STARTING_WITH_A as note}
-        <option value={note}>{note}</option>
-      {/each}
-    </select>
+      {#snippet trigger()}
+        <div class="flex items-center justify-center gap-x-1 outline-hidden">
+          {#if !bottom_start_note_popup_status}
+            <Icon src={BsChevronDown} class="-mt-1 size-4 sm:size-5" />
+          {:else}
+            <Icon src={BsChevronUp} class="-mt-1 size-4 sm:size-5" />
+          {/if}
+          <span class="text-xs sm:text-sm md:text-base">{bottom_start_note}</span>
+        </div>
+      {/snippet}
+      {#snippet content()}
+        <div class="grid grid-cols-4 gap-x-2 gap-y-1 sm:grid-cols-6 sm:gap-x-2">
+          {#each NOTES_STARTING_WITH_A as note}
+            <button
+              class={cl_join(
+                'gap-0 rounded-md px-1 py-1 text-sm font-semibold text-white sm:text-base',
+                bottom_start_note === note
+                  ? 'bg-primary-500 dark:bg-primary-600'
+                  : 'bg-slate-400 hover:bg-primary-500/80 dark:bg-slate-800 dark:hover:bg-primary-600/80'
+              )}
+              onclick={() => {
+                bottom_start_note = note;
+                bottom_start_note_popup_status = false;
+              }}>{note}</button
+            >
+          {/each}
+        </div>
+      {/snippet}
+    </Popover>
   </div>
 </div>
 
@@ -195,45 +251,55 @@
       <!-- Background -->
       <rect width={SVG_BACKGROUND.width} height={SVG_BACKGROUND.height} fill="transparent" />
 
-      <!-- Grid lines for notes -->
-      {#each Array.from({ length: 13 }, (_, i) => i) as noteIndex}
-        {@const noteName = NOTES_CUSTOM_START[NOTES_CUSTOM_START.length - noteIndex - 1]}
-        {@const y = (noteIndex / 12) * GRAPH_INFO.height + GRAPH_PADDING.top}
-        <line
-          x1={GRAPH_PADDING.left}
-          y1={y}
-          x2={GRAPH_PADDING.left + GRAPH_INFO.width}
-          y2={y}
-          stroke="#e5e7eb"
-          stroke-width="1"
-          opacity="0.5"
-        />
-        {#if noteName}
-          <circle cx={GRAPH_PADDING.left - 5} cy={y} r="2" fill={NOTE_COLORS[noteName] || '#ccc'} />
-        {/if}
-        <text
-          x={GRAPH_PADDING.left - 10}
-          y={y + 4}
-          text-anchor="end"
-          class="fill-gray-600 text-xs dark:fill-gray-400"
-        >
-          {noteName}
-        </text>
-        <!-- Sargam  -->
-        {@const sargam_key = SARGAM_CUSTOM_START[SARGAM_CUSTOM_START.length - noteIndex - 1]}
-        <text
-          x={GRAPH_PADDING.left - 30}
-          y={y + 4}
-          text-anchor="end"
-          class={cl_join(
-            'fill-gray-600 text-xs dark:fill-gray-400',
-            sargam_key === 's' && 'fill-slate-500 font-semibold dark:fill-slate-200'
-          )}
-          font-family="ome_bhatkhande_en"
-        >
-          {sargam_key}
-        </text>
-      {/each}
+      <!-- Grid lines, notes & sargam labels -->
+      <g>
+        {#each Array.from({ length: 13 }, (_, i) => i) as noteIndex}
+          {@const noteName = NOTES_CUSTOM_START[NOTES_CUSTOM_START.length - noteIndex - 1]}
+          {@const y = (noteIndex / 12) * GRAPH_INFO.height + GRAPH_PADDING.top}
+          <line
+            x1={GRAPH_PADDING.left}
+            y1={y}
+            x2={GRAPH_PADDING.left + GRAPH_INFO.width}
+            y2={y}
+            stroke="#e5e7eb"
+            stroke-width="1"
+            opacity="0.5"
+          />
+          {#if noteName}
+            <circle
+              cx={GRAPH_PADDING.left - 5}
+              cy={y}
+              r="2"
+              fill={NOTE_COLORS[noteName] || '#ccc'}
+            />
+          {/if}
+          <text
+            x={GRAPH_PADDING.left - 10}
+            y={y + 4}
+            text-anchor="end"
+            class={cl_join(
+              'fill-gray-600 text-xs dark:fill-gray-400',
+              noteIndex === NOTES_CUSTOM_START.length - 1 && 'font-semibold '
+            )}
+          >
+            {noteName}
+          </text>
+          <!-- Sargam  -->
+          {@const sargam_key = SARGAM_CUSTOM_START[SARGAM_CUSTOM_START.length - noteIndex - 1]}
+          <text
+            x={GRAPH_PADDING.left - 30}
+            y={y + 4}
+            text-anchor="end"
+            class={cl_join(
+              'fill-gray-600 text-xs dark:fill-gray-400',
+              sargam_key === 's' && 'fill-slate-500 font-semibold dark:fill-slate-200'
+            )}
+            font-family="ome_bhatkhande_en"
+          >
+            {sargam_key}
+          </text>
+        {/each}
+      </g>
 
       <!-- Time grid lines -->
       <!-- {#each Array.from({ length: 6 }, (_, i) => i) as timeIndex}
@@ -250,61 +316,72 @@
       {/each} -->
 
       <!-- Data line & jump highlights -->
-      {#if faintSegments.length}
+      <g>
+        {#if faintSegments.length}
+          <path
+            d={faintSegments.join(' ')}
+            stroke="url(#noteGradient)"
+            stroke-width="2"
+            fill="none"
+            opacity="0.4"
+          />
+        {/if}
         <path
-          d={faintSegments.join(' ')}
+          d={normalSegments.join(' ')}
           stroke="url(#noteGradient)"
           stroke-width="2"
           fill="none"
-          opacity="0.4"
         />
-      {/if}
-      <path d={normalSegments.join(' ')} stroke="url(#noteGradient)" stroke-width="2" fill="none" />
 
-      <defs>
-        <linearGradient
-          id="noteGradient"
-          gradientUnits="userSpaceOnUse"
-          x1="0"
-          y1={GRAPH_PADDING.top + GRAPH_INFO.height}
-          x2="0"
-          y2={GRAPH_PADDING.top}
-        >
-          {#each NOTES_CUSTOM_START as note, idx}
-            {@const offset = (idx / (NOTES_CUSTOM_START.length - 1)) * 100}
-            <stop offset={`${offset}%`} stop-color={NOTE_COLORS[note]} />
-          {/each}
-        </linearGradient>
-      </defs>
+        <defs>
+          <linearGradient
+            id="noteGradient"
+            gradientUnits="userSpaceOnUse"
+            x1="0"
+            y1={GRAPH_PADDING.top + GRAPH_INFO.height}
+            x2="0"
+            y2={GRAPH_PADDING.top}
+          >
+            {#each NOTES_CUSTOM_START as note, idx}
+              {@const offset = (idx / (NOTES_CUSTOM_START.length - 1)) * 100}
+              <stop offset={`${offset}%`} stop-color={NOTE_COLORS[note]} />
+            {/each}
+          </linearGradient>
+        </defs>
+      </g>
 
       <!-- Current frequency display -->
-      <circle cx={lastX} cy={lastY} r="4" fill="#ef4444" />
-      <text
-        x={indicatorX}
-        y={indicatorY}
-        text-anchor={textAnchor}
-        class="fill-gray-800 text-xs font-medium opacity-85 dark:fill-gray-200"
-      >
-        {lastPoint.pitch.toFixed(1)} Hz ({lastPoint.note}{audio_info_scale})
-      </text>
+      <g>
+        <circle cx={lastX} cy={lastY} r="4" fill="#ef4444" />
+        <text
+          x={indicatorX}
+          y={indicatorY}
+          text-anchor={textAnchor}
+          class="fill-gray-800 text-xs font-medium opacity-85 dark:fill-gray-200"
+        >
+          {lastPoint.pitch.toFixed(1)} Hz ({lastPoint.note}{audio_info_scale})
+        </text>
+      </g>
 
       <!-- Axes -->
-      <line
-        x1={GRAPH_PADDING.left}
-        y1={GRAPH_PADDING.top}
-        x2={GRAPH_PADDING.left}
-        y2={GRAPH_INFO.height + GRAPH_PADDING.top}
-        stroke="#374151"
-        stroke-width="2"
-      />
-      <line
-        x1={GRAPH_PADDING.left}
-        y1={GRAPH_INFO.height + GRAPH_PADDING.top}
-        x2={GRAPH_INFO.width + GRAPH_PADDING.left}
-        y2={GRAPH_INFO.height + GRAPH_PADDING.top}
-        stroke="#374151"
-        stroke-width="1"
-      />
+      <g>
+        <line
+          x1={GRAPH_PADDING.left}
+          y1={GRAPH_PADDING.top}
+          x2={GRAPH_PADDING.left}
+          y2={GRAPH_INFO.height + GRAPH_PADDING.top}
+          stroke="#374151"
+          stroke-width="2"
+        />
+        <line
+          x1={GRAPH_PADDING.left}
+          y1={GRAPH_INFO.height + GRAPH_PADDING.top}
+          x2={GRAPH_INFO.width + GRAPH_PADDING.left}
+          y2={GRAPH_INFO.height + GRAPH_PADDING.top}
+          stroke="#374151"
+          stroke-width="1"
+        />
+      </g>
 
       <!-- Y-axis label -->
       <!-- <text

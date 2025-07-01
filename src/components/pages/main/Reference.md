@@ -199,50 +199,93 @@ Both functions implement the **12-tone equal temperament** system where:
 
 ## [`PitchTimeGraph.svelte`](./time_graph/PitchTimeGraph.svelte)
 
-### `frequencyToYPosition`
+### Mathematical Functions
 
-**Purpose**: Converts a frequency (Hz) to a Y-axis position (0-100%) for pitch visualization on a graph, mapping frequencies to positions within one octave range.
+#### `frequencyToYPositionRatio`
 
-**Function Signature**:
+**Purpose**: Converts a frequency (Hz) to a Y-position ratio (0-1) for graph display, mapping frequencies to visual positions within one octave relative to a configurable bottom starting note.
 
-```typescript
-const frequencyToYPosition = (frequency: number) => number | null;
-```
+**Mathematical Formula Breakdown**:
 
-**Mathematical Formula**:
+**Step 1: Semitone Offset from A0**
 
 ```
 semitoneOffset = 12 × log₂(frequency / A0_frequency)
-semitoneInOctave = ((semitoneOffset % 12) + 12) % 12
-normalized = ((semitoneInOctave + 1) / 12) × 100
-position = clamp(normalized, 0, 100)
 ```
 
-**Step-by-Step Breakdown**:
+where `A0_frequency = 27.5 Hz`
 
-1. **Reference Point**: Uses A0 = 27.5 Hz as the base frequency
-2. **Semitone Calculation**: `12 × log₂(frequency / 27.5)`
-   - Calculates how many semitones the input frequency is above A0
-   - Uses the same logarithmic relationship as equal temperament tuning
-3. **Octave Mapping**: `((semitoneOffset % 12) + 12) % 12`
-   - Maps the semitone offset to a position within one octave (0-11)
-   - The double modulo handles negative values correctly
-4. **Normalization**: `((semitoneInOctave + 1) / 12) × 100`
-   - Converts 0-11 semitone range to 0-100% display range
-   - The `+1` offset ensures A (semitone 0) maps slightly above the bottom axis
-5. **Clamping**: Ensures result stays within 0-100% bounds
+**Step 2: Fractional Semitone Within One Octave**
 
-**Key Design Decisions**:
+```
+semitoneInOctave = ((semitoneOffset % 12) + 12) % 12
+```
 
-- **A0 Reference**: Uses A0 (27.5 Hz) instead of A4 (440 Hz) to provide a lower reference point
-- **Octave Compression**: All frequencies map to the same relative position within their octave
-  - A4 (440 Hz), A5 (880 Hz), A6 (1760 Hz) all map to the same Y position
-  - This creates a "piano roll" style visualization focused on note names rather than absolute pitch
-- **+1 Offset**: Prevents notes from mapping exactly to the bottom edge (y=0), improving visual clarity
+**Step 3: Relative Semitone Position**
 
-**Use Case**:
-This function enables the pitch-time graph to display all frequencies in a consistent visual format, where:
+```
+semitoneRelative = (semitoneInOctave - baseIndex + 12) % 12
+```
 
-- Different octaves of the same note appear at the same height
-- The full chromatic scale is visible within a single octave range
-- Visual spacing matches musical intervals (equal temperament)
+where `baseIndex = NOTES_STARTING_WITH_A.indexOf(bottom_start_note)`
+
+**Step 4: Normalization to Graph Ratio**
+
+```
+normalized = ((semitoneRelative + 1) / 12) × 100
+yRatio = clamp(normalized, 0, 100) / 100
+```
+
+**Detailed Mathematical Derivation**:
+
+**1. Logarithmic Frequency Mapping**
+
+- Uses the same equal temperament principle as `getNoteNumberFromPitch`
+- **A0 (27.5 Hz)** is chosen as reference because it's exactly 4 octaves below A4 (440 Hz)
+- **Mathematical relationship**: A0 = A4 / 2^4 = 440 / 16 = 27.5 Hz
+- The logarithmic calculation gives continuous semitone positions, not just discrete note numbers
+
+**2. Octave Reduction**
+
+- `semitoneOffset % 12` reduces any frequency to its position within one octave
+- **Double modulo pattern** `((x % 12) + 12) % 12` ensures positive results for negative inputs
+- **Example**:
+  - Frequency below A0 → negative semitoneOffset → still maps correctly to 0-12 range
+
+**3. Note Array Alignment**
+
+- `NOTES_STARTING_WITH_A = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#']`
+- `baseIndex` finds where the `bottom_start_note` appears in this A-centered array
+- **Shifting calculation** aligns the visual graph so the selected bottom note appears at the bottom
+
+**4. Graph Positioning**
+
+- **Adding 1**: `(semitoneRelative + 1)` ensures the bottom note appears slightly above the bottom axis (not at y=0)
+- **Division by 12**: Normalizes 12 semitones to the range [1/12, 13/12]
+- **Multiplication by 100**: Converts to percentage for easier processing
+- **Final division by 100**: Converts back to 0-1 ratio for SVG coordinates
+
+**Visual Mapping Examples**:
+
+Assuming `bottom_start_note = 'C'`:
+
+| Input Note | semitoneInOctave | baseIndex | semitoneRelative | yRatio |
+|------------|------------------|-----------|------------------|---------|
+| C (any octave) | 3 | 3 | 0 | 0.083 (8.3% from bottom) |
+| C# | 4 | 3 | 1 | 0.167 (16.7% from bottom) |
+| G# | 11 | 3 | 8 | 0.75 (75% from bottom) |
+| A | 0 | 3 | 9 | 0.833 (83.3% from bottom) |
+| B | 2 | 3 | 11 | 1.0 (100% from bottom) |
+
+**Key Mathematical Properties**:
+
+1. **Octave Independence**: All Cs map to the same Y position regardless of octave
+2. **Continuous Mapping**: Frequencies between notes get intermediate Y positions
+3. **Configurable Origin**: Different `bottom_start_note` values shift the entire mapping
+4. **Bounded Output**: Always returns values in [0, 1] range for valid inputs
+5. **Logarithmic Scaling**: Equal frequency ratios produce equal visual distances
+
+**Error Handling**:
+
+- Returns `null` for invalid inputs (non-finite, zero, or negative frequencies)
+- Clamping ensures output stays within [0, 1] even for edge cases
