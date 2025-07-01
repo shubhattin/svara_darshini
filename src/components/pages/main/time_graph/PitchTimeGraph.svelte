@@ -122,6 +122,23 @@
       .filter((point): point is NonNullable<typeof point> => point !== null)
   );
 
+  // Helper function to create smooth curve control points
+  const createCurveControlPoints = (
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    smoothing = 0.3
+  ) => {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const controlPoint1X = x1 + dx * smoothing;
+    const controlPoint1Y = y1;
+    const controlPoint2X = x2 - dx * smoothing;
+    const controlPoint2Y = y2;
+    return { controlPoint1X, controlPoint1Y, controlPoint2X, controlPoint2Y };
+  };
+
   // Compute normal and faint segments for jump highlights
   const [normalSegments, faintSegments] = $derived(
     graphData.reduce<[string[], string[]]>(
@@ -137,11 +154,23 @@
           const deltaPitch = point.pitch - prev.pitch;
           const deltaY = y - prevY;
           const isJump = (deltaPitch > 0 && deltaY > 0) || (deltaPitch < 0 && deltaY < 0);
+
           if (isJump) {
             norm.push(`M ${x} ${y}`);
-            faint.push(`M ${prevX} ${prevY}`, `L ${x} ${y}`);
+            // Use smooth curve for faint segments too
+            const { controlPoint1X, controlPoint1Y, controlPoint2X, controlPoint2Y } =
+              createCurveControlPoints(prevX, prevY, x, y);
+            faint.push(
+              `M ${prevX} ${prevY}`,
+              `C ${controlPoint1X} ${controlPoint1Y}, ${controlPoint2X} ${controlPoint2Y}, ${x} ${y}`
+            );
           } else {
-            norm.push(`L ${x} ${y}`);
+            // Create smooth curve for normal segments
+            const { controlPoint1X, controlPoint1Y, controlPoint2X, controlPoint2Y } =
+              createCurveControlPoints(prevX, prevY, x, y);
+            norm.push(
+              `C ${controlPoint1X} ${controlPoint1Y}, ${controlPoint2X} ${controlPoint2Y}, ${x} ${y}`
+            );
           }
         }
         return [norm, faint];
@@ -309,7 +338,7 @@
             stroke="url(#noteGradient)"
             stroke-width="2"
             fill="none"
-            opacity="0.4"
+            opacity="0.3"
           />
         {/if}
         <path
