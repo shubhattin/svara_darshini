@@ -127,16 +127,23 @@
   const lastPoint = $derived(graphData[graphData.length - 1]);
   const lastX = $derived(get_x_pos_on_graph(lastPoint.originalIndex));
   const lastY = $derived(get_y_pos_on_graph(lastPoint.yRatio));
+
+  // Smart label positioning to avoid cropping
+  const isRightSide = $derived(lastX > SVG_BACKGROUND.width * 0.85);
+  const isNearTop = $derived(lastY < GRAPH_PADDING.top + 20);
+  const indicatorX = $derived(isRightSide ? lastX - 10 : lastX + 10);
+  const indicatorY = $derived(isNearTop ? lastY + 20 : lastY - 10);
+  const textAnchor = $derived(isRightSide ? 'end' : 'start');
 </script>
 
 <!-- <div class="flex items-center justify-center">
   <div
-    class=" mr-4 rounded-lg bg-gradient-to-r from-amber-600 via-orange-700 to-red-600 px-3 py-1 text-sm font-bold text-white select-none"
+    class="mr-4 rounded-lg bg-gradient-to-r from-amber-600 via-orange-700 to-red-600 px-2 py-1 text-xs font-bold text-white select-none"
   >
-    Alpha
+    Beta
   </div>
 </div> -->
-<div class="mt-2 h-[250px] w-full sm:h-[350px] md:h-[500px] lg:h-[600px]">
+<div class="mt-1 h-[250px] w-full sm:h-[350px] md:h-[500px] lg:h-[600px]">
   {#if graphData.length > 1}
     <!-- <h3 class="mb-4 text-lg font-semibold">Pitch Over Time</h3> -->
     <svg
@@ -214,9 +221,10 @@
       <!-- Current frequency display -->
       <circle cx={lastX} cy={lastY} r="4" fill="#ef4444" />
       <text
-        x={lastX + 10}
-        y={lastY - 10}
-        class="fill-gray-800 text-sm font-medium dark:fill-gray-200"
+        x={indicatorX}
+        y={indicatorY}
+        text-anchor={textAnchor}
+        class="fill-gray-800 text-xs font-medium opacity-85 dark:fill-gray-200"
       >
         {lastPoint.pitch.toFixed(1)} Hz ({lastPoint.note}{audio_info_scale})
       </text>
