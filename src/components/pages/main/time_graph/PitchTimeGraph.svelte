@@ -309,7 +309,7 @@
             stroke="url(#noteGradient)"
             stroke-width="2"
             fill="none"
-            opacity="0.4"
+            opacity="0.3"
           />
         {/if}
         <path
