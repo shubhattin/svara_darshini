@@ -1,7 +1,33 @@
-export const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
+export const NOTES_STARTING_WITH_A = [
+  'A',
+  'A#',
+  'B',
+  'C',
+  'C#',
+  'D',
+  'D#',
+  'E',
+  'F',
+  'F#',
+  'G',
+  'G#'
+] as const;
+export const NOTES_STARTING_WITH_C = [
+  'C',
+  'C#',
+  'D',
+  'D#',
+  'E',
+  'F',
+  'F#',
+  'G',
+  'G#',
+  'A',
+  'A#',
+  'B'
+] as const;
+export const NOTES = NOTES_STARTING_WITH_C;
 export type note_types = (typeof NOTES)[number];
-
-export const PURE_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 
 export const SARGAM: { name: string; key: string }[] = [
   { name: 'Sa', key: 's' },
@@ -18,8 +44,25 @@ export const SARGAM: { name: string; key: string }[] = [
   { name: 'Ni', key: 'n' }
 ];
 
-export const PURE_SARGAM = ['Sa', 'Re', 'Ga', 'Ma', 'Pa', 'Dha', 'Ni'];
+export const getNoteNumberFromPitch = (frequency: number) => {
+  const noteNum = 12 * (Math.log(frequency / 440) / Math.log(2));
+  return Math.round(noteNum) + 69;
+};
 
+export const getNoteFrequency = (note: number) => {
+  return 440 * Math.pow(2, (note - 69) / 12);
+};
+
+export const getScaleFromNoteNumber = (noteNumber: number) => {
+  return Math.floor(noteNumber / 12) - 1;
+};
+
+export const getDetuneFromPitch = (pitch: number, noteNumber: number) => {
+  return Math.floor((1200 * Math.log(pitch / getNoteFrequency(noteNumber))) / Math.log(2));
+};
+
+// export const PURE_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+// export const PURE_SARGAM = ['Sa', 'Re', 'Ga', 'Ma', 'Pa', 'Dha', 'Ni'];
 // function to generate NOTES to sa re ga ma pa dha ni mapping from base note, no half steps
 // Sa to Re - 2 half steps
 // Re to Ga - 2 half steps
@@ -28,25 +71,23 @@ export const PURE_SARGAM = ['Sa', 'Re', 'Ga', 'Ma', 'Pa', 'Dha', 'Ni'];
 // Pa to Dha - 2 half steps
 // Dha to Ni - 2 half steps
 // Ni to Sa - 1 half steps
+// eg : notesToSargam("A") => ["A", "B", "C#", "D", "E", "F#", "G#"]
+// export const notesToSargam = (baseNote: string) => {
+//   const baseNoteIndex = NOTES.indexOf(baseNote as note_types);
+//   const sargam = [];
+//   sargam.push(NOTES[baseNoteIndex]);
+//   sargam.push(NOTES[(baseNoteIndex + 2) % 12]);
+//   sargam.push(NOTES[(baseNoteIndex + 4) % 12]);
+//   sargam.push(NOTES[(baseNoteIndex + 5) % 12]);
+//   sargam.push(NOTES[(baseNoteIndex + 7) % 12]);
+//   sargam.push(NOTES[(baseNoteIndex + 9) % 12]);
+//   sargam.push(NOTES[(baseNoteIndex + 11) % 12]);
+//   return sargam;
+// };
 
-//eg : notesToSargam("A") => ["A", "B", "C#", "D", "E", "F#", "G#"]
-
-export const notesToSargam = (baseNote: string) => {
-  const baseNoteIndex = NOTES.indexOf(baseNote as note_types);
-  const sargam = [];
-  sargam.push(NOTES[baseNoteIndex]);
-  sargam.push(NOTES[(baseNoteIndex + 2) % 12]);
-  sargam.push(NOTES[(baseNoteIndex + 4) % 12]);
-  sargam.push(NOTES[(baseNoteIndex + 5) % 12]);
-  sargam.push(NOTES[(baseNoteIndex + 7) % 12]);
-  sargam.push(NOTES[(baseNoteIndex + 9) % 12]);
-  sargam.push(NOTES[(baseNoteIndex + 11) % 12]);
-  return sargam;
-};
-
-export const getSargamForNote = (note: string, scale: string) => {
-  // create an array by moving all notes before scale to infront
-  const notes = notesToSargam(scale);
-  const noteIndex = notes.indexOf(note);
-  return SARGAM[noteIndex];
-};
+// export const getSargamForNote = (note: string, scale: string) => {
+//   // create an array by moving all notes before scale to infront
+//   const notes = notesToSargam(scale);
+//   const noteIndex = notes.indexOf(note);
+//   return SARGAM[noteIndex];
+// };
