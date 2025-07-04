@@ -176,6 +176,8 @@
             norm.push(
               `C ${controlPoint1X} ${controlPoint1Y}, ${controlPoint2X} ${controlPoint2Y}, ${x} ${y}`
             );
+            // for straight line
+            // `L ${x} ${y}`;
           }
         }
         return [norm, faint];
