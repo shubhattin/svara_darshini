@@ -156,6 +156,11 @@
         console.error('Microphone permission not granted');
         return;
       }
+      console.log(
+        'Selected Microphone: ',
+        audio_devices.find((device, i) => device.deviceId === selected_device)?.label ??
+          selected_device
+      );
 
       // start audio context
       audio_context = new AudioContext();
