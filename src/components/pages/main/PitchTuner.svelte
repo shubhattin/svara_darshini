@@ -220,7 +220,7 @@
       update_interval = setInterval(updateAudioInfo, AUDIO_INFO_UPDATE_INTERVAL);
       started = true;
     } catch (error) {
-      console.log('error in Start-->', error);
+      console.error('error in Start-->', error);
     }
   };
 
