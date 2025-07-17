@@ -3,7 +3,7 @@
   import { NOTES, NOTES_STARTING_WITH_A, type note_types, SARGAM } from '../constants';
   import { cl_join } from '~/tools/cl_join';
   import { Popover } from '@skeletonlabs/skeleton-svelte';
-  import { BsChevronDown, BsChevronUp } from 'svelte-icons-pack/bs';
+  import { BsChevronDown, BsChevronUp, BsPauseFill, BsPlayFill } from 'svelte-icons-pack/bs';
   import Icon from '~/tools/Icon.svelte';
 
   let Sa_at_popup_status = $state(false);
@@ -13,7 +13,7 @@
     pitch_history,
     stop_button,
     MAX_PITCH_HISTORY_POINTS,
-    audio_info_scale,
+    audio_info_scale: audio_info_scale_prop,
     bottom_start_note = $bindable(),
     selected_Sa_at = $bindable()
   }: {
@@ -104,7 +104,7 @@
     return Math.min(Math.max(normalized, 0), 100) / 100;
   };
 
-  const graphData = $derived(
+  const graphDataMain = $derived(
     pitch_history
       .map((point, index) => {
         const yPos = frequencyToYPositionRatio(point.pitch);
@@ -120,6 +120,18 @@
           : null;
       })
       .filter((point): point is NonNullable<typeof point> => point !== null)
+  );
+  let is_paused = $state(false);
+  let paused_graph_data = $state<{
+    history: typeof graphDataMain;
+    audio_info_scale?: number;
+  }>({
+    history: [],
+    audio_info_scale: undefined
+  });
+  let graphData = $derived(is_paused ? paused_graph_data.history : graphDataMain);
+  let audio_info_scale = $derived(
+    is_paused ? paused_graph_data.audio_info_scale : audio_info_scale_prop
   );
 
   // Helper function to create smooth curve control points
@@ -407,4 +419,16 @@
     </svg>
   {/if}
 </div>
-{@render stop_button()}
+<div class="mt-4 flex items-center justify-center space-x-3 sm:mt-5 sm:space-x-4 md:space-x-5">
+  <button
+    class="btn gap-1 rounded-lg bg-primary-600 px-2 py-1 text-xl font-bold text-white dark:bg-primary-500"
+    onclick={() => {
+      paused_graph_data = { history: graphData, audio_info_scale: audio_info_scale_prop };
+      is_paused = !is_paused;
+    }}
+  >
+    <Icon src={is_paused ? BsPlayFill : BsPauseFill} class="-mt-1 text-2xl" />
+    {is_paused ? 'Play' : 'Pause'}
+  </button>
+  {@render stop_button()}
+</div>

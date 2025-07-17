@@ -261,7 +261,7 @@
       <div class="relative flex items-center gap-3">
         <Icon
           src={FiPlay}
-          class="text-2xl transition-transform duration-200 group-hover:scale-110"
+          class="-mt-1 text-2xl transition-transform duration-200 group-hover:scale-110"
         />
         <span>Start</span>
       </div>
@@ -269,15 +269,13 @@
   </div>
 {/if}
 {#snippet stop_button()}
-  <div class="mt-4 flex items-center justify-center sm:mt-5">
-    <button
-      class="btn gap-1 rounded-lg bg-error-600 px-2 py-1 text-xl font-bold text-white dark:bg-error-500"
-      onclick={Stop}
-    >
-      <Icon src={BiStopCircle} class="text-2xl" />
-      Stop
-    </button>
-  </div>
+  <button
+    class="btn gap-1 rounded-lg bg-error-600 px-2 py-1 text-xl font-bold text-white dark:bg-error-500"
+    onclick={Stop}
+  >
+    <Icon src={BiStopCircle} class="-mt-1 text-2xl" />
+    Stop
+  </button>
 {/snippet}
 
 {#if audio_info && started}

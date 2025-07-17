@@ -132,6 +132,8 @@
     </Popover>
 
     <!-- Stop button -->
-    {@render stop_button()}
+    <div class="mt-4 flex items-center justify-center sm:mt-5">
+      {@render stop_button()}
+    </div>
   </div>
 </div>
