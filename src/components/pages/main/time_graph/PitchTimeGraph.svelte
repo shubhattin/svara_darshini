@@ -288,7 +288,7 @@
   </div>
 </div>
 
-<div class="mt-1 h-[250px] w-full sm:h-[350px] md:h-[500px] lg:h-[600px]">
+<div class={cl_join('mt-1 w-full', 'h-[250px] sm:h-[330px] md:h-[500px] lg:h-[600px]')}>
   {#if graphData.length > 0}
     <!-- <h3 class="mb-4 text-lg font-semibold">Pitch Over Time</h3> -->
     <svg

@@ -23,10 +23,10 @@
           onclick={async () => {
             await updateServiceWorker(true);
           }}
-          class="btn preset-tonal-primary px-2 py-1 font-bold">Reload</button
+          class="btn preset-tonal-primary px-2 py-1 font-bold">Update</button
         >
         <button onclick={() => (popup_open = false)} class="btn preset-tonal-error font-bold"
-          >Dismiss</button
+          >Later</button
         >
       </span>
     </div>
