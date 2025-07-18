@@ -213,7 +213,6 @@
 
 <div class="flex items-center justify-center gap-x-8 sm:gap-x-12 md:gap-x-16 lg:gap-x-20">
   <div class="flex items-center gap-x-2">
-    <span class="text-xs font-semibold sm:text-sm md:text-base">Sa at</span>
     <Popover
       open={Sa_at_popup_status}
       onOpenChange={(e) => (Sa_at_popup_status = e.open)}
@@ -221,6 +220,7 @@
     >
       {#snippet trigger()}
         <div class="flex items-center justify-center gap-x-1 outline-hidden">
+          <span class="text-xs font-semibold sm:text-sm md:text-base">Sa at</span>
           {#if !Sa_at_popup_status}
             <Icon src={BsChevronDown} class="-mt-1 size-4 sm:size-5" />
           {:else}
@@ -250,7 +250,6 @@
     </Popover>
   </div>
   <div class="flex items-center gap-x-2">
-    <span class="text-xs font-semibold sm:text-sm md:text-base">Bottom Start Note</span>
     <Popover
       open={bottom_start_note_popup_status}
       onOpenChange={(e) => (bottom_start_note_popup_status = e.open)}
@@ -258,6 +257,7 @@
     >
       {#snippet trigger()}
         <div class="flex items-center justify-center gap-x-1 outline-hidden">
+          <span class="text-xs font-semibold sm:text-sm md:text-base">Bottom Start Note</span>
           {#if !bottom_start_note_popup_status}
             <Icon src={BsChevronDown} class="-mt-1 size-4 sm:size-5" />
           {:else}
