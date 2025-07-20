@@ -154,16 +154,16 @@
     <!-- File Drop Zone -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
-      class="relative w-full max-w-md rounded-xl border-1 border-dashed border-surface-300 bg-surface-50 p-1 text-center transition-all duration-200 hover:border-primary-400 hover:bg-surface-100 lg:p-4 dark:border-surface-600 dark:bg-surface-800 dark:hover:border-primary-400 dark:hover:bg-surface-700
+      class="relative w-full max-w-md rounded-xl border-2 border-dashed border-surface-300 bg-surface-50 p-1 text-center transition-all duration-200 hover:border-primary-400 hover:bg-surface-100 lg:p-4 dark:border-surface-600 dark:bg-surface-800 dark:hover:border-primary-400 dark:hover:bg-surface-700
              {is_dragging ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' : ''}"
       ondrop={handleDrop}
       ondragover={handleDragOver}
       ondragleave={handleDragLeave}
       in:fade
     >
-      <div class="space-y-0.5">
+      <div class="space-y-2">
         <div
-          class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/30"
+          class="mx-auto flex size-14 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/30"
         >
           <Icon
             src={is_dragging ? BiMusic : FiUploadCloud}
