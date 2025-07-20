@@ -393,8 +393,8 @@
   classes="mt-4"
 >
   {#snippet list()}
-    <Tabs.Control value="mic"><Icon src={BiMicrophone} class="-mt-1 size-6" /> Mic</Tabs.Control>
-    <Tabs.Control value="file"><Icon src={FiMusic} class="-mt-1 mr-1 size-5" /> File</Tabs.Control>
+    <Tabs.Control value="mic"><Icon src={BiMicrophone} class="-mt-1 size-6" />Mic</Tabs.Control>
+    <Tabs.Control value="file"><Icon src={FiMusic} class="-mt-1 mr-1 size-5" />File</Tabs.Control>
   {/snippet}
   {#snippet content()}
     <Tabs.Panel value="mic">
