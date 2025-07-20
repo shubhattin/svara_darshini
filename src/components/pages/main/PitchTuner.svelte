@@ -89,9 +89,14 @@
   onMount(() => {
     get_audio_devices();
     indactivity_timeout(ms('30mins'), Stop);
-    navigator.mediaDevices.addEventListener('devicechange', handleDeviceChange);
+    function func() {
+      console.log('devicechange detected');
+      get_audio_devices(false);
+      handleDeviceChange();
+    }
+    navigator.mediaDevices.addEventListener('devicechange', func);
     return () => {
-      navigator.mediaDevices.removeEventListener('devicechange', handleDeviceChange);
+      navigator.mediaDevices.removeEventListener('devicechange', func);
     };
   });
 
