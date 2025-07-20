@@ -1,2 +1,2 @@
-/ingest/static/*  https://us-assets.i.posthog.com/static/:splat  200!
-/ingest/*         https://us.i.posthog.com/:splat  200!
+/new_data_submit/static/*  https://us-assets.i.posthog.com/static/:splat  200!
+/new_data_submit/*         https://us.i.posthog.com/:splat  200!
