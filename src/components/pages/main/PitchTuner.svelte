@@ -8,9 +8,9 @@
     getDetuneFromPitch
   } from './constants';
   import { onMount, type Snippet } from 'svelte';
-  import { FiPlay, FiRefreshCcw } from 'svelte-icons-pack/fi';
+  import { FiMusic, FiPlay, FiRefreshCcw } from 'svelte-icons-pack/fi';
   import Icon from '~/tools/Icon.svelte';
-  import { BiStopCircle } from 'svelte-icons-pack/bi';
+  import { BiMicrophone, BiStopCircle } from 'svelte-icons-pack/bi';
   import { fade, slide } from 'svelte/transition';
   import { BsMic } from 'svelte-icons-pack/bs';
   import { delay } from '~/tools/delay';
@@ -42,6 +42,8 @@
     welcome_msg: Snippet;
   } = $props();
 
+  let input_mode = $state<'mic' | 'file'>('mic');
+  let input_file = $state<File | null>(null);
   let audio_devices = $state<MediaDeviceInfo[]>([]);
   let device_list_loaded = $state(false);
 
@@ -328,31 +330,51 @@
     {/snippet}
   </Tabs>
 {/if}
-<label class="mt-3 flex space-x-1">
-  <Icon src={BsMic} class="text-2xl sm:text-3xl" />
-  {#if !device_list_loaded}
-    <span
-      class="-mt-1 inline-block h-10 placeholder w-44 animate-pulse rounded-md sm:w-56 md:w-60 lg:w-64"
-    ></span>
-  {:else}
-    <select
-      class="select inline-block w-44 rounded-md px-2 py-1 sm:w-56 md:w-60 lg:w-64"
-      bind:value={selected_device}
-      onchange={handleDeviceChange}
-    >
-      {#each audio_devices as device (device.deviceId)}
-        <option value={device.deviceId}>
-          {device.label || `Microphone ${audio_devices.indexOf(device) + 1}`}
-        </option>
-      {/each}
-    </select>
-  {/if}
-  <button
-    title="Refresh Device List"
-    class={cl_join('btn p-0 pl-2 outline-hidden select-none')}
-    onclick={() => get_audio_devices()}
-    disabled={!device_list_loaded}
-  >
-    <Icon src={FiRefreshCcw} class=" text-lg" />
-  </button>
-</label>
+<Tabs
+  value={input_mode}
+  onValueChange={(e) => (input_mode = e.value as typeof input_mode)}
+  listJustify="justify-center"
+  classes="mt-4"
+>
+  {#snippet list()}
+    <Tabs.Control value="mic"><Icon src={BiMicrophone} class="-mt-1 size-6" /> Mic</Tabs.Control>
+    <Tabs.Control value="file"><Icon src={FiMusic} class="-mt-1 mr-1 size-5" /> File</Tabs.Control>
+  {/snippet}
+  {#snippet content()}
+    <Tabs.Panel value="mic">
+      <div class="flex items-center justify-center">
+        <label class="flex space-x-1">
+          <Icon src={BsMic} class="text-2xl sm:text-3xl" />
+          {#if !device_list_loaded}
+            <span
+              class="-mt-1 inline-block h-10 placeholder w-44 animate-pulse rounded-md sm:w-56 md:w-60 lg:w-64"
+            ></span>
+          {:else}
+            <select
+              class="select inline-block w-44 rounded-md px-2 py-1 sm:w-56 md:w-60 lg:w-64"
+              bind:value={selected_device}
+              onchange={handleDeviceChange}
+            >
+              {#each audio_devices as device (device.deviceId)}
+                <option value={device.deviceId}>
+                  {device.label || `Microphone ${audio_devices.indexOf(device) + 1}`}
+                </option>
+              {/each}
+            </select>
+          {/if}
+          <button
+            title="Refresh Device List"
+            class={cl_join('btn p-0 pl-2 outline-hidden select-none')}
+            onclick={() => get_audio_devices()}
+            disabled={!device_list_loaded}
+          >
+            <Icon src={FiRefreshCcw} class=" text-lg" />
+          </button>
+        </label>
+      </div>
+    </Tabs.Panel>
+    <Tabs.Panel value="file">
+      <!--  -->
+    </Tabs.Panel>
+  {/snippet}
+</Tabs>
