@@ -21,6 +21,8 @@
   import { Tabs } from '@skeletonlabs/skeleton-svelte';
   import CircularScale from './circular/CircularScale.svelte';
   import PitchTimeGraph from './time_graph/PitchTimeGraph.svelte';
+  import AudioInputFile from './AudioInputFile.svelte';
+  import type { ZodMiniNumber } from 'zod/v4-mini';
 
   let {
     selected_device = $bindable(),
@@ -46,6 +48,12 @@
   let input_file = $state<File | null>(null);
   let audio_devices = $state<MediaDeviceInfo[]>([]);
   let device_list_loaded = $state(false);
+
+  // File input states
+  let file_is_playing = $state(false);
+  let file_current_time = $state(0);
+  let file_duration = $state(0);
+  let file_audio_element: HTMLAudioElement | null = null;
 
   let audio_context: AudioContext | null = null;
   let analyzer_node: AnalyserNode | null = null;
@@ -75,6 +83,7 @@
       pitch: number;
       note: string;
       clarity: number;
+      scale: number;
     }>
   >([]);
 
@@ -109,6 +118,12 @@
 
     // stop mic stream
     mic_stream?.getTracks().forEach((track) => track.stop());
+
+    // stop file audio if playing
+    if (input_mode === 'file' && file_audio_element) {
+      file_audio_element.pause();
+      file_is_playing = false;
+    }
 
     // destroy analyzer node
     analyzer_node?.disconnect();
@@ -160,61 +175,82 @@
 
   const Start = async () => {
     try {
-      // Check and request microphone permissions first
-      const hasPermission = await checkAndRequestMicrophonePermission();
-      // console.log('hasPermission', hasPermission);
-      if (!hasPermission) {
-        console.error('Microphone permission not granted');
-        return;
+      if (input_mode === 'mic') {
+        // Microphone input mode
+        const hasPermission = await checkAndRequestMicrophonePermission();
+        if (!hasPermission) {
+          console.error('Microphone permission not granted');
+          return;
+        }
+        console.log(
+          'Selected Microphone: ',
+          audio_devices.find((device, i) => device.deviceId === selected_device)?.label ??
+            selected_device
+        );
+
+        // start audio context
+        audio_context = new AudioContext();
+        // create analyzer node
+        analyzer_node = audio_context.createAnalyser();
+
+        // connect analyzer node to audio context destination
+        const constraints: MediaStreamConstraints = {
+          audio: selected_device ? { deviceId: { ideal: selected_device } } : true
+        };
+
+        let stream: MediaStream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (err) {
+          console.warn("Couldn't open selected device, falling back to default", err);
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        }
+        get_audio_devices(false); // refresh list
+        if (!audio_context) return;
+        if (!analyzer_node) return;
+        if (!stream) return;
+        mic_stream = stream;
+
+        analyzer_node.fftSize = FFT_SIZE;
+        audio_context.createMediaStreamSource(stream).connect(analyzer_node);
+      } else if (input_mode === 'file') {
+        // File input mode
+        if (!file_audio_element || !input_file) {
+          console.error('No audio file selected');
+          return;
+        }
+
+        // start audio context
+        audio_context = new AudioContext();
+        // create analyzer node
+        analyzer_node = audio_context.createAnalyser();
+        analyzer_node.fftSize = FFT_SIZE;
+
+        // Create media element source
+        const source = audio_context.createMediaElementSource(file_audio_element);
+        source.connect(analyzer_node);
+        source.connect(audio_context.destination); // So we can hear the audio
       }
-      console.log(
-        'Selected Microphone: ',
-        audio_devices.find((device, i) => device.deviceId === selected_device)?.label ??
-          selected_device
-      );
 
-      // start audio context
-      audio_context = new AudioContext();
-      // create analyzer node
-      analyzer_node = audio_context.createAnalyser();
-
-      // connect analyzer node to audio context destination
-      const constraints: MediaStreamConstraints = {
-        audio: selected_device ? { deviceId: { ideal: selected_device } } : true
-      };
-
-      let stream: MediaStream;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia(constraints);
-      } catch (err) {
-        console.warn('Couldn’t open selected device, falling back to default', err);
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        // You may also want to refresh your device list here
-      }
-      get_audio_devices(false); // refesh list
-      if (!audio_context) return;
-      if (!analyzer_node) return;
-
-      if (!stream) return;
-      mic_stream = stream;
-
-      analyzer_node.fftSize = FFT_SIZE;
-
-      audio_context.createMediaStreamSource(stream).connect(analyzer_node);
-      const detector = PitchDetector.forFloat32Array(analyzer_node.fftSize);
+      const detector = PitchDetector.forFloat32Array(analyzer_node!.fftSize);
       const input = new Float32Array(detector.inputLength);
 
       clearInterval(update_interval!);
       pitch_history = [];
 
       function updateAudioInfo() {
+        // For file mode, only analyze when audio is playing
+        if (input_mode === 'file' && !file_is_playing) {
+          audio_info = { pitch: 0, clarity: 0, note: '', scale: 0, detune: NaN };
+          return;
+        }
+
         analyzer_node?.getFloatTimeDomainData(input);
         const [pitch, clarity] = detector.findPitch(input, audio_context!.sampleRate);
-        // console.log(pitch, clarity);
-        // console.log(pitch, clarity);
+
         const rawNoteNumber = getNoteNumberFromPitch(pitch);
         const noteName = NOTES[rawNoteNumber % 12];
-        // console.log(pitch);
+
         const currentAudioInfo = {
           pitch: Math.round(pitch * 10) / 10,
           clarity: Math.round(clarity * 100),
@@ -224,6 +260,7 @@
         };
 
         audio_info = currentAudioInfo;
+        // console.log('audio_info', audio_info);
 
         // Add to pitch history for time graph
         const currentTime = Date.now();
@@ -231,7 +268,8 @@
           time: currentTime,
           pitch: currentAudioInfo.pitch,
           note: currentAudioInfo.note,
-          clarity: currentAudioInfo.clarity
+          clarity: currentAudioInfo.clarity,
+          scale: currentAudioInfo.scale
         });
 
         // Keep only the last MAX_PITCH_HISTORY_POINTS entries
@@ -239,6 +277,7 @@
           pitch_history = pitch_history.slice(-MAX_PITCH_HISTORY_POINTS);
         }
       }
+
       updateAudioInfo();
       update_interval = setInterval(updateAudioInfo, AUDIO_INFO_UPDATE_INTERVAL);
       started = true;
@@ -252,6 +291,15 @@
       // disconnect previous mic
       mic_stream?.getTracks().forEach((track) => track.stop());
       Start(); // Restart with new device if already running
+    }
+  };
+
+  // File audio event handlers
+  const handleAudioReady = (elm: HTMLAudioElement) => {
+    file_audio_element = elm;
+    // Auto-start analysis for file mode
+    if (input_mode === 'file' && !started) {
+      Start();
     }
   };
 </script>
@@ -270,9 +318,12 @@
              px-8 py-4 text-xl font-bold text-white shadow-xl
              transition-all duration-300 ease-out
              hover:scale-105 hover:from-blue-600
-             hover:via-purple-600 hover:to-indigo-700 hover:shadow-2xl active:scale-95"
+             hover:via-purple-600 hover:to-indigo-700 hover:shadow-2xl active:scale-95
+             "
       onclick={Start}
     >
+      <!-- {input_mode === 'file' && !input_file ? 'cursor-not-allowed opacity-50' : ''} -->
+      <!-- disabled={input_mode === 'file' && !input_file} -->
       <div
         class="absolute inset-0 translate-x-[-100%] bg-gradient-to-r from-white/0 via-white/20 to-white/0 transition-transform duration-700 ease-out group-hover:translate-x-[100%]"
       ></div>
@@ -322,7 +373,7 @@
           {pitch_history}
           {stop_button}
           {MAX_PITCH_HISTORY_POINTS}
-          audio_info_scale={audio_info?.scale}
+          {input_mode}
           bind:selected_Sa_at={selected_timegraph_Sa_at}
           bind:bottom_start_note={selected_timegraph_bottom_start_note}
         />
@@ -332,7 +383,12 @@
 {/if}
 <Tabs
   value={input_mode}
-  onValueChange={(e) => (input_mode = e.value as typeof input_mode)}
+  onValueChange={(e) => {
+    if (started && input_mode !== e.value) {
+      Stop(); // Stop current analysis when switching modes
+    }
+    input_mode = e.value as typeof input_mode;
+  }}
   listJustify="justify-center"
   classes="mt-4"
 >
@@ -374,7 +430,14 @@
       </div>
     </Tabs.Panel>
     <Tabs.Panel value="file">
-      <!--  -->
+      <AudioInputFile
+        bind:audio_file={input_file}
+        bind:is_playing={file_is_playing}
+        bind:current_time={file_current_time}
+        bind:duration={file_duration}
+        on_audio_ready={handleAudioReady}
+        handle_stop={Stop}
+      />
     </Tabs.Panel>
   {/snippet}
 </Tabs>
