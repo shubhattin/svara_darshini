@@ -13,21 +13,22 @@
     pitch_history,
     stop_button,
     MAX_PITCH_HISTORY_POINTS,
-    audio_info_scale: audio_info_scale_prop,
     bottom_start_note = $bindable(),
-    selected_Sa_at = $bindable()
+    selected_Sa_at = $bindable(),
+    input_mode
   }: {
     pitch_history: Array<{
       time: number;
       pitch: number;
       note: string;
       clarity: number;
+      scale: number;
     }>;
     stop_button: Snippet;
     MAX_PITCH_HISTORY_POINTS: number;
-    audio_info_scale?: number;
     bottom_start_note: note_types;
     selected_Sa_at: note_types;
+    input_mode: 'mic' | 'file';
   } = $props();
 
   const SVG_BACKGROUND = {
@@ -115,7 +116,8 @@
               pitch: point.pitch,
               note: point.note,
               clarity: point.clarity,
-              originalIndex: index
+              originalIndex: index,
+              scale: point.scale
             }
           : null;
       })
@@ -130,9 +132,6 @@
     audio_info_scale: undefined
   });
   let graphData = $derived(is_paused ? paused_graph_data.history : graphDataMain);
-  let audio_info_scale = $derived(
-    is_paused ? paused_graph_data.audio_info_scale : audio_info_scale_prop
-  );
 
   // Helper function to create smooth curve control points
   const createCurveControlPoints = (
@@ -288,7 +287,7 @@
   </div>
 </div>
 
-<div class={cl_join('mt-1 w-full', 'h-[250px] sm:h-[330px] md:h-[500px] lg:h-[600px]')}>
+<div class={cl_join('mt-1 w-full', 'h-[250px] sm:h-[330px] md:h-[500px] lg:h-[580px]')}>
   {#if graphData.length > 0}
     <!-- <h3 class="mb-4 text-lg font-semibold">Pitch Over Time</h3> -->
     <svg
@@ -393,7 +392,7 @@
           text-anchor={textAnchor}
           class="fill-gray-800 text-xs font-medium opacity-85 dark:fill-gray-200"
         >
-          {lastPoint.pitch.toFixed(1)} Hz ({lastPoint.note}{audio_info_scale})
+          {lastPoint.pitch.toFixed(1)} Hz ({lastPoint.note}{lastPoint.scale})
         </text>
       </g>
 
@@ -419,16 +418,18 @@
     </svg>
   {/if}
 </div>
-<div class="mt-4 flex items-center justify-center space-x-3 sm:mt-5 sm:space-x-4 md:space-x-5">
-  <button
-    class="btn gap-1 rounded-lg bg-primary-600 px-2 py-1 text-xl font-bold text-white dark:bg-primary-500"
-    onclick={() => {
-      paused_graph_data = { history: graphData, audio_info_scale: audio_info_scale_prop };
-      is_paused = !is_paused;
-    }}
-  >
-    <Icon src={is_paused ? BsPlayFill : BsPauseFill} class="-mt-1 text-2xl" />
-    {is_paused ? 'Play' : 'Pause'}
-  </button>
-  {@render stop_button()}
-</div>
+{#if input_mode === 'mic'}
+  <div class="mt-4 flex items-center justify-center space-x-3 sm:mt-5 sm:space-x-4 md:space-x-5">
+    <button
+      class="btn gap-1 rounded-lg bg-primary-600 px-2 py-1 text-xl font-bold text-white dark:bg-primary-500"
+      onclick={() => {
+        paused_graph_data = { history: graphData };
+        is_paused = !is_paused;
+      }}
+    >
+      <Icon src={is_paused ? BsPlayFill : BsPauseFill} class="-mt-1 text-2xl" />
+      {is_paused ? 'Play' : 'Pause'}
+    </button>
+    {@render stop_button()}
+  </div>
+{/if}
