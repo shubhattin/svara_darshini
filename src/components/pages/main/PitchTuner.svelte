@@ -89,6 +89,10 @@
   onMount(() => {
     get_audio_devices();
     indactivity_timeout(ms('30mins'), Stop);
+    navigator.mediaDevices.addEventListener('devicechange', handleDeviceChange);
+    return () => {
+      navigator.mediaDevices.removeEventListener('devicechange', handleDeviceChange);
+    };
   });
 
   const Stop = () => {
@@ -168,11 +172,18 @@
       analyzer_node = audio_context.createAnalyser();
 
       // connect analyzer node to audio context destination
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          deviceId: selected_device ? { exact: selected_device } : undefined
-        }
-      });
+      const constraints: MediaStreamConstraints = {
+        audio: selected_device ? { deviceId: { ideal: selected_device } } : true
+      };
+
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (err) {
+        console.warn('Couldn’t open selected device, falling back to default', err);
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // You may also want to refresh your device list here
+      }
       get_audio_devices(false); // refesh list
       if (!audio_context) return;
       if (!analyzer_node) return;
