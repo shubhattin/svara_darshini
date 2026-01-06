@@ -15,15 +15,17 @@
     selected_sargam_orientation = $bindable(),
     selected_note_orientation = $bindable(),
     stop_button,
-    is_paused = $bindable()
+    // is_paused = $bindable()
   }: {
     audio_info: AudioInfo;
     selected_Sa_at: note_types;
     selected_sargam_orientation: 'radial' | 'vertical';
     selected_note_orientation: 'radial' | 'vertical';
     stop_button: Snippet;
-    is_paused: boolean;
+    // is_paused: boolean;
   } = $props();
+
+  let is_paused = $state(false);
 
   let paused_audio_info = $state<AudioInfo | null>(null);
   let audio_info_display = $derived(

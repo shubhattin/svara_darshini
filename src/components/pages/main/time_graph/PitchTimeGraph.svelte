@@ -15,8 +15,8 @@
     MAX_PITCH_HISTORY_POINTS,
     bottom_start_note = $bindable(),
     selected_Sa_at = $bindable(),
-    input_mode,
-    is_paused = $bindable()
+    input_mode
+    // is_paused = $bindable()
   }: {
     pitch_history: Array<{
       time: number;
@@ -32,6 +32,8 @@
     input_mode: 'mic' | 'file';
     is_paused: boolean;
   } = $props();
+
+  let is_paused = $state(false);
 
   const SVG_BACKGROUND = {
     width: 800,
