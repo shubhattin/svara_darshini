@@ -207,7 +207,7 @@
       <!-- Header with file name and close button -->
       <div class="flex items-center justify-between">
         <div class="flex min-w-0 flex-1 items-center space-x-2">
-          <Icon src={BiMusic} class="flex-shrink-0 text-primary-600 dark:text-primary-400" />
+          <Icon src={BiMusic} class="shrink-0 text-primary-600 dark:text-primary-400" />
           <span class="truncate text-sm font-medium text-surface-900 dark:text-surface-100">
             {audio_file.name}
           </span>

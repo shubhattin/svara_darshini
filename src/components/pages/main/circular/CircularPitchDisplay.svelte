@@ -99,7 +99,7 @@
 
     <!-- Note markers and labels -->
     <g
-      class="origin-[0_0] transition-transform duration-500 ease-in-out"
+      class="origin-top-left transition-transform duration-500 ease-in-out"
       style="transform: rotate({-Sa_at_index * 30}deg)"
     >
       {#each NOTES as note, i}
@@ -126,7 +126,7 @@
           dominant-baseline="middle"
           class={cl_join(
             'fill-zinc-700 text-[0.7rem] font-semibold dark:fill-zinc-300',
-            'origin-[0_0] transition-transform duration-600 ease-in-out'
+            'origin-top-left transition-transform duration-600 ease-in-out'
           )}
           transform={note_orientation === 'radial'
             ? `rotate(${angle + 90} ${x} ${y})`
@@ -150,7 +150,7 @@
           dominant-baseline="middle"
           class={cl_join(
             'fill-gray-800 text-xs font-semibold opacity-90 dark:fill-gray-200',
-            'origin-[0_0] transition-transform duration-600 ease-in-out'
+            'origin-top-left transition-transform duration-600 ease-in-out'
           )}
           font-family="ome_bhatkhande_en"
           {...sargam_orientation === 'radial'
@@ -190,7 +190,7 @@
       transform={`rotate(${detune ? cents_to_rotation(detune, note_) : 0})`}
       class={cl_join(
         '-z-10',
-        'origin-[0_0] transition-transform duration-[300ms] ease-linear',
+        'origin-top-left transition-transform duration-300 ease-linear',
         !detune && 'opacity-50'
       )}
     >
@@ -221,7 +221,7 @@
       transform={`rotate(${detune ? (note_index - Sa_at_index) * 30 : 0} 0 0)`}
       class={cl_join(
         'fill-black opacity-10 dark:fill-white dark:opacity-15',
-        'origin-[0_0] transition-transform duration-[300ms] ease-linear',
+        'origin-top-left transition-transform duration-300 ease-linear',
         !detune && 'hidden'
       )}
     />

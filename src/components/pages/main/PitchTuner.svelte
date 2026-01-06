@@ -302,6 +302,8 @@
       Start();
     }
   };
+
+  let is_paused = $state(false);
 </script>
 
 {#if !started}
@@ -314,7 +316,7 @@
     <button
       in:slide
       out:slide
-      class="group relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600
+      class="group relative overflow-hidden rounded-2xl bg-linear-to-r from-blue-500 via-purple-500 to-indigo-600
              px-8 py-4 text-xl font-bold text-white shadow-xl
              transition-all duration-300 ease-out
              hover:scale-105 hover:from-blue-600
@@ -325,7 +327,7 @@
       <!-- {input_mode === 'file' && !input_file ? 'cursor-not-allowed opacity-50' : ''} -->
       <!-- disabled={input_mode === 'file' && !input_file} -->
       <div
-        class="absolute inset-0 translate-x-[-100%] bg-gradient-to-r from-white/0 via-white/20 to-white/0 transition-transform duration-700 ease-out group-hover:translate-x-[100%]"
+        class="absolute inset-0 -translate-x-full bg-linear-to-r from-white/0 via-white/20 to-white/0 transition-transform duration-700 ease-out group-hover:translate-x-full"
       ></div>
       <div class="relative flex items-center gap-3">
         <Icon
@@ -365,6 +367,7 @@
           bind:selected_Sa_at
           bind:selected_sargam_orientation
           bind:selected_note_orientation
+          bind:is_paused
           {stop_button}
         />
       </Tabs.Panel>
@@ -374,6 +377,7 @@
           {stop_button}
           {MAX_PITCH_HISTORY_POINTS}
           {input_mode}
+          bind:is_paused
           bind:selected_Sa_at={selected_timegraph_Sa_at}
           bind:bottom_start_note={selected_timegraph_bottom_start_note}
         />
