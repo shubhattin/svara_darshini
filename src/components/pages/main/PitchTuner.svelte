@@ -303,7 +303,7 @@
     }
   };
 
-  let is_paused = $state(false);
+  // let is_paused = $state(false);
 </script>
 
 {#if !started}
@@ -367,20 +367,20 @@
           bind:selected_Sa_at
           bind:selected_sargam_orientation
           bind:selected_note_orientation
-          bind:is_paused
           {stop_button}
-        />
-      </Tabs.Panel>
+          />
+          <!-- bind:is_paused -->
+        </Tabs.Panel>
       <Tabs.Panel value="time_graph">
         <PitchTimeGraph
           {pitch_history}
           {stop_button}
           {MAX_PITCH_HISTORY_POINTS}
           {input_mode}
-          bind:is_paused
           bind:selected_Sa_at={selected_timegraph_Sa_at}
           bind:bottom_start_note={selected_timegraph_bottom_start_note}
-        />
+          />
+          <!-- bind:is_paused -->
       </Tabs.Panel>
     {/snippet}
   </Tabs>

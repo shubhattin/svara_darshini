@@ -30,7 +30,7 @@
     bottom_start_note: note_types;
     selected_Sa_at: note_types;
     input_mode: 'mic' | 'file';
-    is_paused: boolean;
+    // is_paused: boolean;
   } = $props();
 
   let is_paused = $state(false);
