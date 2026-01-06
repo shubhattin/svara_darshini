@@ -1,11 +1,13 @@
 <script lang="ts">
   import { Popover } from '@skeletonlabs/skeleton-svelte';
-  import { BsChevronDown, BsChevronUp } from 'svelte-icons-pack/bs';
+  import { BsChevronDown, BsChevronUp, BsPauseFill, BsPlayFill } from 'svelte-icons-pack/bs';
   import Icon from '~/tools/Icon.svelte';
   import { cl_join } from '~/tools/cl_join';
   import { NOTES_STARTING_WITH_A, type note_types } from '../constants';
   import CircularPitchDisplay from './CircularPitchDisplay.svelte';
   import type { Snippet } from 'svelte';
+
+  type AudioInfo = { clarity: number; detune: number; note: string; pitch: number; scale: number };
 
   let {
     audio_info,
@@ -14,14 +16,20 @@
     selected_note_orientation = $bindable(),
     stop_button
   }: {
-    audio_info: { clarity: number; detune: number; note: string; pitch: number; scale: number };
+    audio_info: AudioInfo;
     selected_Sa_at: note_types;
     selected_sargam_orientation: 'radial' | 'vertical';
     selected_note_orientation: 'radial' | 'vertical';
     stop_button: Snippet;
   } = $props();
 
-  let { clarity, pitch } = $derived(audio_info);
+  let is_paused = $state(false);
+  let paused_audio_info = $state<AudioInfo | null>(null);
+  let audio_info_display = $derived(
+    is_paused && paused_audio_info ? paused_audio_info : audio_info
+  );
+
+  let { clarity, pitch } = $derived(audio_info_display);
   let Sa_at_popup_status = $state(false);
   let orientation_popup_status = $state(false);
 </script>
@@ -67,7 +75,7 @@
         </Popover>
       </div>
       <CircularPitchDisplay
-        audio_info={audio_info!}
+        audio_info={audio_info_display!}
         bind:Sa_at={selected_Sa_at}
         sargam_orientation={selected_sargam_orientation}
         note_orientation={selected_note_orientation}
@@ -133,7 +141,20 @@
 
     <!-- Stop button -->
     <div class="mt-4 flex items-center justify-center sm:mt-5">
-      {@render stop_button()}
+      <div class="flex items-center justify-center gap-2">
+        <button
+          class="btn gap-1 rounded-lg bg-primary-600 px-2 py-1 text-xl font-bold text-white dark:bg-primary-500"
+          onclick={() => {
+            if (!is_paused) paused_audio_info = { ...audio_info };
+            is_paused = !is_paused;
+          }}
+        >
+          <Icon src={is_paused ? BsPlayFill : BsPauseFill} class="-mt-1 text-2xl" />
+          {is_paused ? 'Play' : 'Pause'}
+        </button>
+
+        {@render stop_button()}
+      </div>
     </div>
   </div>
 </div>

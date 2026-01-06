@@ -84,7 +84,7 @@
         <h1
           class="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-4xl font-bold text-transparent md:text-5xl"
         >
-          Welcome to Svara Darshini
+          Svara Darshini
         </h1>
         <p
           class="mx-auto max-w-2xl text-lg leading-relaxed text-gray-600 md:text-xl dark:text-gray-300"
