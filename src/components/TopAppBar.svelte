@@ -11,7 +11,10 @@
     BsDownload,
     BsBoxArrowUpRight,
     BsBook,
-    BsMusicNote
+    BsMusicNote,
+
+    BsVectorPen
+
   } from 'svelte-icons-pack/bs';
   import { FiMonitor, FiSun, FiMoon } from 'svelte-icons-pack/fi';
   import { page } from '$app/state';
@@ -98,13 +101,20 @@
       title: 'Padavali',
       subtitle: 'A Sanskrit Word Game',
       iconClass: 'bg-gradient-to-br from-indigo-500 to-purple-600'
+    },
+    {
+      href: 'https://akshara.thesanskritchannel.org/',
+      icon: BsVectorPen,
+      title: 'Akshara Shikshaka',
+      subtitle: 'Learn to Write Indian Scripts',
+      iconClass: 'bg-gradient-to-br from-orange-400 to-orange-600'
     }
   ];
 </script>
 
 <div class="pt-safe-top z-50 mb-4">
   <div
-    class="border-b border-gray-200/50 bg-gradient-to-r from-slate-200 via-blue-100 to-zinc-200 shadow-lg backdrop-blur-sm dark:border-slate-600/50 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800"
+    class="border-b border-gray-200/50 bg-linear-to-r from-slate-200 via-blue-100 to-zinc-200 shadow-lg backdrop-blur-sm dark:border-slate-600/50 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800"
   >
     <AppBar class="border-0 bg-transparent shadow-none">
       {#snippet lead()}
@@ -187,7 +197,7 @@
               <!-- Header -->
               <div class="mb-4 flex items-center gap-2">
                 <div
-                  class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600"
+                  class="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-blue-500 to-indigo-600"
                 >
                   <Icon src={IoSettingsSharp} class="h-4 w-4 text-white" />
                 </div>
@@ -244,11 +254,11 @@
                       app_bar_popover_status = false;
                       if (pwa_state.event_triggerer) await pwa_state.event_triggerer.prompt();
                     }}
-                    class="flex w-full items-center gap-3 rounded-lg border-2 border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 p-3 text-left text-sm font-medium text-green-700 transition-all duration-200 hover:scale-[1.02] hover:border-green-300 hover:from-green-100 hover:to-emerald-100 hover:shadow-md active:scale-[0.98] dark:border-green-800 dark:from-green-950/30 dark:to-emerald-950/30 dark:text-green-300 dark:hover:border-green-700 dark:hover:from-green-900/40 dark:hover:to-emerald-900/40"
+                    class="flex w-full items-center gap-3 rounded-lg border-2 border-green-200 bg-linear-to-r from-green-50 to-emerald-50 p-3 text-left text-sm font-medium text-green-700 transition-all duration-200 hover:scale-[1.02] hover:border-green-300 hover:from-green-100 hover:to-emerald-100 hover:shadow-md active:scale-[0.98] dark:border-green-800 dark:from-green-950/30 dark:to-emerald-950/30 dark:text-green-300 dark:hover:border-green-700 dark:hover:from-green-900/40 dark:hover:to-emerald-900/40"
                     title="Install PWA App for offline access"
                   >
                     <div
-                      class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 shadow-sm"
+                      class="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-green-500 to-emerald-600 shadow-sm"
                     >
                       <Icon src={BsDownload} class="h-4 w-4 text-white" />
                     </div>
@@ -310,6 +320,26 @@
                       </div>
                     </a>
                   {/each}
+                  <a
+                  href="https://lipilekhika.in"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onclick={() => app_bar_popover_status = false}
+                  class="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:scale-[1.02] hover:border-slate-300 hover:bg-slate-100 active:scale-[0.98] dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-700/50"
+                >
+                  <span
+                    class="inline-block size-8 bg-cover bg-center bg-no-repeat px-4"
+                    style={`background-image: url('/lipi.svg');`}
+                    title="Lipi Lekhika"
+                    aria-label="Lipi Lekhika"
+                  ></span>
+                  <div>
+                    <div class="font-medium">Lipi Lekhika</div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400">
+                      Type Indian Languages with full Speed and Accuracy
+                    </div>
+                  </div>
+                </a>
                 </div>
               </div>
             </div>
