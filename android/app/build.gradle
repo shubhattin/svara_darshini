@@ -7,8 +7,19 @@ android {
         applicationId "com.shubhattin.svara_darshini"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionName System.getenv("VERSION_NAME") ?: "0.0.0"
-        versionCode (System.getenv("VERSION_CODE") ?: "1").toInteger()
+        def resolvedVersionName =
+                (project.findProperty("VERSION_NAME") ?: System.getenv("VERSION_NAME") ?: "0.0.0").toString()
+        def resolvedVersionCodeStr =
+                (project.findProperty("VERSION_CODE") ?: System.getenv("VERSION_CODE") ?: "1").toString()
+        def resolvedVersionCode = 1
+        try {
+            resolvedVersionCode = Integer.parseInt(resolvedVersionCodeStr.trim())
+        } catch (Exception ignored) {
+            logger.warn("Invalid VERSION_CODE='${resolvedVersionCodeStr}', defaulting to 1")
+        }
+
+        versionName resolvedVersionName
+        versionCode resolvedVersionCode
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
