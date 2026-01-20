@@ -5,6 +5,9 @@ on:
       tags:
         - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -76,7 +79,12 @@ jobs:
             -Pandroid.injected.signing.key.alias="$ANDROID_KEY_ALIAS" \
             -Pandroid.injected.signing.key.password="$ANDROID_KEY_PASSWORD"
 
-      - uses: actions/upload-artifact@v4
+      - name: Prepare release asset
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk "svara_darshini_${GITHUB_REF_NAME}.apk"
+
+      - name: Upload APK to GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: apk
-          path: android/app/build/outputs/apk/release/app-release.apk
+          files: |
+            svara_darshini_${{ github.ref_name }}.apk
