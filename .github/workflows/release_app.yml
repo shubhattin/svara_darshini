@@ -8,6 +8,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
     steps:
       - uses: actions/checkout@v4
@@ -55,20 +60,21 @@ jobs:
 
       - name: Decode keystore
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
 
       - name: Build Release APK
         working-directory: android
         run: |
           echo "VERSION_NAME=$VERSION_NAME"
           echo "VERSION_CODE=$VERSION_CODE"
+          KEYSTORE_PATH="$(pwd)/app/release.keystore"
           ./gradlew assembleRelease \
             -PVERSION_NAME="$VERSION_NAME" \
             -PVERSION_CODE="$VERSION_CODE" \
-            -Pandroid.injected.signing.store.file=app/release.keystore \
-            -Pandroid.injected.signing.store.password=${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
-            -Pandroid.injected.signing.key.alias=${{ secrets.ANDROID_KEY_ALIAS }} \
-            -Pandroid.injected.signing.key.password=${{ secrets.ANDROID_KEY_PASSWORD }}
+            -Pandroid.injected.signing.store.file="$KEYSTORE_PATH" \
+            -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$ANDROID_KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$ANDROID_KEY_PASSWORD"
 
       - uses: actions/upload-artifact@v4
         with:
