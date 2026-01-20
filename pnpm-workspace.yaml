@@ -1,7 +1,0 @@
-ignoredBuiltDependencies:
-  - '@parcel/watcher'
-
-onlyBuiltDependencies:
-  - '@tailwindcss/oxide'
-  - core-js
-  - esbuild

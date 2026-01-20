@@ -49,7 +49,7 @@
 <PostHogInit />
 
 {#if browser && import.meta.env.PROD}
-  {#await import("~/components/tags/ServiceWorker.svelte") then ServiceWorker}
+  {#await import('~/components/tags/ServiceWorker.svelte') then ServiceWorker}
     <ServiceWorker.default />
   {/await}
 {/if}

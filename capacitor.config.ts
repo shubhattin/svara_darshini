@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.svara_darshini_tsc.app',
+  appId: 'com.shubhattin.svara_darshini',
   appName: 'Svara Darshini',
   webDir: 'build',
   plugins: {

@@ -1,4 +1,4 @@
-package com.svara_darshini_tsc.app;
+package com.shubhattin.svara_darshini;
 
 import com.getcapacitor.BridgeActivity;
 

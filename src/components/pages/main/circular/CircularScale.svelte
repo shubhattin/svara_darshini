@@ -14,7 +14,7 @@
     selected_Sa_at = $bindable(),
     selected_sargam_orientation = $bindable(),
     selected_note_orientation = $bindable(),
-    stop_button,
+    stop_button
     // is_paused = $bindable()
   }: {
     audio_info: AudioInfo;

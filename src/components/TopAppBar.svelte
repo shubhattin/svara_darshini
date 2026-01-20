@@ -12,9 +12,7 @@
     BsBoxArrowUpRight,
     BsBook,
     BsMusicNote,
-
     BsVectorPen
-
   } from 'svelte-icons-pack/bs';
   import { FiMonitor, FiSun, FiMoon } from 'svelte-icons-pack/fi';
   import { page } from '$app/state';
@@ -321,25 +319,25 @@
                     </a>
                   {/each}
                   <a
-                  href="https://lipilekhika.in"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onclick={() => app_bar_popover_status = false}
-                  class="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:scale-[1.02] hover:border-slate-300 hover:bg-slate-100 active:scale-[0.98] dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-700/50"
-                >
-                  <span
-                    class="inline-block size-8 bg-cover bg-center bg-no-repeat px-4"
-                    style={`background-image: url('/lipi.svg');`}
-                    title="Lipi Lekhika"
-                    aria-label="Lipi Lekhika"
-                  ></span>
-                  <div>
-                    <div class="font-medium">Lipi Lekhika</div>
-                    <div class="text-xs text-slate-500 dark:text-slate-400">
-                      Type Indian Languages with full Speed and Accuracy
+                    href="https://lipilekhika.in"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onclick={() => (app_bar_popover_status = false)}
+                    class="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:scale-[1.02] hover:border-slate-300 hover:bg-slate-100 active:scale-[0.98] dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-700/50"
+                  >
+                    <span
+                      class="inline-block size-8 bg-cover bg-center bg-no-repeat px-4"
+                      style={`background-image: url('/lipi.svg');`}
+                      title="Lipi Lekhika"
+                      aria-label="Lipi Lekhika"
+                    ></span>
+                    <div>
+                      <div class="font-medium">Lipi Lekhika</div>
+                      <div class="text-xs text-slate-500 dark:text-slate-400">
+                        Type Indian Languages with full Speed and Accuracy
+                      </div>
                     </div>
-                  </div>
-                </a>
+                  </a>
                 </div>
               </div>
             </div>

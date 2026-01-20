@@ -20,3 +20,6 @@ static/sitemap.xml
 dev-dist
 
 **/a.ts
+
+release.keystore
+release.keystore.b64

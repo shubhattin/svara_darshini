@@ -368,9 +368,9 @@
           bind:selected_sargam_orientation
           bind:selected_note_orientation
           {stop_button}
-          />
-          <!-- bind:is_paused -->
-        </Tabs.Panel>
+        />
+        <!-- bind:is_paused -->
+      </Tabs.Panel>
       <Tabs.Panel value="time_graph">
         <PitchTimeGraph
           {pitch_history}
@@ -379,8 +379,8 @@
           {input_mode}
           bind:selected_Sa_at={selected_timegraph_Sa_at}
           bind:bottom_start_note={selected_timegraph_bottom_start_note}
-          />
-          <!-- bind:is_paused -->
+        />
+        <!-- bind:is_paused -->
       </Tabs.Panel>
     {/snippet}
   </Tabs>

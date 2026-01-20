@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.svara_darshini_tsc.app"
+    namespace "com.shubhattin.svara_darshini"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.svara_darshini_tsc.app"
+        applicationId "com.shubhattin.svara_darshini"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
