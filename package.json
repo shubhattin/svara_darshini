@@ -10,7 +10,8 @@
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "lint": "prettier --check .",
     "format": "prettier --write .",
-    "build:android": "pnpm build && bunx cap copy"
+    "build:android": "IS_ANDROID_BUILD=true pnpm build && bunx cap copy",
+    "generate:icons": "bunx @capacitor/assets generate --iconBackgroundColor transparent"
   },
   "devDependencies": {
     "@capacitor/cli": "^7.4.5",

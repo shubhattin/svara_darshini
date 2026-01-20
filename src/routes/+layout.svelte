@@ -11,6 +11,8 @@
   import { Capacitor } from '@capacitor/core';
   import { StatusBar, Style } from '@capacitor/status-bar';
 
+  const IS_ANDROID_BUILD = import.meta.env.IS_ANDROID_BUILD === 'true';
+
   let { children }: { children: Snippet } = $props();
 
   onMount(async () => {
@@ -36,7 +38,7 @@
 <ModeWatcher />
 <!-- Full viewport background with safe area support -->
 <div
-  class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-950"
+  class="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-950"
 >
   <!-- Content container -->
   <div class="container mx-auto mb-1 max-w-7xl">
@@ -48,7 +50,7 @@
 </div>
 <PostHogInit />
 
-{#if browser && import.meta.env.PROD}
+{#if browser && import.meta.env.PROD && !IS_ANDROID_BUILD}
   {#await import('~/components/tags/ServiceWorker.svelte') then ServiceWorker}
     <ServiceWorker.default />
   {/await}
