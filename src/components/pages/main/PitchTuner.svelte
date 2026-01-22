@@ -316,11 +316,12 @@
     <button
       in:slide
       out:slide
-      class="group relative overflow-hidden rounded-2xl bg-linear-to-r from-blue-500 via-purple-500 to-indigo-600
-             px-8 py-4 text-xl font-bold text-white shadow-xl
+      class="group relative overflow-hidden rounded-xl bg-linear-to-r from-blue-500 via-purple-500 to-indigo-600
+             px-5 py-3 text-lg font-bold text-white shadow-xl
              transition-all duration-300 ease-out
              hover:scale-105 hover:from-blue-600
              hover:via-purple-600 hover:to-indigo-700 hover:shadow-2xl active:scale-95
+             sm:rounded-2xl sm:px-8 sm:py-4 sm:text-xl
              "
       onclick={Start}
     >
@@ -329,10 +330,10 @@
       <div
         class="absolute inset-0 -translate-x-full bg-linear-to-r from-white/0 via-white/20 to-white/0 transition-transform duration-700 ease-out group-hover:translate-x-full"
       ></div>
-      <div class="relative flex items-center gap-3">
+      <div class="relative flex items-center gap-2 sm:gap-3">
         <Icon
           src={FiPlay}
-          class="-mt-1 text-2xl transition-transform duration-200 group-hover:scale-110"
+          class="-mt-0.5 text-xl transition-transform duration-200 group-hover:scale-110 sm:-mt-1 sm:text-2xl"
         />
         <span>Start</span>
       </div>
@@ -341,10 +342,10 @@
 {/if}
 {#snippet stop_button()}
   <button
-    class="btn gap-1 rounded-lg bg-error-600 px-2 py-1 text-xl font-bold text-white dark:bg-error-500"
+    class="btn gap-0.5 rounded-md bg-error-600 px-1.5 py-0.5 text-base font-bold text-white dark:bg-error-500 sm:gap-1 sm:rounded-lg sm:px-2 sm:py-1 sm:text-xl"
     onclick={Stop}
   >
-    <Icon src={BiStopCircle} class="-mt-1 text-2xl" />
+    <Icon src={BiStopCircle} class="-mt-0.5 text-xl sm:-mt-1 sm:text-2xl" />
     Stop
   </button>
 {/snippet}
