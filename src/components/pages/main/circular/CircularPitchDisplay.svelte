@@ -6,12 +6,14 @@
     audio_info,
     Sa_at = $bindable(),
     sargam_orientation,
-    note_orientation
+    note_orientation,
+    is_demo
   }: {
     audio_info: { clarity: number; detune: number; note: string; pitch: number; scale: number };
     Sa_at: note_types;
     sargam_orientation: 'radial' | 'vertical';
     note_orientation: 'radial' | 'vertical';
+    is_demo?: boolean;
   } = $props();
 
   let Sa_at_index = $derived(NOTES.indexOf(Sa_at));
@@ -229,15 +231,25 @@
     <!-- Center display -->
     <!-- <circle cx="0" cy="0" r={MIDDLE_CIRCLE_RADIUS} class="fill-white opacity-60 dark:fill-black" /> -->
     {#if detune}
-      <g x="0" y="-5">
-        <text text-anchor="middle" class="fill-black text-base font-bold dark:fill-white">
+      <g>
+        <text
+          x="0"
+          y={is_demo ? '0' : '-5'}
+          text-anchor="middle"
+          dominant-baseline="middle"
+          class="fill-black text-base font-bold dark:fill-white"
+        >
           {note_}
-          <tspan class="text-[0.6em]" dy="-0.1em">{scale !== 0 ? scale : ''}</tspan>
+          {#if !is_demo}
+            <tspan class="text-[0.6em]" dy="-0.1em">{scale !== 0 ? scale : ''}</tspan>
+          {/if}
         </text>
       </g>
-      <text x="0" y="12" text-anchor="middle" class="fill-black text-[0.52rem] dark:fill-white">
-        {detune > 0 ? '+' : ''}{detune} cents
-      </text>
+      {#if !is_demo}
+        <text x="0" y="12" text-anchor="middle" class="fill-black text-[0.52rem] dark:fill-white">
+          {detune > 0 ? '+' : ''}{detune} cents
+        </text>
+      {/if}
     {/if}
   </svg>
 </div>

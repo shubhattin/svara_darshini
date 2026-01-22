@@ -308,7 +308,7 @@
 
 {#if !started}
   <div
-    class="mt-12 flex flex-col items-center justify-center space-y-8 sm:mt-15 md:mt-18 xl:mt-20"
+    class="mt-2 flex flex-col items-center justify-center space-y-4 sm:mt-6 md:mt-8"
     in:fade
     out:slide
   >
@@ -316,12 +316,14 @@
     <button
       in:slide
       out:slide
-      class="group relative overflow-hidden rounded-xl bg-linear-to-r from-blue-500 via-purple-500 to-indigo-600
-             px-5 py-3 text-lg font-bold text-white shadow-xl
+      class="group relative overflow-hidden rounded-xl bg-linear-to-r from-amber-500 via-orange-500 to-yellow-600
+             px-4 py-2.5 text-base font-bold text-white shadow-xl
              transition-all duration-300 ease-out
-             hover:scale-105 hover:from-blue-600
-             hover:via-purple-600 hover:to-indigo-700 hover:shadow-2xl active:scale-95
+             hover:scale-105 hover:from-amber-600
+             hover:via-orange-600 hover:to-yellow-700 hover:shadow-2xl active:scale-95
              sm:rounded-2xl sm:px-8 sm:py-4 sm:text-xl
+             dark:from-amber-600 dark:via-orange-600 dark:to-yellow-700
+             dark:hover:from-amber-700 dark:hover:via-orange-700 dark:hover:to-yellow-800
              "
       onclick={Start}
     >
@@ -330,10 +332,10 @@
       <div
         class="absolute inset-0 -translate-x-full bg-linear-to-r from-white/0 via-white/20 to-white/0 transition-transform duration-700 ease-out group-hover:translate-x-full"
       ></div>
-      <div class="relative flex items-center gap-2 sm:gap-3">
+      <div class="relative flex items-center gap-1.5 sm:gap-3">
         <Icon
           src={FiPlay}
-          class="-mt-0.5 text-xl transition-transform duration-200 group-hover:scale-110 sm:-mt-1 sm:text-2xl"
+          class="-mt-0.5 text-lg transition-transform duration-200 group-hover:scale-110 sm:-mt-1 sm:text-2xl"
         />
         <span>Start</span>
       </div>
@@ -342,7 +344,7 @@
 {/if}
 {#snippet stop_button()}
   <button
-    class="btn gap-0.5 rounded-md bg-error-600 px-1.5 py-0.5 text-base font-bold text-white dark:bg-error-500 sm:gap-1 sm:rounded-lg sm:px-2 sm:py-1 sm:text-xl"
+    class="btn gap-0.5 rounded-md bg-error-600 px-1.5 py-0.5 text-base font-bold text-white sm:gap-1 sm:rounded-lg sm:px-2 sm:py-1 sm:text-xl dark:bg-error-500"
     onclick={Stop}
   >
     <Icon src={BiStopCircle} class="-mt-0.5 text-xl sm:-mt-1 sm:text-2xl" />

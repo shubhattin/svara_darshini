@@ -146,7 +146,7 @@
     <div class="mt-4 flex items-center justify-center sm:mt-5">
       <div class="flex items-center justify-center gap-2">
         <button
-          class="btn gap-0.5 rounded-md bg-primary-600 px-1.5 py-0.5 text-base font-bold text-white dark:bg-primary-500 sm:gap-1 sm:rounded-lg sm:px-2 sm:py-1 sm:text-xl"
+          class="btn gap-0.5 rounded-md bg-primary-600 px-1.5 py-0.5 text-base font-bold text-white sm:gap-1 sm:rounded-lg sm:px-2 sm:py-1 sm:text-xl dark:bg-primary-500"
           onclick={() => {
             if (!is_paused) paused_audio_info = { ...audio_info };
             is_paused = !is_paused;
