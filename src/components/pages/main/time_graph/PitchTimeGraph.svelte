@@ -424,13 +424,16 @@
 {#if input_mode === 'mic'}
   <div class="mt-4 flex items-center justify-center space-x-3 sm:mt-5 sm:space-x-4 md:space-x-5">
     <button
-      class="btn gap-1 rounded-lg bg-primary-600 px-2 py-1 text-xl font-bold text-white dark:bg-primary-500"
+      class="btn gap-0.5 rounded-md bg-primary-600 px-1.5 py-0.5 text-base font-bold text-white dark:bg-primary-500 sm:gap-1 sm:rounded-lg sm:px-2 sm:py-1 sm:text-xl"
       onclick={() => {
         paused_graph_data = { history: graphData };
         is_paused = !is_paused;
       }}
     >
-      <Icon src={is_paused ? BsPlayFill : BsPauseFill} class="-mt-1 text-2xl" />
+      <Icon
+        src={is_paused ? BsPlayFill : BsPauseFill}
+        class="-mt-0.5 text-xl sm:-mt-1 sm:text-2xl"
+      />
       {is_paused ? 'Play' : 'Pause'}
     </button>
     {@render stop_button()}
