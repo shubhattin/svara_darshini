@@ -70,11 +70,23 @@
     };
   });
 
+  let randomOffsetPercent = 0;
+
   onMount(() => {
     // Animate the pitch smoothly with random variations
     const interval = setInterval(() => {
-      // Add subtle random variation to make it feel natural (±0.15 Hz)
-      const randomError = (Math.random() - 0.5) * 0.3;
+      // Add smoothed variation so the pitch doesn't feel jittery
+      const fluctuationPercent = 0.15;
+      const adjustmentStep = 0.03;
+      const damping = 0.92;
+
+      randomOffsetPercent += (Math.random() - 0.5) * adjustmentStep;
+      const maxOffset = fluctuationPercent / 100;
+      if (randomOffsetPercent > maxOffset) randomOffsetPercent = maxOffset;
+      if (randomOffsetPercent < -maxOffset) randomOffsetPercent = -maxOffset;
+      randomOffsetPercent *= damping;
+
+      const randomError = demo_pitch * randomOffsetPercent;
 
       // Increment pitch with minimal variance in speed
       const speed = 0.9 + Math.random() * 0.2; // Between 0.9 and 1.1 Hz per frame
