@@ -4,6 +4,13 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    # Use carefully as it would overwrite the tag and the files there
+    # should be only in case of a build error, to avoid wasting the version string
+    inputs:
+      tag:
+        description: 'Tag to use for the release (e.g. v1.2.3)'
+        required: true
 
 permissions:
   contents: write
@@ -25,30 +32,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Tooling
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: latest
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
-
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/**/gradle-wrapper.properties') }}
-
-      # Versioning from tag
-      - name: Extract version
+      # Resolve tag (use workflow_dispatch input or pushed tag) and export as GITHUB_REF_NAME
+      - name: Resolve release tag
+        id: release_tag
+        shell: bash
         run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${{ github.ref_name }}"
+          fi
+          echo "Resolved TAG=$TAG"
+          # expose both as step output and as environment variable for later steps
+          echo "TAG=$TAG" >> $GITHUB_OUTPUT
+          echo "GITHUB_REF_NAME=$TAG" >> $GITHUB_ENV
+
+      # Versioning from tag (use resolved GITHUB_REF_NAME)
+      - name: Extract version
+        shell: bash
+        run: |
+          # Strip leading 'v' if present to get VERSION (1.2.3)
+          VERSION="${GITHUB_REF_NAME#v}"
           echo "VERSION_NAME=$VERSION" >> $GITHUB_ENV
 
           IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
@@ -92,8 +96,8 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: svara_darshini_${{ github.ref_name }}
-          path: svara_darshini_${{ github.ref_name }}.apk
+          name: svara_darshini_${{ steps.release_tag.outputs.TAG }}
+          path: svara_darshini_${GITHUB_REF_NAME}.apk
 
       # Build AAB (Play Store)
       - name: Build Release AAB
@@ -112,5 +116,5 @@ jobs:
       - name: Upload AAB artifact for Play Store
         uses: actions/upload-artifact@v4
         with:
-          name: playstore-aab-${{ github.ref_name }}
+          name: playstore-aab-${{ steps.release_tag.outputs.TAG }}
           path: android/app/build/outputs/bundle/release/app-release.aab
