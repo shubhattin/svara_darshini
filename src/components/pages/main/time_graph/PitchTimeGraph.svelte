@@ -2,18 +2,21 @@
   import type { Snippet } from 'svelte';
   import { NOTES, NOTES_STARTING_WITH_A, type note_types, SARGAM } from '../constants';
   import { cl_join } from '~/tools/cl_join';
-  import { Popover } from '@skeletonlabs/skeleton-svelte';
+  import { Popover, Tabs } from '@skeletonlabs/skeleton-svelte';
   import { BsChevronDown, BsChevronUp, BsPauseFill, BsPlayFill } from 'svelte-icons-pack/bs';
   import Icon from '~/tools/Icon.svelte';
   import { mode } from 'mode-watcher';
+  import SpectrogramTimeGraph from './SpectrogramTimeGraph.svelte';
 
   let Sa_at_popup_status = $state(false);
   let bottom_start_note_popup_status = $state(false);
 
   let {
     pitch_history,
+    spectrum_history,
     stop_button,
     MAX_PITCH_HISTORY_POINTS,
+    cqt_width,
     bottom_start_note = $bindable(),
     selected_Sa_at = $bindable(),
     input_mode
@@ -26,13 +29,20 @@
       clarity: number;
       scale: number;
     }>;
+    spectrum_history: Array<{
+      time: number;
+      scanline: Uint8ClampedArray;
+    }>;
     stop_button: Snippet;
     MAX_PITCH_HISTORY_POINTS: number;
+    cqt_width: number;
     bottom_start_note: note_types;
     selected_Sa_at: note_types;
     input_mode: 'mic' | 'file';
     // is_paused: boolean;
   } = $props();
+
+  let time_graph_mode = $state<'normal' | 'raw'>('normal');
 
   let is_paused = $state(false);
 
@@ -329,137 +339,157 @@
   </div>
 </div>
 
-<div
-  bind:this={containerEl}
-  class={cl_join('mt-1 w-full', 'h-[60vh] sm:h-[50vh] md:h-[500px] lg:h-[580px]')}
+<!-- Sub-tabs for Normal / Raw modes -->
+<Tabs
+  value={time_graph_mode}
+  onValueChange={(e) => (time_graph_mode = e.value as 'normal' | 'raw')}
+  listJustify="justify-center"
+  classes="mt-1"
 >
-  {#if graphData.length > 0}
-    <svg class="h-full w-full select-none" viewBox={`0 0 ${VIEWBOX_W} ${VIEWBOX_H}`}>
-      <!-- Background -->
-      <rect width={VIEWBOX_W} height={VIEWBOX_H} rx="8" fill={graphBgColor} />
+  {#snippet list()}
+    <Tabs.Control value="normal">Normal</Tabs.Control>
+    <Tabs.Control value="raw">Raw</Tabs.Control>
+  {/snippet}
+  {#snippet content()}
+    <Tabs.Panel value="normal">
+      <div
+        bind:this={containerEl}
+        class={cl_join('mt-1 w-full', 'h-[60vh] sm:h-[50vh] md:h-[500px] lg:h-[580px]')}
+      >
+        {#if graphData.length > 0}
+          <svg class="h-full w-full select-none" viewBox={`0 0 ${VIEWBOX_W} ${VIEWBOX_H}`}>
+            <!-- Background -->
+            <rect width={VIEWBOX_W} height={VIEWBOX_H} rx="8" fill={graphBgColor} />
 
-      <!-- Grid lines, notes & sargam labels -->
-      <g>
-        {#each Array.from({ length: 13 }, (_, i) => i) as noteIndex (noteIndex)}
-          {@const noteName = NOTES_CUSTOM_START[NOTES_CUSTOM_START.length - noteIndex - 1]}
-          {@const y = (noteIndex / 12) * GRAPH_HEIGHT + GRAPH_PADDING.top}
-          <line
-            x1={GRAPH_PADDING.left}
-            y1={y}
-            x2={GRAPH_PADDING.left + GRAPH_WIDTH}
-            y2={y}
-            stroke="rgba(255,255,255,0.15)"
-            stroke-width="1"
-          />
-          {#if noteName}
-            <circle
-              cx={GRAPH_PADDING.left - 5}
-              cy={y}
-              r="2"
-              fill={NOTE_COLORS[noteName] || '#ccc'}
-            />
-          {/if}
-          <text
-            x={GRAPH_PADDING.left - 10}
-            y={y + 4}
-            text-anchor="end"
-            font-size="10"
-            class={cl_join(
-              'fill-gray-600 dark:fill-gray-400',
-              noteIndex === NOTES_CUSTOM_START.length - 1 && 'font-semibold '
-            )}
-          >
-            {noteName}
-          </text>
-          <!-- Sargam  -->
-          {@const sargam_key = SARGAM_CUSTOM_START[SARGAM_CUSTOM_START.length - noteIndex - 1]}
-          <text
-            x={GRAPH_PADDING.left - 30}
-            y={y + 4}
-            text-anchor="end"
-            font-size="10"
-            class={cl_join(
-              'fill-gray-600 dark:fill-gray-400',
-              sargam_key === 's' && 'fill-slate-500 font-semibold dark:fill-slate-200'
-            )}
-            font-family="ome_bhatkhande_en"
-          >
-            {sargam_key}
-          </text>
-        {/each}
-      </g>
+            <!-- Grid lines, notes & sargam labels -->
+            <g>
+              {#each Array.from({ length: 13 }, (_, i) => i) as noteIndex (noteIndex)}
+                {@const noteName = NOTES_CUSTOM_START[NOTES_CUSTOM_START.length - noteIndex - 1]}
+                {@const y = (noteIndex / 12) * GRAPH_HEIGHT + GRAPH_PADDING.top}
+                <line
+                  x1={GRAPH_PADDING.left}
+                  y1={y}
+                  x2={GRAPH_PADDING.left + GRAPH_WIDTH}
+                  y2={y}
+                  stroke="rgba(255,255,255,0.15)"
+                  stroke-width="1"
+                />
+                {#if noteName}
+                  <circle
+                    cx={GRAPH_PADDING.left - 5}
+                    cy={y}
+                    r="2"
+                    fill={NOTE_COLORS[noteName] || '#ccc'}
+                  />
+                {/if}
+                <text
+                  x={GRAPH_PADDING.left - 10}
+                  y={y + 4}
+                  text-anchor="end"
+                  font-size="10"
+                  class={cl_join(
+                    'fill-gray-600 dark:fill-gray-400',
+                    noteIndex === NOTES_CUSTOM_START.length - 1 && 'font-semibold '
+                  )}
+                >
+                  {noteName}
+                </text>
+                <!-- Sargam  -->
+                {@const sargam_key =
+                  SARGAM_CUSTOM_START[SARGAM_CUSTOM_START.length - noteIndex - 1]}
+                <text
+                  x={GRAPH_PADDING.left - 30}
+                  y={y + 4}
+                  text-anchor="end"
+                  font-size="10"
+                  class={cl_join(
+                    'fill-gray-600 dark:fill-gray-400',
+                    sargam_key === 's' && 'fill-slate-500 font-semibold dark:fill-slate-200'
+                  )}
+                  font-family="ome_bhatkhande_en"
+                >
+                  {sargam_key}
+                </text>
+              {/each}
+            </g>
 
-      <!-- Data line & jump highlights -->
-      <g>
-        {#if faintSegments.length}
-          <path
-            d={faintSegments.join(' ')}
-            stroke="url(#noteGradient)"
-            stroke-width="2"
-            fill="none"
-            opacity="0.3"
-          />
+            <!-- Data line & jump highlights -->
+            <g>
+              {#if faintSegments.length}
+                <path
+                  d={faintSegments.join(' ')}
+                  stroke="url(#noteGradient)"
+                  stroke-width="2"
+                  fill="none"
+                  opacity="0.3"
+                />
+              {/if}
+              <path
+                d={normalSegments.join(' ')}
+                stroke="url(#noteGradient)"
+                stroke-width="2"
+                fill="none"
+              />
+
+              <defs>
+                <linearGradient
+                  id="noteGradient"
+                  gradientUnits="userSpaceOnUse"
+                  x1="0"
+                  y1={GRAPH_PADDING.top + GRAPH_HEIGHT}
+                  x2="0"
+                  y2={GRAPH_PADDING.top}
+                >
+                  {#each NOTES_CUSTOM_START as note, idx}
+                    {@const offset = (idx / (NOTES_CUSTOM_START.length - 1)) * 100}
+                    <stop offset={`${offset}%`} stop-color={NOTE_COLORS[note]} />
+                  {/each}
+                </linearGradient>
+              </defs>
+            </g>
+
+            <!-- Current frequency display -->
+            <g>
+              <circle cx={lastX} cy={lastY} r="4" fill="#ef4444" />
+              <text
+                x={indicatorX}
+                y={indicatorY}
+                text-anchor={textAnchor}
+                font-size="10"
+                class="fill-gray-800 font-medium opacity-85 dark:fill-gray-200"
+              >
+                {lastPoint.pitch.toFixed(1)} Hz ({lastPoint.note}{lastPoint.scale})
+              </text>
+            </g>
+
+            <!-- Axes -->
+            <g>
+              <line
+                x1={GRAPH_PADDING.left}
+                y1={GRAPH_PADDING.top}
+                x2={GRAPH_PADDING.left}
+                y2={GRAPH_HEIGHT + GRAPH_PADDING.top}
+                stroke="#374151"
+                stroke-width="2"
+              />
+              <line
+                x1={GRAPH_PADDING.left}
+                y1={GRAPH_HEIGHT + GRAPH_PADDING.top}
+                x2={GRAPH_WIDTH + GRAPH_PADDING.left}
+                y2={GRAPH_HEIGHT + GRAPH_PADDING.top}
+                stroke="#374151"
+                stroke-width="1"
+              />
+            </g>
+          </svg>
         {/if}
-        <path
-          d={normalSegments.join(' ')}
-          stroke="url(#noteGradient)"
-          stroke-width="2"
-          fill="none"
-        />
-
-        <defs>
-          <linearGradient
-            id="noteGradient"
-            gradientUnits="userSpaceOnUse"
-            x1="0"
-            y1={GRAPH_PADDING.top + GRAPH_HEIGHT}
-            x2="0"
-            y2={GRAPH_PADDING.top}
-          >
-            {#each NOTES_CUSTOM_START as note, idx}
-              {@const offset = (idx / (NOTES_CUSTOM_START.length - 1)) * 100}
-              <stop offset={`${offset}%`} stop-color={NOTE_COLORS[note]} />
-            {/each}
-          </linearGradient>
-        </defs>
-      </g>
-
-      <!-- Current frequency display -->
-      <g>
-        <circle cx={lastX} cy={lastY} r="4" fill="#ef4444" />
-        <text
-          x={indicatorX}
-          y={indicatorY}
-          text-anchor={textAnchor}
-          font-size="10"
-          class="fill-gray-800 font-medium opacity-85 dark:fill-gray-200"
-        >
-          {lastPoint.pitch.toFixed(1)} Hz ({lastPoint.note}{lastPoint.scale})
-        </text>
-      </g>
-
-      <!-- Axes -->
-      <g>
-        <line
-          x1={GRAPH_PADDING.left}
-          y1={GRAPH_PADDING.top}
-          x2={GRAPH_PADDING.left}
-          y2={GRAPH_HEIGHT + GRAPH_PADDING.top}
-          stroke="#374151"
-          stroke-width="2"
-        />
-        <line
-          x1={GRAPH_PADDING.left}
-          y1={GRAPH_HEIGHT + GRAPH_PADDING.top}
-          x2={GRAPH_WIDTH + GRAPH_PADDING.left}
-          y2={GRAPH_HEIGHT + GRAPH_PADDING.top}
-          stroke="#374151"
-          stroke-width="1"
-        />
-      </g>
-    </svg>
-  {/if}
-</div>
+      </div>
+    </Tabs.Panel>
+    <Tabs.Panel value="raw">
+      <SpectrogramTimeGraph {spectrum_history} {MAX_PITCH_HISTORY_POINTS} {cqt_width} />
+    </Tabs.Panel>
+  {/snippet}
+</Tabs>
 {#if input_mode === 'mic'}
   <div class="mt-4 flex items-center justify-center space-x-3 sm:mt-5 sm:space-x-4 md:space-x-5">
     <button

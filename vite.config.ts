@@ -71,5 +71,8 @@ export default defineConfig({
   },
   define: {
     'import.meta.env.IS_ANDROID_BUILD': JSON.stringify(String(IS_ANDROID_BUILD))
+  },
+  optimizeDeps: {
+    exclude: ['showcqt']
   }
 });

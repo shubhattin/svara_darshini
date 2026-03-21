@@ -1,5 +1,6 @@
 <script lang="ts">
   import { PitchDetector } from 'pitchy';
+  import { ShowCQT } from 'showcqt';
   import {
     NOTES,
     type note_types,
@@ -57,6 +58,8 @@
 
   let audio_context: AudioContext | null = null;
   let analyzer_node: AnalyserNode | null = null;
+  let cqt_analyzer_node: AnalyserNode | null = null;
+  let cqt_instance: Awaited<ReturnType<typeof ShowCQT.instantiate>> | null = null;
   let update_interval: NodeJS.Timeout | null = null;
   let mic_stream: MediaStream | null = null;
 
@@ -86,6 +89,15 @@
       scale: number;
     }>
   >([]);
+
+  // CQT spectrum history for raw spectrogram mode
+  let spectrum_history = $state<
+    Array<{
+      time: number;
+      scanline: Uint8ClampedArray; // RGBA scanline from CQT, width pixels * 4
+    }>
+  >([]);
+  let cqt_width = $state(0); // width of the CQT output
 
   const get_audio_devices = async (show_loading = true) => {
     if (show_loading) device_list_loaded = false;
@@ -125,8 +137,9 @@
       file_is_playing = false;
     }
 
-    // destroy analyzer node
+    // destroy analyzer nodes
     analyzer_node?.disconnect();
+    cqt_analyzer_node?.disconnect();
 
     // stop audio context
     audio_context?.close();
@@ -134,8 +147,11 @@
     audio_info = null;
     audio_context = null;
     analyzer_node = null;
+    cqt_analyzer_node = null;
+    cqt_instance = null;
     mic_stream = null;
     pitch_history = []; // Clear pitch history
+    spectrum_history = []; // Clear spectrum history
   };
 
   onMount(() => {
@@ -190,8 +206,10 @@
 
         // start audio context
         audio_context = new AudioContext();
-        // create analyzer node
+        // create analyzer node for pitch detection
         analyzer_node = audio_context.createAnalyser();
+        // create second analyzer node for CQT
+        cqt_analyzer_node = audio_context.createAnalyser();
 
         // connect analyzer node to audio context destination
         const constraints: MediaStreamConstraints = {
@@ -212,7 +230,9 @@
         mic_stream = stream;
 
         analyzer_node.fftSize = FFT_SIZE;
-        audio_context.createMediaStreamSource(stream).connect(analyzer_node);
+        const source = audio_context.createMediaStreamSource(stream);
+        source.connect(analyzer_node);
+        source.connect(cqt_analyzer_node);
       } else if (input_mode === 'file') {
         // File input mode
         if (!file_audio_element || !input_file) {
@@ -222,21 +242,48 @@
 
         // start audio context
         audio_context = new AudioContext();
-        // create analyzer node
+        // create analyzer nodes
         analyzer_node = audio_context.createAnalyser();
         analyzer_node.fftSize = FFT_SIZE;
+        cqt_analyzer_node = audio_context.createAnalyser();
 
         // Create media element source
         const source = audio_context.createMediaElementSource(file_audio_element);
         source.connect(analyzer_node);
+        source.connect(cqt_analyzer_node);
         source.connect(audio_context.destination); // So we can hear the audio
       }
 
       const detector = PitchDetector.forFloat32Array(analyzer_node!.fftSize);
       const input = new Float32Array(detector.inputLength);
 
+      // Initialize CQT WASM engine
+      cqt_instance = await ShowCQT.instantiate();
+      const CQT_RENDER_WIDTH = 960;
+      cqt_instance.init(
+        audio_context!.sampleRate,
+        CQT_RENDER_WIDTH, // width
+        1, // height (1 scanline per frame)
+        15, // bar_v (bar height)
+        25, // sono_v (brightness)
+        true // supersampling
+      );
+      cqt_width = CQT_RENDER_WIDTH;
+      try {
+        cqt_analyzer_node!.fftSize = cqt_instance.fft_size;
+        console.log('CQT fft_size assigned:', cqt_instance.fft_size);
+      } catch (err) {
+        console.error(
+          'CQT fft_size error - setting to nearest power of 2! Original size:',
+          cqt_instance.fft_size
+        );
+        const p2 = Math.pow(2, Math.ceil(Math.log2(cqt_instance.fft_size)));
+        cqt_analyzer_node!.fftSize = p2;
+      }
+
       clearInterval(update_interval!);
       pitch_history = [];
+      spectrum_history = [];
 
       function updateAudioInfo() {
         // For file mode, only analyze when audio is playing
@@ -275,6 +322,42 @@
         // Keep only the last MAX_PITCH_HISTORY_POINTS entries
         if (pitch_history.length > MAX_PITCH_HISTORY_POINTS) {
           pitch_history = pitch_history.slice(-MAX_PITCH_HISTORY_POINTS);
+        }
+
+        // Capture CQT magnitudes for spectrogram
+        if (cqt_instance && cqt_analyzer_node) {
+          cqt_analyzer_node.getFloatTimeDomainData(cqt_instance.inputs[0]);
+          cqt_instance.inputs[1].set(cqt_instance.inputs[0]); // Mono to stereo
+          cqt_instance.calc();
+
+          // cqt_instance.color is a Float32Array of [r, g, b, h] per bin
+          // The 'h' (height) channel represents the magnitude (amplitude).
+          // We will extract these into a single RGBA scanline, mapped to our own colors.
+          const scanline = new Uint8ClampedArray(cqt_width * 4);
+          for (let i = 0; i < cqt_width; i++) {
+            const h = cqt_instance.color[i * 4 + 3]; // Extract internal magnitude
+
+            // Map magnitude to intensity (0 to 255)
+            // Use a power scale to make peaks pop out (PitchLab style)
+            const intensity = Math.min(255, Math.pow(h * 3.0, 1.5) * 255);
+
+            // For now, use a simple heatmap gradient (black -> red -> yellow -> white)
+            // We can refine this to match the specific notes later in SpectrogramTimeGraph
+            // But doing it here saves memory (Uint8 vs Float32)
+
+            scanline[i * 4] = intensity; // R (we'll just pass intensity as grayscale for now)
+            scanline[i * 4 + 1] = intensity; // G
+            scanline[i * 4 + 2] = intensity; // B
+            scanline[i * 4 + 3] = 255; // A (always opaque)
+          }
+
+          spectrum_history.push({
+            time: currentTime,
+            scanline: scanline
+          });
+          if (spectrum_history.length > MAX_PITCH_HISTORY_POINTS) {
+            spectrum_history = spectrum_history.slice(-MAX_PITCH_HISTORY_POINTS);
+          }
         }
       }
 
@@ -377,8 +460,10 @@
       <Tabs.Panel value="time_graph">
         <PitchTimeGraph
           {pitch_history}
+          {spectrum_history}
           {stop_button}
           {MAX_PITCH_HISTORY_POINTS}
+          {cqt_width}
           {input_mode}
           bind:selected_Sa_at={selected_timegraph_Sa_at}
           bind:bottom_start_note={selected_timegraph_bottom_start_note}
