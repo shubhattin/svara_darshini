@@ -5,6 +5,7 @@
   import { Popover } from '@skeletonlabs/skeleton-svelte';
   import { BsChevronDown, BsChevronUp, BsPauseFill, BsPlayFill } from 'svelte-icons-pack/bs';
   import Icon from '~/tools/Icon.svelte';
+  import { mode } from 'mode-watcher';
 
   let Sa_at_popup_status = $state(false);
   let bottom_start_note_popup_status = $state(false);
@@ -35,19 +36,55 @@
 
   let is_paused = $state(false);
 
-  const SVG_BACKGROUND = {
-    width: 800,
-    height: 300
-  } as const;
+  // --- Dynamic sizing via ResizeObserver ---
+  // The viewBox uses a fixed height (VIEWBOX_H = 300) so text/elements stay
+  // consistently sized. The viewBox width is computed to match the container's
+  // aspect ratio, so the SVG scales uniformly (no distortion).
+  let containerEl: HTMLDivElement | undefined = $state(undefined);
+  let containerWidth = $state(800);
+  let containerHeight = $state(300);
 
-  const GRAPH_INFO = {
-    width: 720,
-    height: 280
-  } as const; // without padding
+  $effect(() => {
+    const el = containerEl;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        containerWidth = Math.round(entry.contentRect.width);
+        containerHeight = Math.round(entry.contentRect.height);
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  });
+
+  // Fixed viewBox height — keeps text/element sizes consistent across screens
+  const VIEWBOX_H = 300;
+  // ViewBox width computed to match container aspect ratio
+  const aspectRatio = $derived(containerHeight > 0 ? containerWidth / containerHeight : 800 / 300);
+  const VIEWBOX_W = $derived(Math.round(VIEWBOX_H * aspectRatio));
+
   const GRAPH_PADDING = {
     top: 10,
-    left: 60
+    left: 50,
+    right: 10,
+    bottom: 10
   } as const;
+  const GRAPH_WIDTH = $derived(VIEWBOX_W - GRAPH_PADDING.left - GRAPH_PADDING.right);
+  const GRAPH_HEIGHT = VIEWBOX_H - GRAPH_PADDING.top - GRAPH_PADDING.bottom;
+
+  // Adaptive visible points: fewer on narrower screens to reduce congestion
+  // At VIEWBOX_W ~800 (desktop), show all MAX_PITCH_HISTORY_POINTS
+  // At VIEWBOX_W ~280 (mobile), show ~35% of points
+  const VISIBLE_POINTS = $derived(
+    Math.max(
+      20,
+      Math.min(MAX_PITCH_HISTORY_POINTS, Math.round(MAX_PITCH_HISTORY_POINTS * (VIEWBOX_W / 800)))
+    )
+  );
+
+  // Graph background color based on theme
+  const graphBgColor = $derived($mode === 'dark' ? '#0f172a' : '#1e293b');
 
   const NOTES_CUSTOM_START = $derived(
     NOTES.slice(NOTES.indexOf(bottom_start_note)).concat(
@@ -81,12 +118,10 @@
     'G#': 'hsla(330, 100%, 50%, 1)'
   };
 
-  const get_x_pos_on_graph = (index: number) => {
-    return (index / (MAX_PITCH_HISTORY_POINTS - 1)) * GRAPH_INFO.width + GRAPH_PADDING.left;
-  };
-  const get_y_pos_on_graph = (yRatio: number) => {
-    return GRAPH_INFO.height + GRAPH_PADDING.top - yRatio * GRAPH_INFO.height;
-  };
+  const get_x_pos_on_graph = (index: number) =>
+    (index / (VISIBLE_POINTS - 1)) * GRAPH_WIDTH + GRAPH_PADDING.left;
+  const get_y_pos_on_graph = (yRatio: number) =>
+    GRAPH_HEIGHT + GRAPH_PADDING.top - yRatio * GRAPH_HEIGHT;
 
   // Convert frequency to y-position for graph based on semitone offset within one octave
   const frequencyToYPositionRatio = (frequency: number) => {
@@ -134,7 +169,11 @@
     history: [],
     audio_info_scale: undefined
   });
-  let graphData = $derived(is_paused ? paused_graph_data.history : graphDataMain);
+  let graphData = $derived.by(() => {
+    const source = is_paused ? paused_graph_data.history : graphDataMain;
+    // Show only the most recent VISIBLE_POINTS entries
+    return source.length > VISIBLE_POINTS ? source.slice(-VISIBLE_POINTS) : source;
+  });
 
   // Helper function to create smooth curve control points
   const createCurveControlPoints = (
@@ -158,13 +197,13 @@
   const [normalSegments, faintSegments] = $derived(
     graphData.reduce<[string[], string[]]>(
       ([norm, faint], point, index) => {
-        const x = get_x_pos_on_graph(point.originalIndex);
+        const x = get_x_pos_on_graph(index);
         const y = get_y_pos_on_graph(point.yRatio);
         if (index === 0) {
           norm.push(`M ${x} ${y}`);
         } else {
           const prev = graphData[index - 1];
-          const prevX = get_x_pos_on_graph(prev.originalIndex);
+          const prevX = get_x_pos_on_graph(index - 1);
           const prevY = get_y_pos_on_graph(prev.yRatio);
           const deltaPitch = point.pitch - prev.pitch;
           const deltaY = y - prevY;
@@ -202,11 +241,11 @@
 
   // Reactive last point and its coordinates
   const lastPoint = $derived(graphData[graphData.length - 1]);
-  const lastX = $derived(get_x_pos_on_graph(lastPoint.originalIndex));
+  const lastX = $derived(get_x_pos_on_graph(graphData.length - 1));
   const lastY = $derived(get_y_pos_on_graph(lastPoint.yRatio));
 
   // Smart label positioning to avoid cropping
-  const isRightSide = $derived(lastX > SVG_BACKGROUND.width * 0.85);
+  const isRightSide = $derived(lastX > VIEWBOX_W * 0.85);
   const isNearTop = $derived(lastY < GRAPH_PADDING.top + 20);
   const indicatorX = $derived(isRightSide ? lastX - 10 : lastX + 10);
   const indicatorY = $derived(isNearTop ? lastY + 20 : lastY - 10);
@@ -290,30 +329,27 @@
   </div>
 </div>
 
-<div class={cl_join('mt-1 w-full', 'h-[250px] sm:h-[330px] md:h-[500px] lg:h-[580px]')}>
+<div
+  bind:this={containerEl}
+  class={cl_join('mt-1 w-full', 'h-[60vh] sm:h-[50vh] md:h-[500px] lg:h-[580px]')}
+>
   {#if graphData.length > 0}
-    <!-- <h3 class="mb-4 text-lg font-semibold">Pitch Over Time</h3> -->
-    <svg
-      preserveAspectRatio="none"
-      class="h-full w-full select-none"
-      viewBox={`0 0 ${SVG_BACKGROUND.width} ${SVG_BACKGROUND.height}`}
-    >
+    <svg class="h-full w-full select-none" viewBox={`0 0 ${VIEWBOX_W} ${VIEWBOX_H}`}>
       <!-- Background -->
-      <rect width={SVG_BACKGROUND.width} height={SVG_BACKGROUND.height} fill="transparent" />
+      <rect width={VIEWBOX_W} height={VIEWBOX_H} rx="8" fill={graphBgColor} />
 
       <!-- Grid lines, notes & sargam labels -->
       <g>
-        {#each Array.from({ length: 13 }, (_, i) => i) as noteIndex}
+        {#each Array.from({ length: 13 }, (_, i) => i) as noteIndex (noteIndex)}
           {@const noteName = NOTES_CUSTOM_START[NOTES_CUSTOM_START.length - noteIndex - 1]}
-          {@const y = (noteIndex / 12) * GRAPH_INFO.height + GRAPH_PADDING.top}
+          {@const y = (noteIndex / 12) * GRAPH_HEIGHT + GRAPH_PADDING.top}
           <line
             x1={GRAPH_PADDING.left}
             y1={y}
-            x2={GRAPH_PADDING.left + GRAPH_INFO.width}
+            x2={GRAPH_PADDING.left + GRAPH_WIDTH}
             y2={y}
-            stroke="#e5e7eb"
+            stroke="rgba(255,255,255,0.15)"
             stroke-width="1"
-            opacity="0.5"
           />
           {#if noteName}
             <circle
@@ -327,8 +363,9 @@
             x={GRAPH_PADDING.left - 10}
             y={y + 4}
             text-anchor="end"
+            font-size="10"
             class={cl_join(
-              'fill-gray-600 text-xs dark:fill-gray-400',
+              'fill-gray-600 dark:fill-gray-400',
               noteIndex === NOTES_CUSTOM_START.length - 1 && 'font-semibold '
             )}
           >
@@ -340,8 +377,9 @@
             x={GRAPH_PADDING.left - 30}
             y={y + 4}
             text-anchor="end"
+            font-size="10"
             class={cl_join(
-              'fill-gray-600 text-xs dark:fill-gray-400',
+              'fill-gray-600 dark:fill-gray-400',
               sargam_key === 's' && 'fill-slate-500 font-semibold dark:fill-slate-200'
             )}
             font-family="ome_bhatkhande_en"
@@ -374,7 +412,7 @@
             id="noteGradient"
             gradientUnits="userSpaceOnUse"
             x1="0"
-            y1={GRAPH_PADDING.top + GRAPH_INFO.height}
+            y1={GRAPH_PADDING.top + GRAPH_HEIGHT}
             x2="0"
             y2={GRAPH_PADDING.top}
           >
@@ -393,7 +431,8 @@
           x={indicatorX}
           y={indicatorY}
           text-anchor={textAnchor}
-          class="fill-gray-800 text-xs font-medium opacity-85 dark:fill-gray-200"
+          font-size="10"
+          class="fill-gray-800 font-medium opacity-85 dark:fill-gray-200"
         >
           {lastPoint.pitch.toFixed(1)} Hz ({lastPoint.note}{lastPoint.scale})
         </text>
@@ -405,15 +444,15 @@
           x1={GRAPH_PADDING.left}
           y1={GRAPH_PADDING.top}
           x2={GRAPH_PADDING.left}
-          y2={GRAPH_INFO.height + GRAPH_PADDING.top}
+          y2={GRAPH_HEIGHT + GRAPH_PADDING.top}
           stroke="#374151"
           stroke-width="2"
         />
         <line
           x1={GRAPH_PADDING.left}
-          y1={GRAPH_INFO.height + GRAPH_PADDING.top}
-          x2={GRAPH_INFO.width + GRAPH_PADDING.left}
-          y2={GRAPH_INFO.height + GRAPH_PADDING.top}
+          y1={GRAPH_HEIGHT + GRAPH_PADDING.top}
+          x2={GRAPH_WIDTH + GRAPH_PADDING.left}
+          y2={GRAPH_HEIGHT + GRAPH_PADDING.top}
           stroke="#374151"
           stroke-width="1"
         />
@@ -424,7 +463,7 @@
 {#if input_mode === 'mic'}
   <div class="mt-4 flex items-center justify-center space-x-3 sm:mt-5 sm:space-x-4 md:space-x-5">
     <button
-      class="btn gap-0.5 rounded-md bg-primary-600 px-1.5 py-0.5 text-base font-bold text-white dark:bg-primary-500 sm:gap-1 sm:rounded-lg sm:px-2 sm:py-1 sm:text-xl"
+      class="btn gap-0.5 rounded-md bg-primary-600 px-1.5 py-0.5 text-base font-bold text-white sm:gap-1 sm:rounded-lg sm:px-2 sm:py-1 sm:text-xl dark:bg-primary-500"
       onclick={() => {
         paused_graph_data = { history: graphData };
         is_paused = !is_paused;
