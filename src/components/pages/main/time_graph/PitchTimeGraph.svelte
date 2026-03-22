@@ -65,13 +65,16 @@
   const VIEWBOX_W = $derived(Math.round(VIEWBOX_H * aspectRatio));
 
   const GRAPH_PADDING = {
-    top: 10,
+    top: 26,
     left: 50,
     right: 10,
-    bottom: 10
+    bottom: 26
   } as const;
   const GRAPH_WIDTH = $derived(VIEWBOX_W - GRAPH_PADDING.left - GRAPH_PADDING.right);
   const GRAPH_HEIGHT = VIEWBOX_H - GRAPH_PADDING.top - GRAPH_PADDING.bottom;
+  const NOTE_STEP_CONTROL_SIZE = 18;
+  const NOTE_STEP_CONTROL_TOP_INSET = 2;
+  const NOTE_STEP_CONTROL_BOTTOM_INSET = 6;
 
   // Adaptive visible points: fewer on narrower screens to reduce congestion
   // At VIEWBOX_W ~800 (desktop), show all MAX_PITCH_HISTORY_POINTS
@@ -116,6 +119,18 @@
     'F#': 'hsla(270, 100%, 50%, 1)',
     G: 'hsla(300, 100%, 50%, 1)',
     'G#': 'hsla(330, 100%, 50%, 1)'
+  };
+
+  const stepBottomStartNote = (direction: 'up' | 'down') => {
+    const currentIndex = NOTES_STARTING_WITH_A.indexOf(bottom_start_note);
+    if (currentIndex === -1) return;
+
+    const nextIndex =
+      direction === 'up'
+        ? (currentIndex + 1) % NOTES_STARTING_WITH_A.length
+        : (currentIndex - 1 + NOTES_STARTING_WITH_A.length) % NOTES_STARTING_WITH_A.length;
+
+    bottom_start_note = NOTES_STARTING_WITH_A[nextIndex];
   };
 
   const get_x_pos_on_graph = (index: number) =>
@@ -337,6 +352,41 @@
     <svg class="h-full w-full select-none" viewBox={`0 0 ${VIEWBOX_W} ${VIEWBOX_H}`}>
       <!-- Background -->
       <rect width={VIEWBOX_W} height={VIEWBOX_H} rx="8" fill={graphBgColor} />
+
+      <!-- Bottom start note step controls -->
+      <foreignObject
+        x={GRAPH_PADDING.left - 10 - NOTE_STEP_CONTROL_SIZE / 2}
+        y={NOTE_STEP_CONTROL_TOP_INSET}
+        width={NOTE_STEP_CONTROL_SIZE}
+        height={NOTE_STEP_CONTROL_SIZE}
+      >
+        <button
+          type="button"
+          class="flex h-full w-full items-center justify-center rounded-md bg-slate-100/90 p-0 text-slate-700 shadow-sm ring-1 ring-slate-300/70 backdrop-blur-sm hover:bg-primary-100 dark:bg-surface-900/90 dark:text-slate-200 dark:ring-slate-700/80 dark:hover:bg-primary-900/70"
+          aria-label="Move bottom start note up"
+          title="Move bottom start note up"
+          onclick={() => stepBottomStartNote('up')}
+        >
+          <Icon src={BsChevronUp} class="text-sm" />
+        </button>
+      </foreignObject>
+
+      <foreignObject
+        x={GRAPH_PADDING.left - 10 - NOTE_STEP_CONTROL_SIZE / 2}
+        y={VIEWBOX_H - NOTE_STEP_CONTROL_SIZE - NOTE_STEP_CONTROL_BOTTOM_INSET}
+        width={NOTE_STEP_CONTROL_SIZE}
+        height={NOTE_STEP_CONTROL_SIZE}
+      >
+        <button
+          type="button"
+          class="flex h-full w-full items-center justify-center rounded-md bg-slate-100/90 p-0 text-slate-700 shadow-sm ring-1 ring-slate-300/70 backdrop-blur-sm hover:bg-primary-100 dark:bg-surface-900/90 dark:text-slate-200 dark:ring-slate-700/80 dark:hover:bg-primary-900/70"
+          aria-label="Move bottom start note down"
+          title="Move bottom start note down"
+          onclick={() => stepBottomStartNote('down')}
+        >
+          <Icon src={BsChevronDown} class="text-sm" />
+        </button>
+      </foreignObject>
 
       <!-- Grid lines, notes & sargam labels -->
       <g>
