@@ -134,6 +134,10 @@
     bottom_start_note = NOTES_STARTING_WITH_A[nextIndex];
   };
 
+  /** Unique per baseline note so keyed transitions never duplicate gradient ids (# breaks url fragments). */
+  const noteGradientId = (note: note_types) =>
+    `timeGraphNoteGradient-${note.replaceAll('#', 'sharp')}`;
+
   const get_x_pos_on_graph = (index: number) =>
     (index / (VISIBLE_POINTS - 1)) * GRAPH_WIDTH + GRAPH_PADDING.left;
   const get_y_pos_on_graph = (yRatio: number) =>
@@ -364,9 +368,9 @@
         <button
           type="button"
           class="flex h-full w-full items-center justify-center rounded-md bg-slate-700/95 p-0 text-slate-100 shadow-sm ring-1 ring-slate-500/70 backdrop-blur-sm hover:bg-slate-600/95"
-          aria-label="Move bottom start note up"
-          title="Move bottom start note up"
-          onclick={() => stepBottomStartNote('up')}
+          aria-label="Move bottom start note down"
+          title="Move bottom start note down"
+          onclick={() => stepBottomStartNote('down')}
         >
           <Icon src={BsChevronUp} class="text-sm" />
         </button>
@@ -381,9 +385,9 @@
         <button
           type="button"
           class="flex h-full w-full items-center justify-center rounded-md bg-slate-700/95 p-0 text-slate-100 shadow-sm ring-1 ring-slate-500/70 backdrop-blur-sm hover:bg-slate-600/95"
-          aria-label="Move bottom start note down"
-          title="Move bottom start note down"
-          onclick={() => stepBottomStartNote('down')}
+          aria-label="Move bottom start note up"
+          title="Move bottom start note up"
+          onclick={() => stepBottomStartNote('up')}
         >
           <Icon src={BsChevronDown} class="text-sm" />
         </button>
@@ -454,11 +458,12 @@
 
       <!-- Data line & jump highlights -->
       {#key bottom_start_note}
+        {@const gradientId = noteGradientId(bottom_start_note)}
         <g in:fade={{ duration: 220 }} out:fade={{ duration: 160 }}>
           {#if faintSegments.length}
             <path
               d={faintSegments.join(' ')}
-              stroke="url(#noteGradient)"
+              stroke={`url(#${gradientId})`}
               stroke-width="2"
               fill="none"
               opacity="0.3"
@@ -466,14 +471,14 @@
           {/if}
           <path
             d={normalSegments.join(' ')}
-            stroke="url(#noteGradient)"
+            stroke={`url(#${gradientId})`}
             stroke-width="2"
             fill="none"
           />
 
           <defs>
             <linearGradient
-              id="noteGradient"
+              id={gradientId}
               gradientUnits="userSpaceOnUse"
               x1="0"
               y1={GRAPH_PADDING.top + GRAPH_HEIGHT}
