@@ -367,7 +367,7 @@
       >
         <button
           type="button"
-          class="flex h-full w-full items-center justify-center rounded-md bg-slate-700/95 p-0 text-slate-100 shadow-sm ring-1 ring-slate-500/70 backdrop-blur-sm hover:bg-slate-600/95"
+          class="flex h-full w-full items-center justify-center rounded-md bg-slate-700/95 p-0 text-slate-100 shadow-sm ring-1 ring-slate-500/70 backdrop-blur-sm select-none hover:bg-slate-600/95"
           aria-label="Move bottom start note down"
           title="Move bottom start note down"
           onclick={() => stepBottomStartNote('down')}
@@ -384,7 +384,7 @@
       >
         <button
           type="button"
-          class="flex h-full w-full items-center justify-center rounded-md bg-slate-700/95 p-0 text-slate-100 shadow-sm ring-1 ring-slate-500/70 backdrop-blur-sm hover:bg-slate-600/95"
+          class="flex h-full w-full items-center justify-center rounded-md bg-slate-700/95 p-0 text-slate-100 shadow-sm ring-1 ring-slate-500/70 backdrop-blur-sm select-none hover:bg-slate-600/95"
           aria-label="Move bottom start note up"
           title="Move bottom start note up"
           onclick={() => stepBottomStartNote('up')}
