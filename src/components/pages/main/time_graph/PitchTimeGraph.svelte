@@ -363,7 +363,7 @@
       >
         <button
           type="button"
-          class="flex h-full w-full items-center justify-center rounded-md bg-slate-100/90 p-0 text-slate-700 shadow-sm ring-1 ring-slate-300/70 backdrop-blur-sm hover:bg-primary-100 dark:bg-surface-900/90 dark:text-slate-200 dark:ring-slate-700/80 dark:hover:bg-primary-900/70"
+          class="flex h-full w-full items-center justify-center rounded-md bg-slate-700/95 p-0 text-slate-100 shadow-sm ring-1 ring-slate-500/70 backdrop-blur-sm hover:bg-slate-600/95"
           aria-label="Move bottom start note up"
           title="Move bottom start note up"
           onclick={() => stepBottomStartNote('up')}
@@ -380,7 +380,7 @@
       >
         <button
           type="button"
-          class="flex h-full w-full items-center justify-center rounded-md bg-slate-100/90 p-0 text-slate-700 shadow-sm ring-1 ring-slate-300/70 backdrop-blur-sm hover:bg-primary-100 dark:bg-surface-900/90 dark:text-slate-200 dark:ring-slate-700/80 dark:hover:bg-primary-900/70"
+          class="flex h-full w-full items-center justify-center rounded-md bg-slate-700/95 p-0 text-slate-100 shadow-sm ring-1 ring-slate-500/70 backdrop-blur-sm hover:bg-slate-600/95"
           aria-label="Move bottom start note down"
           title="Move bottom start note down"
           onclick={() => stepBottomStartNote('down')}
@@ -419,8 +419,8 @@
               text-anchor="end"
               font-size="10"
               class={cl_join(
-                'fill-gray-600 dark:fill-gray-400',
-                noteIndex === NOTES_CUSTOM_START.length - 1 && 'font-semibold '
+                'fill-slate-300',
+                noteIndex === NOTES_CUSTOM_START.length - 1 && 'fill-slate-100 font-semibold'
               )}
             >
               {noteName}
@@ -441,8 +441,8 @@
               text-anchor="end"
               font-size="10"
               class={cl_join(
-                'fill-gray-600 dark:fill-gray-400',
-                sargam_key === 's' && 'fill-slate-500 font-semibold dark:fill-slate-200'
+                'fill-slate-300',
+                sargam_key === 's' && 'fill-slate-100 font-semibold'
               )}
               font-family="ome_bhatkhande_en"
             >
@@ -497,7 +497,7 @@
           y={indicatorY}
           text-anchor={textAnchor}
           font-size="10"
-          class="fill-gray-800 font-medium opacity-85 dark:fill-gray-200"
+          class="fill-slate-100 font-medium opacity-95"
         >
           {lastPoint.pitch.toFixed(1)} Hz ({lastPoint.note}{lastPoint.scale})
         </text>
@@ -510,7 +510,7 @@
           y1={GRAPH_PADDING.top}
           x2={GRAPH_PADDING.left}
           y2={GRAPH_HEIGHT + GRAPH_PADDING.top}
-          stroke="#374151"
+          stroke="#64748b"
           stroke-width="2"
         />
         <line
@@ -518,8 +518,8 @@
           y1={GRAPH_HEIGHT + GRAPH_PADDING.top}
           x2={GRAPH_WIDTH + GRAPH_PADDING.left}
           y2={GRAPH_HEIGHT + GRAPH_PADDING.top}
-          stroke="#374151"
-          class="opacity-70"
+          stroke="#64748b"
+          class="opacity-80"
           stroke-width="1"
         />
       </g>
