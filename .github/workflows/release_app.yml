@@ -55,10 +55,20 @@ jobs:
         run: |
           # Strip leading 'v' if present to get VERSION (1.2.3)
           VERSION="${GITHUB_REF_NAME#v}"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release tag must be in semver form: vMAJOR.MINOR.PATCH"
+            echo "Resolved tag: ${GITHUB_REF_NAME}"
+            exit 1
+          fi
           echo "VERSION_NAME=$VERSION" >> $GITHUB_ENV
 
           IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
           VERSION_CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH))
+          if (( VERSION_CODE <= 0 )); then
+            echo "Computed VERSION_CODE must be a positive integer, got: $VERSION_CODE"
+            echo "Resolved version: $VERSION"
+            exit 1
+          fi
           echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
 
       # Web build
