@@ -5,6 +5,8 @@
   import { Popover } from '@skeletonlabs/skeleton-svelte';
   import { BsChevronDown, BsChevronUp, BsPauseFill, BsPlayFill } from 'svelte-icons-pack/bs';
   import Icon from '~/tools/Icon.svelte';
+  import { mode } from 'mode-watcher';
+  import { fade, fly } from 'svelte/transition';
 
   let Sa_at_popup_status = $state(false);
   let bottom_start_note_popup_status = $state(false);
@@ -35,19 +37,58 @@
 
   let is_paused = $state(false);
 
-  const SVG_BACKGROUND = {
-    width: 800,
-    height: 300
-  } as const;
+  // --- Dynamic sizing via ResizeObserver ---
+  // The viewBox uses a fixed height (VIEWBOX_H = 300) so text/elements stay
+  // consistently sized. The viewBox width is computed to match the container's
+  // aspect ratio, so the SVG scales uniformly (no distortion).
+  let containerEl: HTMLDivElement | undefined = $state(undefined);
+  let containerWidth = $state(800);
+  let containerHeight = $state(300);
 
-  const GRAPH_INFO = {
-    width: 720,
-    height: 280
-  } as const; // without padding
+  $effect(() => {
+    const el = containerEl;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        containerWidth = Math.round(entry.contentRect.width);
+        containerHeight = Math.round(entry.contentRect.height);
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  });
+
+  // Fixed viewBox height — keeps text/element sizes consistent across screens
+  const VIEWBOX_H = 300;
+  // ViewBox width computed to match container aspect ratio
+  const aspectRatio = $derived(containerHeight > 0 ? containerWidth / containerHeight : 800 / 300);
+  const VIEWBOX_W = $derived(Math.round(VIEWBOX_H * aspectRatio));
+
   const GRAPH_PADDING = {
-    top: 10,
-    left: 60
+    top: 26,
+    left: 50,
+    right: 10,
+    bottom: 26
   } as const;
+  const GRAPH_WIDTH = $derived(VIEWBOX_W - GRAPH_PADDING.left - GRAPH_PADDING.right);
+  const GRAPH_HEIGHT = VIEWBOX_H - GRAPH_PADDING.top - GRAPH_PADDING.bottom;
+  const NOTE_STEP_CONTROL_SIZE = 18;
+  const NOTE_STEP_CONTROL_TOP_INSET = 2;
+  const NOTE_STEP_CONTROL_BOTTOM_INSET = 6;
+
+  // Adaptive visible points: fewer on narrower screens to reduce congestion
+  // At VIEWBOX_W ~800 (desktop), show all MAX_PITCH_HISTORY_POINTS
+  // At VIEWBOX_W ~280 (mobile), show ~35% of points
+  const VISIBLE_POINTS = $derived(
+    Math.max(
+      20,
+      Math.min(MAX_PITCH_HISTORY_POINTS, Math.round(MAX_PITCH_HISTORY_POINTS * (VIEWBOX_W / 800)))
+    )
+  );
+
+  // Graph background color based on theme
+  const graphBgColor = $derived($mode === 'dark' ? '#0f172a' : '#1e293b');
 
   const NOTES_CUSTOM_START = $derived(
     NOTES.slice(NOTES.indexOf(bottom_start_note)).concat(
@@ -81,12 +122,26 @@
     'G#': 'hsla(330, 100%, 50%, 1)'
   };
 
-  const get_x_pos_on_graph = (index: number) => {
-    return (index / (MAX_PITCH_HISTORY_POINTS - 1)) * GRAPH_INFO.width + GRAPH_PADDING.left;
+  const stepBottomStartNote = (direction: 'up' | 'down') => {
+    const currentIndex = NOTES_STARTING_WITH_A.indexOf(bottom_start_note);
+    if (currentIndex === -1) return;
+
+    const nextIndex =
+      direction === 'up'
+        ? (currentIndex + 1) % NOTES_STARTING_WITH_A.length
+        : (currentIndex - 1 + NOTES_STARTING_WITH_A.length) % NOTES_STARTING_WITH_A.length;
+
+    bottom_start_note = NOTES_STARTING_WITH_A[nextIndex];
   };
-  const get_y_pos_on_graph = (yRatio: number) => {
-    return GRAPH_INFO.height + GRAPH_PADDING.top - yRatio * GRAPH_INFO.height;
-  };
+
+  /** Unique per baseline note so keyed transitions never duplicate gradient ids (# breaks url fragments). */
+  const noteGradientId = (note: note_types) =>
+    `timeGraphNoteGradient-${note.replaceAll('#', 'sharp')}`;
+
+  const get_x_pos_on_graph = (index: number) =>
+    (index / (VISIBLE_POINTS - 1)) * GRAPH_WIDTH + GRAPH_PADDING.left;
+  const get_y_pos_on_graph = (yRatio: number) =>
+    GRAPH_HEIGHT + GRAPH_PADDING.top - yRatio * GRAPH_HEIGHT;
 
   // Convert frequency to y-position for graph based on semitone offset within one octave
   const frequencyToYPositionRatio = (frequency: number) => {
@@ -134,7 +189,11 @@
     history: [],
     audio_info_scale: undefined
   });
-  let graphData = $derived(is_paused ? paused_graph_data.history : graphDataMain);
+  let graphData = $derived.by(() => {
+    const source = is_paused ? paused_graph_data.history : graphDataMain;
+    // Show only the most recent VISIBLE_POINTS entries
+    return source.length > VISIBLE_POINTS ? source.slice(-VISIBLE_POINTS) : source;
+  });
 
   // Helper function to create smooth curve control points
   const createCurveControlPoints = (
@@ -158,13 +217,13 @@
   const [normalSegments, faintSegments] = $derived(
     graphData.reduce<[string[], string[]]>(
       ([norm, faint], point, index) => {
-        const x = get_x_pos_on_graph(point.originalIndex);
+        const x = get_x_pos_on_graph(index);
         const y = get_y_pos_on_graph(point.yRatio);
         if (index === 0) {
           norm.push(`M ${x} ${y}`);
         } else {
           const prev = graphData[index - 1];
-          const prevX = get_x_pos_on_graph(prev.originalIndex);
+          const prevX = get_x_pos_on_graph(index - 1);
           const prevY = get_y_pos_on_graph(prev.yRatio);
           const deltaPitch = point.pitch - prev.pitch;
           const deltaY = y - prevY;
@@ -202,11 +261,11 @@
 
   // Reactive last point and its coordinates
   const lastPoint = $derived(graphData[graphData.length - 1]);
-  const lastX = $derived(get_x_pos_on_graph(lastPoint.originalIndex));
+  const lastX = $derived(get_x_pos_on_graph(graphData.length - 1));
   const lastY = $derived(get_y_pos_on_graph(lastPoint.yRatio));
 
   // Smart label positioning to avoid cropping
-  const isRightSide = $derived(lastX > SVG_BACKGROUND.width * 0.85);
+  const isRightSide = $derived(lastX > VIEWBOX_W * 0.85);
   const isNearTop = $derived(lastY < GRAPH_PADDING.top + 20);
   const indicatorX = $derived(isRightSide ? lastX - 10 : lastX + 10);
   const indicatorY = $derived(isNearTop ? lastY + 20 : lastY - 10);
@@ -290,101 +349,150 @@
   </div>
 </div>
 
-<div class={cl_join('mt-1 w-full', 'h-[250px] sm:h-[330px] md:h-[500px] lg:h-[580px]')}>
+<div
+  bind:this={containerEl}
+  class={cl_join('mt-1 w-full', 'h-[60vh] sm:h-[50vh] md:h-[500px] lg:h-[580px]')}
+>
   {#if graphData.length > 0}
-    <!-- <h3 class="mb-4 text-lg font-semibold">Pitch Over Time</h3> -->
-    <svg
-      preserveAspectRatio="none"
-      class="h-full w-full select-none"
-      viewBox={`0 0 ${SVG_BACKGROUND.width} ${SVG_BACKGROUND.height}`}
-    >
+    <svg class="h-full w-full select-none" viewBox={`0 0 ${VIEWBOX_W} ${VIEWBOX_H}`}>
       <!-- Background -->
-      <rect width={SVG_BACKGROUND.width} height={SVG_BACKGROUND.height} fill="transparent" />
+      <rect width={VIEWBOX_W} height={VIEWBOX_H} rx="8" fill={graphBgColor} />
 
-      <!-- Grid lines, notes & sargam labels -->
-      <g>
-        {#each Array.from({ length: 13 }, (_, i) => i) as noteIndex}
-          {@const noteName = NOTES_CUSTOM_START[NOTES_CUSTOM_START.length - noteIndex - 1]}
-          {@const y = (noteIndex / 12) * GRAPH_INFO.height + GRAPH_PADDING.top}
-          <line
-            x1={GRAPH_PADDING.left}
-            y1={y}
-            x2={GRAPH_PADDING.left + GRAPH_INFO.width}
-            y2={y}
-            stroke="#e5e7eb"
-            stroke-width="1"
-            opacity="0.5"
-          />
-          {#if noteName}
-            <circle
-              cx={GRAPH_PADDING.left - 5}
-              cy={y}
-              r="2"
-              fill={NOTE_COLORS[noteName] || '#ccc'}
-            />
-          {/if}
-          <text
-            x={GRAPH_PADDING.left - 10}
-            y={y + 4}
-            text-anchor="end"
-            class={cl_join(
-              'fill-gray-600 text-xs dark:fill-gray-400',
-              noteIndex === NOTES_CUSTOM_START.length - 1 && 'font-semibold '
-            )}
-          >
-            {noteName}
-          </text>
-          <!-- Sargam  -->
-          {@const sargam_key = SARGAM_CUSTOM_START[SARGAM_CUSTOM_START.length - noteIndex - 1]}
-          <text
-            x={GRAPH_PADDING.left - 30}
-            y={y + 4}
-            text-anchor="end"
-            class={cl_join(
-              'fill-gray-600 text-xs dark:fill-gray-400',
-              sargam_key === 's' && 'fill-slate-500 font-semibold dark:fill-slate-200'
-            )}
-            font-family="ome_bhatkhande_en"
-          >
-            {sargam_key}
-          </text>
-        {/each}
-      </g>
+      <!-- Bottom start note step controls -->
+      <foreignObject
+        x={GRAPH_PADDING.left - 10 - NOTE_STEP_CONTROL_SIZE / 2}
+        y={NOTE_STEP_CONTROL_TOP_INSET}
+        width={NOTE_STEP_CONTROL_SIZE}
+        height={NOTE_STEP_CONTROL_SIZE}
+      >
+        <button
+          type="button"
+          class="flex h-full w-full items-center justify-center rounded-md bg-slate-700/95 p-0 text-slate-100 shadow-sm ring-1 ring-slate-500/70 backdrop-blur-sm select-none hover:bg-slate-600/95"
+          aria-label="Move bottom start note down"
+          title="Move bottom start note down"
+          onclick={() => stepBottomStartNote('down')}
+        >
+          <Icon src={BsChevronUp} class="text-sm" />
+        </button>
+      </foreignObject>
+
+      <foreignObject
+        x={GRAPH_PADDING.left - 10 - NOTE_STEP_CONTROL_SIZE / 2}
+        y={VIEWBOX_H - NOTE_STEP_CONTROL_SIZE - NOTE_STEP_CONTROL_BOTTOM_INSET}
+        width={NOTE_STEP_CONTROL_SIZE}
+        height={NOTE_STEP_CONTROL_SIZE}
+      >
+        <button
+          type="button"
+          class="flex h-full w-full items-center justify-center rounded-md bg-slate-700/95 p-0 text-slate-100 shadow-sm ring-1 ring-slate-500/70 backdrop-blur-sm select-none hover:bg-slate-600/95"
+          aria-label="Move bottom start note up"
+          title="Move bottom start note up"
+          onclick={() => stepBottomStartNote('up')}
+        >
+          <Icon src={BsChevronDown} class="text-sm" />
+        </button>
+      </foreignObject>
+
+      <!-- Grid lines and western note labels -->
+      {#key bottom_start_note}
+        <g in:fly={{ y: -10, duration: 260 }} out:fly={{ y: 10, duration: 180 }}>
+          {#each Array.from({ length: 13 }, (_, i) => i) as noteIndex (noteIndex)}
+            {@const noteName = NOTES_CUSTOM_START[NOTES_CUSTOM_START.length - noteIndex - 1]}
+            {@const y = (noteIndex / 12) * GRAPH_HEIGHT + GRAPH_PADDING.top}
+            {#if noteIndex < 12}
+              <line
+                x1={GRAPH_PADDING.left}
+                y1={y}
+                x2={GRAPH_PADDING.left + GRAPH_WIDTH}
+                y2={y}
+                stroke="rgba(255,255,255,0.15)"
+                stroke-width="1"
+              />
+            {/if}
+            {#if noteName}
+              <circle
+                cx={GRAPH_PADDING.left - 5}
+                cy={y}
+                r="2"
+                fill={NOTE_COLORS[noteName] || '#ccc'}
+              />
+            {/if}
+            <text
+              x={GRAPH_PADDING.left - 10}
+              y={y + 4}
+              text-anchor="end"
+              font-size="10"
+              class={cl_join(
+                'fill-slate-300',
+                noteIndex === NOTES_CUSTOM_START.length - 1 && 'fill-slate-100 font-semibold'
+              )}
+            >
+              {noteName}
+            </text>
+          {/each}
+        </g>
+      {/key}
+
+      <!-- Sargam labels -->
+      {#key `${bottom_start_note}-${selected_Sa_at}`}
+        <g in:fly={{ y: -6, duration: 220 }} out:fade={{ duration: 140 }}>
+          {#each Array.from({ length: 13 }, (_, i) => i) as noteIndex (noteIndex)}
+            {@const y = (noteIndex / 12) * GRAPH_HEIGHT + GRAPH_PADDING.top}
+            {@const sargam_key = SARGAM_CUSTOM_START[SARGAM_CUSTOM_START.length - noteIndex - 1]}
+            <text
+              x={GRAPH_PADDING.left - 30}
+              y={y + 4}
+              text-anchor="end"
+              font-size="10"
+              class={cl_join(
+                'fill-slate-300',
+                sargam_key === 's' && 'fill-slate-100 font-semibold'
+              )}
+              font-family="ome_bhatkhande_en"
+            >
+              {sargam_key}
+            </text>
+          {/each}
+        </g>
+      {/key}
 
       <!-- Data line & jump highlights -->
-      <g>
-        {#if faintSegments.length}
+      {#key bottom_start_note}
+        {@const gradientId = noteGradientId(bottom_start_note)}
+        <g in:fade={{ duration: 220 }} out:fade={{ duration: 160 }}>
+          {#if faintSegments.length}
+            <path
+              d={faintSegments.join(' ')}
+              stroke={`url(#${gradientId})`}
+              stroke-width="2"
+              fill="none"
+              opacity="0.3"
+            />
+          {/if}
           <path
-            d={faintSegments.join(' ')}
-            stroke="url(#noteGradient)"
+            d={normalSegments.join(' ')}
+            stroke={`url(#${gradientId})`}
             stroke-width="2"
             fill="none"
-            opacity="0.3"
           />
-        {/if}
-        <path
-          d={normalSegments.join(' ')}
-          stroke="url(#noteGradient)"
-          stroke-width="2"
-          fill="none"
-        />
 
-        <defs>
-          <linearGradient
-            id="noteGradient"
-            gradientUnits="userSpaceOnUse"
-            x1="0"
-            y1={GRAPH_PADDING.top + GRAPH_INFO.height}
-            x2="0"
-            y2={GRAPH_PADDING.top}
-          >
-            {#each NOTES_CUSTOM_START as note, idx}
-              {@const offset = (idx / (NOTES_CUSTOM_START.length - 1)) * 100}
-              <stop offset={`${offset}%`} stop-color={NOTE_COLORS[note]} />
-            {/each}
-          </linearGradient>
-        </defs>
-      </g>
+          <defs>
+            <linearGradient
+              id={gradientId}
+              gradientUnits="userSpaceOnUse"
+              x1="0"
+              y1={GRAPH_PADDING.top + GRAPH_HEIGHT}
+              x2="0"
+              y2={GRAPH_PADDING.top}
+            >
+              {#each NOTES_CUSTOM_START as note, idx}
+                {@const offset = (idx / (NOTES_CUSTOM_START.length - 1)) * 100}
+                <stop offset={`${offset}%`} stop-color={NOTE_COLORS[note]} />
+              {/each}
+            </linearGradient>
+          </defs>
+        </g>
+      {/key}
 
       <!-- Current frequency display -->
       <g>
@@ -393,7 +501,8 @@
           x={indicatorX}
           y={indicatorY}
           text-anchor={textAnchor}
-          class="fill-gray-800 text-xs font-medium opacity-85 dark:fill-gray-200"
+          font-size="10"
+          class="fill-slate-100 font-medium opacity-95"
         >
           {lastPoint.pitch.toFixed(1)} Hz ({lastPoint.note}{lastPoint.scale})
         </text>
@@ -405,16 +514,17 @@
           x1={GRAPH_PADDING.left}
           y1={GRAPH_PADDING.top}
           x2={GRAPH_PADDING.left}
-          y2={GRAPH_INFO.height + GRAPH_PADDING.top}
-          stroke="#374151"
+          y2={GRAPH_HEIGHT + GRAPH_PADDING.top}
+          stroke="#64748b"
           stroke-width="2"
         />
         <line
           x1={GRAPH_PADDING.left}
-          y1={GRAPH_INFO.height + GRAPH_PADDING.top}
-          x2={GRAPH_INFO.width + GRAPH_PADDING.left}
-          y2={GRAPH_INFO.height + GRAPH_PADDING.top}
-          stroke="#374151"
+          y1={GRAPH_HEIGHT + GRAPH_PADDING.top}
+          x2={GRAPH_WIDTH + GRAPH_PADDING.left}
+          y2={GRAPH_HEIGHT + GRAPH_PADDING.top}
+          stroke="#64748b"
+          class="opacity-80"
           stroke-width="1"
         />
       </g>
@@ -424,7 +534,7 @@
 {#if input_mode === 'mic'}
   <div class="mt-4 flex items-center justify-center space-x-3 sm:mt-5 sm:space-x-4 md:space-x-5">
     <button
-      class="btn gap-0.5 rounded-md bg-primary-600 px-1.5 py-0.5 text-base font-bold text-white dark:bg-primary-500 sm:gap-1 sm:rounded-lg sm:px-2 sm:py-1 sm:text-xl"
+      class="btn gap-0.5 rounded-md bg-primary-600 px-1.5 py-0.5 text-base font-bold text-white sm:gap-1 sm:rounded-lg sm:px-2 sm:py-1 sm:text-xl dark:bg-primary-500"
       onclick={() => {
         paused_graph_data = { history: graphData };
         is_paused = !is_paused;

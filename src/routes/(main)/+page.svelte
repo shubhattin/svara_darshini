@@ -21,7 +21,7 @@
     'saved_pitch_display_type',
     'circular_scale'
   );
-  let default_timegraph_Sa_at = persistedStore<note_types>('prev_timegraph_Sa_at', 'C');
+  // let default_timegraph_Sa_at = persistedStore<note_types>('prev_timegraph_Sa_at', 'C');
   let default_timegraph_bottom_start_note = persistedStore<note_types>(
     'prev_timegraph_bottom_start_note',
     'C'
@@ -118,9 +118,10 @@
     bind:selected_sargam_orientation={$default_sargam_orientation}
     bind:selected_note_orientation={$default_note_orientation}
     bind:selected_pitch_display_type={$default_pitch_display_type}
-    bind:selected_timegraph_Sa_at={$default_timegraph_Sa_at}
+    bind:selected_timegraph_Sa_at={$default_Sa_at}
     bind:selected_timegraph_bottom_start_note={$default_timegraph_bottom_start_note}
   >
+    <!-- Currently using the same Sa_at for the time graph as the circular display -->
     {#snippet welcome_msg()}
       <div class="flex flex-col items-center space-y-2 px-3 text-center sm:space-y-4 sm:px-4">
         <!-- Title with warm gradient -->
