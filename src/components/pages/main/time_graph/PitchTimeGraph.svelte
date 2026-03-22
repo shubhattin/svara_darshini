@@ -6,6 +6,7 @@
   import { BsChevronDown, BsChevronUp, BsPauseFill, BsPlayFill } from 'svelte-icons-pack/bs';
   import Icon from '~/tools/Icon.svelte';
   import { mode } from 'mode-watcher';
+  import { fade, fly } from 'svelte/transition';
 
   let Sa_at_popup_status = $state(false);
   let bottom_start_note_popup_status = $state(false);
@@ -388,93 +389,105 @@
         </button>
       </foreignObject>
 
-      <!-- Grid lines, notes & sargam labels -->
-      <g>
-        {#each Array.from({ length: 13 }, (_, i) => i) as noteIndex (noteIndex)}
-          {@const noteName = NOTES_CUSTOM_START[NOTES_CUSTOM_START.length - noteIndex - 1]}
-          {@const y = (noteIndex / 12) * GRAPH_HEIGHT + GRAPH_PADDING.top}
-          {#if noteIndex < 12}
-            <line
-              x1={GRAPH_PADDING.left}
-              y1={y}
-              x2={GRAPH_PADDING.left + GRAPH_WIDTH}
-              y2={y}
-              stroke="rgba(255,255,255,0.15)"
-              stroke-width="1"
-            />
-          {/if}
-          {#if noteName}
-            <circle
-              cx={GRAPH_PADDING.left - 5}
-              cy={y}
-              r="2"
-              fill={NOTE_COLORS[noteName] || '#ccc'}
-            />
-          {/if}
-          <text
-            x={GRAPH_PADDING.left - 10}
-            y={y + 4}
-            text-anchor="end"
-            font-size="10"
-            class={cl_join(
-              'fill-gray-600 dark:fill-gray-400',
-              noteIndex === NOTES_CUSTOM_START.length - 1 && 'font-semibold '
-            )}
-          >
-            {noteName}
-          </text>
-          <!-- Sargam  -->
-          {@const sargam_key = SARGAM_CUSTOM_START[SARGAM_CUSTOM_START.length - noteIndex - 1]}
-          <text
-            x={GRAPH_PADDING.left - 30}
-            y={y + 4}
-            text-anchor="end"
-            font-size="10"
-            class={cl_join(
-              'fill-gray-600 dark:fill-gray-400',
-              sargam_key === 's' && 'fill-slate-500 font-semibold dark:fill-slate-200'
-            )}
-            font-family="ome_bhatkhande_en"
-          >
-            {sargam_key}
-          </text>
-        {/each}
-      </g>
+      <!-- Grid lines and western note labels -->
+      {#key bottom_start_note}
+        <g in:fly={{ y: -10, duration: 260 }} out:fly={{ y: 10, duration: 180 }}>
+          {#each Array.from({ length: 13 }, (_, i) => i) as noteIndex (noteIndex)}
+            {@const noteName = NOTES_CUSTOM_START[NOTES_CUSTOM_START.length - noteIndex - 1]}
+            {@const y = (noteIndex / 12) * GRAPH_HEIGHT + GRAPH_PADDING.top}
+            {#if noteIndex < 12}
+              <line
+                x1={GRAPH_PADDING.left}
+                y1={y}
+                x2={GRAPH_PADDING.left + GRAPH_WIDTH}
+                y2={y}
+                stroke="rgba(255,255,255,0.15)"
+                stroke-width="1"
+              />
+            {/if}
+            {#if noteName}
+              <circle
+                cx={GRAPH_PADDING.left - 5}
+                cy={y}
+                r="2"
+                fill={NOTE_COLORS[noteName] || '#ccc'}
+              />
+            {/if}
+            <text
+              x={GRAPH_PADDING.left - 10}
+              y={y + 4}
+              text-anchor="end"
+              font-size="10"
+              class={cl_join(
+                'fill-gray-600 dark:fill-gray-400',
+                noteIndex === NOTES_CUSTOM_START.length - 1 && 'font-semibold '
+              )}
+            >
+              {noteName}
+            </text>
+          {/each}
+        </g>
+      {/key}
+
+      <!-- Sargam labels -->
+      {#key `${bottom_start_note}-${selected_Sa_at}`}
+        <g in:fly={{ y: -6, duration: 220 }} out:fade={{ duration: 140 }}>
+          {#each Array.from({ length: 13 }, (_, i) => i) as noteIndex (noteIndex)}
+            {@const y = (noteIndex / 12) * GRAPH_HEIGHT + GRAPH_PADDING.top}
+            {@const sargam_key = SARGAM_CUSTOM_START[SARGAM_CUSTOM_START.length - noteIndex - 1]}
+            <text
+              x={GRAPH_PADDING.left - 30}
+              y={y + 4}
+              text-anchor="end"
+              font-size="10"
+              class={cl_join(
+                'fill-gray-600 dark:fill-gray-400',
+                sargam_key === 's' && 'fill-slate-500 font-semibold dark:fill-slate-200'
+              )}
+              font-family="ome_bhatkhande_en"
+            >
+              {sargam_key}
+            </text>
+          {/each}
+        </g>
+      {/key}
 
       <!-- Data line & jump highlights -->
-      <g>
-        {#if faintSegments.length}
+      {#key bottom_start_note}
+        <g in:fade={{ duration: 220 }} out:fade={{ duration: 160 }}>
+          {#if faintSegments.length}
+            <path
+              d={faintSegments.join(' ')}
+              stroke="url(#noteGradient)"
+              stroke-width="2"
+              fill="none"
+              opacity="0.3"
+            />
+          {/if}
           <path
-            d={faintSegments.join(' ')}
+            d={normalSegments.join(' ')}
             stroke="url(#noteGradient)"
             stroke-width="2"
             fill="none"
-            opacity="0.3"
           />
-        {/if}
-        <path
-          d={normalSegments.join(' ')}
-          stroke="url(#noteGradient)"
-          stroke-width="2"
-          fill="none"
-        />
 
-        <defs>
-          <linearGradient
-            id="noteGradient"
-            gradientUnits="userSpaceOnUse"
-            x1="0"
-            y1={GRAPH_PADDING.top + GRAPH_HEIGHT}
-            x2="0"
-            y2={GRAPH_PADDING.top}
-          >
-            {#each NOTES_CUSTOM_START as note, idx}
-              {@const offset = (idx / (NOTES_CUSTOM_START.length - 1)) * 100}
-              <stop offset={`${offset}%`} stop-color={NOTE_COLORS[note]} />
-            {/each}
-          </linearGradient>
-        </defs>
-      </g>
+          <defs>
+            <linearGradient
+              id="noteGradient"
+              gradientUnits="userSpaceOnUse"
+              x1="0"
+              y1={GRAPH_PADDING.top + GRAPH_HEIGHT}
+              x2="0"
+              y2={GRAPH_PADDING.top}
+            >
+              {#each NOTES_CUSTOM_START as note, idx}
+                {@const offset = (idx / (NOTES_CUSTOM_START.length - 1)) * 100}
+                <stop offset={`${offset}%`} stop-color={NOTE_COLORS[note]} />
+              {/each}
+            </linearGradient>
+          </defs>
+        </g>
+      {/key}
 
       <!-- Current frequency display -->
       <g>
