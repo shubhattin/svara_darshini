@@ -343,14 +343,16 @@
         {#each Array.from({ length: 13 }, (_, i) => i) as noteIndex (noteIndex)}
           {@const noteName = NOTES_CUSTOM_START[NOTES_CUSTOM_START.length - noteIndex - 1]}
           {@const y = (noteIndex / 12) * GRAPH_HEIGHT + GRAPH_PADDING.top}
-          <line
-            x1={GRAPH_PADDING.left}
-            y1={y}
-            x2={GRAPH_PADDING.left + GRAPH_WIDTH}
-            y2={y}
-            stroke="rgba(255,255,255,0.15)"
-            stroke-width="1"
-          />
+          {#if noteIndex < 12}
+            <line
+              x1={GRAPH_PADDING.left}
+              y1={y}
+              x2={GRAPH_PADDING.left + GRAPH_WIDTH}
+              y2={y}
+              stroke="rgba(255,255,255,0.15)"
+              stroke-width="1"
+            />
+          {/if}
           {#if noteName}
             <circle
               cx={GRAPH_PADDING.left - 5}
@@ -454,6 +456,7 @@
           x2={GRAPH_WIDTH + GRAPH_PADDING.left}
           y2={GRAPH_HEIGHT + GRAPH_PADDING.top}
           stroke="#374151"
+          class="opacity-70"
           stroke-width="1"
         />
       </g>
