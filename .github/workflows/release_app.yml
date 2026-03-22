@@ -41,7 +41,17 @@ jobs:
         run: |
           if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
             TAG="${{ inputs.tag }}"
+            if [[ -z "$TAG" ]]; then
+              echo "workflow_dispatch requires the 'tag' input (example: v1.2.3)."
+              exit 1
+            fi
           else
+            if [[ "${{ github.ref_type }}" != "tag" ]]; then
+              echo "This workflow must run from a git tag ref or via workflow_dispatch with a tag input."
+              echo "Current ref type: ${{ github.ref_type }}"
+              echo "Current ref name: ${{ github.ref_name }}"
+              exit 1
+            fi
             TAG="${{ github.ref_name }}"
           fi
           echo "Resolved TAG=$TAG"
