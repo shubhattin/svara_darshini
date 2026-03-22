@@ -31,6 +31,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        name: Setup Bun
 
       # Resolve tag (use workflow_dispatch input or pushed tag) and export as GITHUB_REF_NAME
       - name: Resolve release tag
