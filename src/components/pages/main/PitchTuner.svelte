@@ -87,6 +87,51 @@
     }>
   >([]);
 
+  const buildAudioConstraints = (deviceId: string): MediaTrackConstraints | true => {
+    if (!deviceId) return true;
+
+    const supported = navigator.mediaDevices.getSupportedConstraints();
+    const constraints: MediaTrackConstraints = {
+      deviceId: { exact: deviceId }
+    };
+
+    // Prefer raw capture for pitch analysis so browser voice processing does not suppress mixed audio.
+    if (supported.echoCancellation) constraints.echoCancellation = false;
+    if (supported.noiseSuppression) constraints.noiseSuppression = false;
+    if (supported.autoGainControl) constraints.autoGainControl = false;
+    if (supported.channelCount) constraints.channelCount = { ideal: 2 };
+
+    return constraints;
+  };
+
+  const logAudioTrackDebugInfo = (stream: MediaStream, requestedDeviceId: string) => {
+    const track = stream.getAudioTracks()[0];
+    if (!track) {
+      console.warn('[PitchTuner] No audio track found on acquired stream');
+      return;
+    }
+
+    const settings = track.getSettings();
+    const constraints = track.getConstraints();
+    const selectedDevice = audio_devices.find((device) => device.deviceId === requestedDeviceId);
+
+    console.groupCollapsed('[PitchTuner] Audio capture debug');
+    console.log('Requested deviceId:', requestedDeviceId);
+    console.log('Requested device label:', selectedDevice?.label ?? '(unknown)');
+    console.log('Actual track label:', track.label);
+    console.log('Track settings:', settings);
+    console.log('Track constraints:', constraints);
+
+    if (settings.deviceId && requestedDeviceId && settings.deviceId !== requestedDeviceId) {
+      console.warn(
+        '[PitchTuner] Browser opened a different audio device than requested',
+        settings.deviceId
+      );
+    }
+
+    console.groupEnd();
+  };
+
   const get_audio_devices = async (show_loading = true) => {
     if (show_loading) device_list_loaded = false;
     await delay(250, true);
@@ -193,23 +238,36 @@
         // create analyzer node
         analyzer_node = audio_context.createAnalyser();
 
-        // connect analyzer node to audio context destination
         const constraints: MediaStreamConstraints = {
-          audio: selected_device ? { deviceId: { ideal: selected_device } } : true
+          audio: buildAudioConstraints(selected_device)
         };
 
         let stream: MediaStream;
         try {
           stream = await navigator.mediaDevices.getUserMedia(constraints);
         } catch (err) {
-          console.warn("Couldn't open selected device, falling back to default", err);
-          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          console.warn(
+            '[PitchTuner] Failed to open selected input device. Analysis will not start.',
+            {
+              selected_device,
+              selected_label:
+                audio_devices.find((device) => device.deviceId === selected_device)?.label ??
+                '(unknown)',
+              error: err
+            }
+          );
+          await audio_context.close();
+          audio_context = null;
+          analyzer_node = null;
+          return;
         }
         get_audio_devices(false); // refresh list
         if (!audio_context) return;
         if (!analyzer_node) return;
         if (!stream) return;
         mic_stream = stream;
+
+        logAudioTrackDebugInfo(stream, selected_device);
 
         analyzer_node.fftSize = FFT_SIZE;
         audio_context.createMediaStreamSource(stream).connect(analyzer_node);
