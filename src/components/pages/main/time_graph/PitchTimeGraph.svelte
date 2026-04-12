@@ -6,7 +6,15 @@
   import { BsChevronDown, BsChevronUp, BsPauseFill, BsPlayFill } from 'svelte-icons-pack/bs';
   import Icon from '~/tools/Icon.svelte';
   import { mode } from 'mode-watcher';
-  import { fade, fly } from 'svelte/transition';
+
+  type GraphPoint = {
+    yRatio: number;
+    pitch: number;
+    note: string;
+    clarity: number;
+    originalIndex: number;
+    scale: number;
+  };
 
   let Sa_at_popup_status = $state(false);
   let bottom_start_note_popup_status = $state(false);
@@ -18,7 +26,6 @@
     bottom_start_note = $bindable(),
     selected_Sa_at = $bindable(),
     input_mode
-    // is_paused = $bindable()
   }: {
     pitch_history: Array<{
       time: number;
@@ -32,81 +39,25 @@
     bottom_start_note: note_types;
     selected_Sa_at: note_types;
     input_mode: 'mic' | 'file';
-    // is_paused: boolean;
   } = $props();
 
   let is_paused = $state(false);
-
-  // --- Dynamic sizing via ResizeObserver ---
-  // The viewBox uses a fixed height (VIEWBOX_H = 300) so text/elements stay
-  // consistently sized. The viewBox width is computed to match the container's
-  // aspect ratio, so the SVG scales uniformly (no distortion).
   let containerEl: HTMLDivElement | undefined = $state(undefined);
+  let canvasEl: HTMLCanvasElement | undefined = $state(undefined);
   let containerWidth = $state(800);
   let containerHeight = $state(300);
 
-  $effect(() => {
-    const el = containerEl;
-    if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry) {
-        containerWidth = Math.round(entry.contentRect.width);
-        containerHeight = Math.round(entry.contentRect.height);
-      }
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  });
-
-  // Fixed viewBox height — keeps text/element sizes consistent across screens
   const VIEWBOX_H = 300;
-  // ViewBox width computed to match container aspect ratio
-  const aspectRatio = $derived(containerHeight > 0 ? containerWidth / containerHeight : 800 / 300);
-  const VIEWBOX_W = $derived(Math.round(VIEWBOX_H * aspectRatio));
-
   const GRAPH_PADDING = {
     top: 26,
     left: 50,
     right: 10,
     bottom: 26
   } as const;
-  const GRAPH_WIDTH = $derived(VIEWBOX_W - GRAPH_PADDING.left - GRAPH_PADDING.right);
-  const GRAPH_HEIGHT = VIEWBOX_H - GRAPH_PADDING.top - GRAPH_PADDING.bottom;
   const NOTE_STEP_CONTROL_SIZE = 18;
   const NOTE_STEP_CONTROL_TOP_INSET = 2;
   const NOTE_STEP_CONTROL_BOTTOM_INSET = 6;
 
-  // Adaptive visible points: fewer on narrower screens to reduce congestion
-  // At VIEWBOX_W ~800 (desktop), show all MAX_PITCH_HISTORY_POINTS
-  // At VIEWBOX_W ~280 (mobile), show ~35% of points
-  const VISIBLE_POINTS = $derived(
-    Math.max(
-      20,
-      Math.min(MAX_PITCH_HISTORY_POINTS, Math.round(MAX_PITCH_HISTORY_POINTS * (VIEWBOX_W / 800)))
-    )
-  );
-
-  // Graph background color based on theme
-  const graphBgColor = $derived($mode === 'dark' ? '#0f172a' : '#1e293b');
-
-  const NOTES_CUSTOM_START = $derived(
-    NOTES.slice(NOTES.indexOf(bottom_start_note)).concat(
-      NOTES.slice(0, NOTES.indexOf(bottom_start_note))
-    )
-  );
-  const SARGAM_KEYS = SARGAM.map((sargam) => sargam.key);
-
-  const SARGAM_CUSTOM_START = $derived.by(() => {
-    const NOTES_INDEX = NOTES_CUSTOM_START.indexOf(selected_Sa_at);
-    const new_arr: string[] = Array.from({ length: NOTES.length });
-    for (let i = 0; i < NOTES.length; i++) {
-      new_arr[(i + NOTES_INDEX) % NOTES.length] = SARGAM_KEYS[i];
-    }
-    return new_arr;
-  });
-
-  // Mapping of each note to a custom color for gradient encoding
   const NOTE_COLORS: Record<note_types, string> = {
     A: 'hsla(0, 100%, 50%, 1)',
     'A#': 'hsla(30, 100%, 50%, 1)',
@@ -122,6 +73,69 @@
     'G#': 'hsla(330, 100%, 50%, 1)'
   };
 
+  const SARGAM_KEYS = SARGAM.map((sargam) => sargam.key);
+
+  const isDarkMode = $derived($mode === 'dark');
+  const aspectRatio = $derived(containerHeight > 0 ? containerWidth / containerHeight : 800 / 300);
+  const VIEWBOX_W = $derived(Math.round(VIEWBOX_H * aspectRatio));
+  const GRAPH_WIDTH = $derived(VIEWBOX_W - GRAPH_PADDING.left - GRAPH_PADDING.right);
+  const GRAPH_HEIGHT = VIEWBOX_H - GRAPH_PADDING.top - GRAPH_PADDING.bottom;
+  const VISIBLE_POINTS = $derived(
+    Math.max(
+      20,
+      Math.min(MAX_PITCH_HISTORY_POINTS, Math.round(MAX_PITCH_HISTORY_POINTS * (VIEWBOX_W / 800)))
+    )
+  );
+
+  const graphPalette = $derived({
+    background: '#0f172a',
+    grid: 'rgba(255,255,255,0.15)',
+    axis: '#64748b',
+    label: '#cbd5e1',
+    labelStrong: '#f8fafc',
+    point: '#ef4444',
+    buttonBg: 'rgba(51, 65, 85, 0.95)',
+    buttonHoverBg: 'rgba(71, 85, 105, 0.95)',
+    buttonText: '#f1f5f9',
+    buttonRing: 'rgba(148, 163, 184, 0.75)',
+    overlayShadow: '0 1px 2px rgba(15, 23, 42, 0.25)',
+    popoverSurface: isDarkMode ? 'bg-surface-900 text-slate-100' : 'bg-slate-100 text-slate-900',
+    inactiveOption: isDarkMode
+      ? 'bg-slate-800 hover:bg-primary-600/80'
+      : 'bg-slate-400 hover:bg-primary-500/80',
+    activeOption: isDarkMode ? 'bg-primary-600' : 'bg-primary-500',
+    pauseButton: isDarkMode ? 'bg-primary-500' : 'bg-primary-600'
+  });
+
+  const NOTES_CUSTOM_START = $derived(
+    NOTES.slice(NOTES.indexOf(bottom_start_note)).concat(
+      NOTES.slice(0, NOTES.indexOf(bottom_start_note))
+    )
+  );
+
+  const SARGAM_CUSTOM_START = $derived.by(() => {
+    const NOTES_INDEX = NOTES_CUSTOM_START.indexOf(selected_Sa_at);
+    const new_arr: string[] = Array.from({ length: NOTES.length });
+    for (let i = 0; i < NOTES.length; i++) {
+      new_arr[(i + NOTES_INDEX) % NOTES.length] = SARGAM_KEYS[i];
+    }
+    return new_arr;
+  });
+
+  $effect(() => {
+    const el = containerEl;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        containerWidth = Math.round(entry.contentRect.width);
+        containerHeight = Math.round(entry.contentRect.height);
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  });
+
   const stepBottomStartNote = (direction: 'up' | 'down') => {
     const currentIndex = NOTES_STARTING_WITH_A.indexOf(bottom_start_note);
     if (currentIndex === -1) return;
@@ -134,33 +148,22 @@
     bottom_start_note = NOTES_STARTING_WITH_A[nextIndex];
   };
 
-  /** Unique per baseline note so keyed transitions never duplicate gradient ids (# breaks url fragments). */
-  const noteGradientId = (note: note_types) =>
-    `timeGraphNoteGradient-${note.replaceAll('#', 'sharp')}`;
-
-  const get_x_pos_on_graph = (index: number) =>
-    (index / (VISIBLE_POINTS - 1)) * GRAPH_WIDTH + GRAPH_PADDING.left;
-  const get_y_pos_on_graph = (yRatio: number) =>
+  const getXPosOnGraph = (index: number) =>
+    (index / Math.max(VISIBLE_POINTS - 1, 1)) * GRAPH_WIDTH + GRAPH_PADDING.left;
+  const getYPosOnGraph = (yRatio: number) =>
     GRAPH_HEIGHT + GRAPH_PADDING.top - yRatio * GRAPH_HEIGHT;
 
-  // Convert frequency to y-position for graph based on semitone offset within one octave
   const frequencyToYPositionRatio = (frequency: number) => {
-    // Validate input: must be a positive finite number
     if (!Number.isFinite(frequency) || frequency <= 0) {
-      return null; // Return null for invalid frequencies
+      return null;
     }
 
     const A0_freq = 27.5;
-    // Compute continuous semitone offset from A0
     const semitoneOffset = 12 * (Math.log(frequency / A0_freq) / Math.log(2));
-    // Fractional semitone within one octave
     const semitoneInOctave = ((semitoneOffset % 12) + 12) % 12;
-    // Shift semitone based on bottom_start_note baseline
     const baseIndex = NOTES_STARTING_WITH_A.indexOf(bottom_start_note);
     const semitoneRelative = (semitoneInOctave - baseIndex + 12) % 12;
-    // Normalize so semitoneRelative 0 maps just above bottom axis, and max maps to top
     const normalized = ((semitoneRelative + 1) / 12) * 100;
-    // Clamp to [0,100]
     return Math.min(Math.max(normalized, 0), 100) / 100;
   };
 
@@ -170,7 +173,6 @@
         const yPos = frequencyToYPositionRatio(point.pitch);
         return yPos !== null
           ? {
-              // x: index * AUDIO_INFO_UPDATE_INTERVAL, // Time in milliseconds from start
               yRatio: yPos,
               pitch: point.pitch,
               note: point.note,
@@ -180,22 +182,30 @@
             }
           : null;
       })
-      .filter((point): point is NonNullable<typeof point> => point !== null)
+      .filter((point): point is GraphPoint => point !== null)
   );
+
   let paused_graph_data = $state<{
-    history: typeof graphDataMain;
+    history: GraphPoint[];
     audio_info_scale?: number;
   }>({
     history: [],
     audio_info_scale: undefined
   });
-  let graphData = $derived.by(() => {
+
+  const graphData = $derived.by(() => {
     const source = is_paused ? paused_graph_data.history : graphDataMain;
-    // Show only the most recent VISIBLE_POINTS entries
     return source.length > VISIBLE_POINTS ? source.slice(-VISIBLE_POINTS) : source;
   });
 
-  // Helper function to create smooth curve control points
+  const lastPoint = $derived(graphData[graphData.length - 1]);
+  const lastX = $derived(lastPoint ? getXPosOnGraph(graphData.length - 1) : GRAPH_PADDING.left);
+  const lastY = $derived(lastPoint ? getYPosOnGraph(lastPoint.yRatio) : GRAPH_PADDING.top);
+  const isRightSide = $derived(lastX > VIEWBOX_W * 0.85);
+  const isNearTop = $derived(lastY < GRAPH_PADDING.top + 20);
+  const indicatorX = $derived(isRightSide ? lastX - 10 : lastX + 10);
+  const indicatorY = $derived(isNearTop ? lastY + 20 : lastY - 10);
+
   const createCurveControlPoints = (
     x1: number,
     y1: number,
@@ -203,9 +213,7 @@
     y2: number,
     smoothing = 0.3
   ) => {
-    // cubic bezier curve
     const dx = x2 - x1;
-    const dy = y2 - y1;
     const controlPoint1X = x1 + dx * smoothing;
     const controlPoint1Y = y1;
     const controlPoint2X = x2 - dx * smoothing;
@@ -213,63 +221,234 @@
     return { controlPoint1X, controlPoint1Y, controlPoint2X, controlPoint2Y };
   };
 
-  // Compute normal and faint segments for jump highlights
-  const [normalSegments, faintSegments] = $derived(
-    graphData.reduce<[string[], string[]]>(
-      ([norm, faint], point, index) => {
-        const x = get_x_pos_on_graph(index);
-        const y = get_y_pos_on_graph(point.yRatio);
-        if (index === 0) {
-          norm.push(`M ${x} ${y}`);
-        } else {
-          const prev = graphData[index - 1];
-          const prevX = get_x_pos_on_graph(index - 1);
-          const prevY = get_y_pos_on_graph(prev.yRatio);
-          const deltaPitch = point.pitch - prev.pitch;
-          const deltaY = y - prevY;
-          // +ve deltaY : graph moved down
-          // -ve deltaY : graph moved up
-          // as in svg, y increases as we go down
+  const makeOverlayStyle = (x: number, y: number, width: number, height: number) =>
+    [
+      `left:${(x / VIEWBOX_W) * 100}%`,
+      `top:${(y / VIEWBOX_H) * 100}%`,
+      `width:${(width / VIEWBOX_W) * 100}%`,
+      `height:${(height / VIEWBOX_H) * 100}%`
+    ].join(';');
 
-          const isJump = (deltaPitch > 0 && deltaY > 0) || (deltaPitch < 0 && deltaY < 0);
+  const drawRoundedRect = (
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    radius: number
+  ) => {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+  };
 
-          if (isJump) {
-            norm.push(`M ${x} ${y}`);
-            // Use smooth curve for faint segments too
-            const { controlPoint1X, controlPoint1Y, controlPoint2X, controlPoint2Y } =
-              createCurveControlPoints(prevX, prevY, x, y);
-            faint.push(
-              `M ${prevX} ${prevY}`,
-              `C ${controlPoint1X} ${controlPoint1Y}, ${controlPoint2X} ${controlPoint2Y}, ${x} ${y}`
-            );
-          } else {
-            // Create smooth curve for normal segments
-            const { controlPoint1X, controlPoint1Y, controlPoint2X, controlPoint2Y } =
-              createCurveControlPoints(prevX, prevY, x, y);
-            norm.push(
-              `C ${controlPoint1X} ${controlPoint1Y}, ${controlPoint2X} ${controlPoint2Y}, ${x} ${y}`
-            );
-            // for straight line
-            // `L ${x} ${y}`;
-          }
-        }
-        return [norm, faint];
-      },
-      [[], []] as [string[], string[]]
-    )
-  );
+  const drawGraphPath = (
+    ctx: CanvasRenderingContext2D,
+    points: GraphPoint[],
+    strokeStyle: string | CanvasGradient,
+    opacity = 1,
+    drawOnlyJumps = false
+  ) => {
+    if (points.length < 2) return;
 
-  // Reactive last point and its coordinates
-  const lastPoint = $derived(graphData[graphData.length - 1]);
-  const lastX = $derived(get_x_pos_on_graph(graphData.length - 1));
-  const lastY = $derived(get_y_pos_on_graph(lastPoint.yRatio));
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.beginPath();
 
-  // Smart label positioning to avoid cropping
-  const isRightSide = $derived(lastX > VIEWBOX_W * 0.85);
-  const isNearTop = $derived(lastY < GRAPH_PADDING.top + 20);
-  const indicatorX = $derived(isRightSide ? lastX - 10 : lastX + 10);
-  const indicatorY = $derived(isNearTop ? lastY + 20 : lastY - 10);
-  const textAnchor = $derived(isRightSide ? 'end' : 'start');
+    let hasDrawn = false;
+
+    for (let index = 1; index < points.length; index++) {
+      const prev = points[index - 1];
+      const point = points[index];
+      const prevX = getXPosOnGraph(index - 1);
+      const prevY = getYPosOnGraph(prev.yRatio);
+      const x = getXPosOnGraph(index);
+      const y = getYPosOnGraph(point.yRatio);
+      const deltaPitch = point.pitch - prev.pitch;
+      const deltaY = y - prevY;
+      const isJump = (deltaPitch > 0 && deltaY > 0) || (deltaPitch < 0 && deltaY < 0);
+
+      if (drawOnlyJumps !== isJump) continue;
+
+      const { controlPoint1X, controlPoint1Y, controlPoint2X, controlPoint2Y } =
+        createCurveControlPoints(prevX, prevY, x, y);
+
+      ctx.moveTo(prevX, prevY);
+      ctx.bezierCurveTo(controlPoint1X, controlPoint1Y, controlPoint2X, controlPoint2Y, x, y);
+      hasDrawn = true;
+    }
+
+    if (hasDrawn) ctx.stroke();
+    ctx.restore();
+  };
+
+  const drawMainGraphPath = (
+    ctx: CanvasRenderingContext2D,
+    points: GraphPoint[],
+    strokeStyle: string | CanvasGradient
+  ) => {
+    if (points.length === 0) return;
+
+    ctx.save();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(getXPosOnGraph(0), getYPosOnGraph(points[0].yRatio));
+
+    for (let index = 1; index < points.length; index++) {
+      const prev = points[index - 1];
+      const point = points[index];
+      const prevX = getXPosOnGraph(index - 1);
+      const prevY = getYPosOnGraph(prev.yRatio);
+      const x = getXPosOnGraph(index);
+      const y = getYPosOnGraph(point.yRatio);
+      const deltaPitch = point.pitch - prev.pitch;
+      const deltaY = y - prevY;
+      const isJump = (deltaPitch > 0 && deltaY > 0) || (deltaPitch < 0 && deltaY < 0);
+
+      if (isJump) {
+        ctx.moveTo(x, y);
+        continue;
+      }
+
+      const { controlPoint1X, controlPoint1Y, controlPoint2X, controlPoint2Y } =
+        createCurveControlPoints(prevX, prevY, x, y);
+      ctx.bezierCurveTo(controlPoint1X, controlPoint1Y, controlPoint2X, controlPoint2Y, x, y);
+    }
+
+    ctx.stroke();
+    ctx.restore();
+  };
+
+  const drawCanvas = (canvas: HTMLCanvasElement) => {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const cssWidth = Math.max(containerWidth, 1);
+    const cssHeight = Math.max(containerHeight, 1);
+    const dpr = window.devicePixelRatio || 1;
+    const internalWidth = Math.max(Math.round(cssWidth * dpr), 1);
+    const internalHeight = Math.max(Math.round(cssHeight * dpr), 1);
+
+    if (canvas.width !== internalWidth) canvas.width = internalWidth;
+    if (canvas.height !== internalHeight) canvas.height = internalHeight;
+
+    ctx.setTransform(internalWidth / VIEWBOX_W, 0, 0, internalHeight / VIEWBOX_H, 0, 0);
+    ctx.clearRect(0, 0, VIEWBOX_W, VIEWBOX_H);
+
+    drawRoundedRect(ctx, 0, 0, VIEWBOX_W, VIEWBOX_H, 8);
+    ctx.fillStyle = graphPalette.background;
+    ctx.fill();
+
+    for (let noteIndex = 0; noteIndex <= 12; noteIndex++) {
+      const y = (noteIndex / 12) * GRAPH_HEIGHT + GRAPH_PADDING.top;
+      const noteName = NOTES_CUSTOM_START[NOTES_CUSTOM_START.length - noteIndex - 1];
+      const sargamKey = SARGAM_CUSTOM_START[SARGAM_CUSTOM_START.length - noteIndex - 1];
+
+      if (noteIndex < 12) {
+        ctx.beginPath();
+        ctx.moveTo(GRAPH_PADDING.left, y);
+        ctx.lineTo(GRAPH_PADDING.left + GRAPH_WIDTH, y);
+        ctx.strokeStyle = graphPalette.grid;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      if (noteName) {
+        ctx.beginPath();
+        ctx.arc(GRAPH_PADDING.left - 5, y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = NOTE_COLORS[noteName];
+        ctx.fill();
+
+        ctx.font = `500 10px sans-serif`;
+        ctx.fillStyle =
+          noteIndex === NOTES_CUSTOM_START.length - 1
+            ? graphPalette.labelStrong
+            : graphPalette.label;
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(noteName, GRAPH_PADDING.left - 10, y + 4);
+      }
+
+      if (sargamKey) {
+        ctx.font = `${sargamKey === 's' ? '600' : '500'} 10px ome_bhatkhande_en, sans-serif`;
+        ctx.fillStyle = sargamKey === 's' ? graphPalette.labelStrong : graphPalette.label;
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(sargamKey, GRAPH_PADDING.left - 30, y + 4);
+      }
+    }
+
+    ctx.beginPath();
+    ctx.moveTo(GRAPH_PADDING.left, GRAPH_PADDING.top);
+    ctx.lineTo(GRAPH_PADDING.left, GRAPH_HEIGHT + GRAPH_PADDING.top);
+    ctx.strokeStyle = graphPalette.axis;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(GRAPH_PADDING.left, GRAPH_HEIGHT + GRAPH_PADDING.top);
+    ctx.lineTo(GRAPH_WIDTH + GRAPH_PADDING.left, GRAPH_HEIGHT + GRAPH_PADDING.top);
+    ctx.strokeStyle = graphPalette.axis;
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.8;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    if (graphData.length > 1) {
+      const gradient = ctx.createLinearGradient(
+        0,
+        GRAPH_PADDING.top + GRAPH_HEIGHT,
+        0,
+        GRAPH_PADDING.top
+      );
+      NOTES_CUSTOM_START.forEach((note, idx) => {
+        const offset = idx / Math.max(NOTES_CUSTOM_START.length - 1, 1);
+        gradient.addColorStop(offset, NOTE_COLORS[note]);
+      });
+
+      drawGraphPath(ctx, graphData, gradient, 0.3, true);
+      drawMainGraphPath(ctx, graphData, gradient);
+    }
+
+    if (lastPoint) {
+      ctx.beginPath();
+      ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
+      ctx.fillStyle = graphPalette.point;
+      ctx.fill();
+
+      ctx.font = '500 10px sans-serif';
+      ctx.fillStyle = graphPalette.labelStrong;
+      ctx.textAlign = isRightSide ? 'right' : 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(
+        `${lastPoint.pitch.toFixed(1)} Hz (${lastPoint.note}${lastPoint.scale})`,
+        indicatorX,
+        indicatorY
+      );
+    }
+  };
+
+  $effect(() => {
+    const canvas = canvasEl;
+    if (!canvas || graphData.length === 0) return;
+
+    drawCanvas(canvas);
+  });
 </script>
 
 <div class="flex items-center justify-center gap-x-8 sm:gap-x-12 md:gap-x-16 lg:gap-x-20">
@@ -277,7 +456,7 @@
     <Popover
       open={Sa_at_popup_status}
       onOpenChange={(e) => (Sa_at_popup_status = e.open)}
-      contentBase="card z-50 space-y-2 p-2 rounded-lg shadow-xl dark:bg-surface-900 bg-slate-100"
+      contentBase={cl_join('card z-50 space-y-2 rounded-lg p-2 shadow-xl', graphPalette.popoverSurface)}
     >
       {#snippet trigger()}
         <div class="flex items-center justify-center gap-x-1 outline-hidden">
@@ -296,9 +475,7 @@
             <button
               class={cl_join(
                 'gap-0 rounded-md px-1 py-1 text-sm font-semibold text-white sm:text-base',
-                selected_Sa_at === note
-                  ? 'bg-primary-500 dark:bg-primary-600'
-                  : 'bg-slate-400 hover:bg-primary-500/80 dark:bg-slate-800 dark:hover:bg-primary-600/80'
+                selected_Sa_at === note ? graphPalette.activeOption : graphPalette.inactiveOption
               )}
               onclick={() => {
                 selected_Sa_at = note;
@@ -314,7 +491,7 @@
     <Popover
       open={bottom_start_note_popup_status}
       onOpenChange={(e) => (bottom_start_note_popup_status = e.open)}
-      contentBase="card z-50 space-y-2 p-2 rounded-lg shadow-xl dark:bg-surface-900 bg-slate-100"
+      contentBase={cl_join('card z-50 space-y-2 rounded-lg p-2 shadow-xl', graphPalette.popoverSurface)}
     >
       {#snippet trigger()}
         <div class="flex items-center justify-center gap-x-1 outline-hidden">
@@ -333,9 +510,7 @@
             <button
               class={cl_join(
                 'gap-0 rounded-md px-1 py-1 text-sm font-semibold text-white sm:text-base',
-                bottom_start_note === note
-                  ? 'bg-primary-500 dark:bg-primary-600'
-                  : 'bg-slate-400 hover:bg-primary-500/80 dark:bg-slate-800 dark:hover:bg-primary-600/80'
+                bottom_start_note === note ? graphPalette.activeOption : graphPalette.inactiveOption
               )}
               onclick={() => {
                 bottom_start_note = note;
@@ -351,190 +526,71 @@
 
 <div
   bind:this={containerEl}
-  class={cl_join('mt-1 w-full', 'h-[60vh] sm:h-[50vh] md:h-[500px] lg:h-[580px]')}
+  class={cl_join(
+    'relative mt-1 w-full overflow-hidden rounded-lg',
+    'h-[60vh] sm:h-[50vh] md:h-[500px] lg:h-[580px]'
+  )}
 >
   {#if graphData.length > 0}
-    <svg class="h-full w-full select-none" viewBox={`0 0 ${VIEWBOX_W} ${VIEWBOX_H}`}>
-      <!-- Background -->
-      <rect width={VIEWBOX_W} height={VIEWBOX_H} rx="8" fill={graphBgColor} />
+    <canvas bind:this={canvasEl} class="block h-full w-full select-none"></canvas>
 
-      <!-- Bottom start note step controls -->
-      <foreignObject
-        x={GRAPH_PADDING.left - 10 - NOTE_STEP_CONTROL_SIZE / 2}
-        y={NOTE_STEP_CONTROL_TOP_INSET}
-        width={NOTE_STEP_CONTROL_SIZE}
-        height={NOTE_STEP_CONTROL_SIZE}
-      >
-        <button
-          type="button"
-          class="flex h-full w-full items-center justify-center rounded-md bg-slate-700/95 p-0 text-slate-100 shadow-sm ring-1 ring-slate-500/70 backdrop-blur-sm select-none hover:bg-slate-600/95"
-          aria-label="Move bottom start note down"
-          title="Move bottom start note down"
-          onclick={() => stepBottomStartNote('down')}
-        >
-          <Icon src={BsChevronUp} class="text-sm" />
-        </button>
-      </foreignObject>
+    <button
+      type="button"
+      class="absolute flex items-center justify-center rounded-md p-0 select-none backdrop-blur-sm"
+      style={makeOverlayStyle(
+        GRAPH_PADDING.left - 10 - NOTE_STEP_CONTROL_SIZE / 2,
+        NOTE_STEP_CONTROL_TOP_INSET,
+        NOTE_STEP_CONTROL_SIZE,
+        NOTE_STEP_CONTROL_SIZE
+      )}
+      aria-label="Move bottom start note down"
+      title="Move bottom start note down"
+      onclick={() => stepBottomStartNote('down')}
+      onmouseenter={(e) =>
+        ((e.currentTarget as HTMLButtonElement).style.backgroundColor = graphPalette.buttonHoverBg)}
+      onmouseleave={(e) =>
+        ((e.currentTarget as HTMLButtonElement).style.backgroundColor = graphPalette.buttonBg)}
+      style:background-color={graphPalette.buttonBg}
+      style:color={graphPalette.buttonText}
+      style:border={`1px solid ${graphPalette.buttonRing}`}
+      style:box-shadow={graphPalette.overlayShadow}
+    >
+      <Icon src={BsChevronUp} class="text-sm" />
+    </button>
 
-      <foreignObject
-        x={GRAPH_PADDING.left - 10 - NOTE_STEP_CONTROL_SIZE / 2}
-        y={VIEWBOX_H - NOTE_STEP_CONTROL_SIZE - NOTE_STEP_CONTROL_BOTTOM_INSET}
-        width={NOTE_STEP_CONTROL_SIZE}
-        height={NOTE_STEP_CONTROL_SIZE}
-      >
-        <button
-          type="button"
-          class="flex h-full w-full items-center justify-center rounded-md bg-slate-700/95 p-0 text-slate-100 shadow-sm ring-1 ring-slate-500/70 backdrop-blur-sm select-none hover:bg-slate-600/95"
-          aria-label="Move bottom start note up"
-          title="Move bottom start note up"
-          onclick={() => stepBottomStartNote('up')}
-        >
-          <Icon src={BsChevronDown} class="text-sm" />
-        </button>
-      </foreignObject>
-
-      <!-- Grid lines and western note labels -->
-      {#key bottom_start_note}
-        <g in:fly={{ y: -10, duration: 260 }} out:fly={{ y: 10, duration: 180 }}>
-          {#each Array.from({ length: 13 }, (_, i) => i) as noteIndex (noteIndex)}
-            {@const noteName = NOTES_CUSTOM_START[NOTES_CUSTOM_START.length - noteIndex - 1]}
-            {@const y = (noteIndex / 12) * GRAPH_HEIGHT + GRAPH_PADDING.top}
-            {#if noteIndex < 12}
-              <line
-                x1={GRAPH_PADDING.left}
-                y1={y}
-                x2={GRAPH_PADDING.left + GRAPH_WIDTH}
-                y2={y}
-                stroke="rgba(255,255,255,0.15)"
-                stroke-width="1"
-              />
-            {/if}
-            {#if noteName}
-              <circle
-                cx={GRAPH_PADDING.left - 5}
-                cy={y}
-                r="2"
-                fill={NOTE_COLORS[noteName] || '#ccc'}
-              />
-            {/if}
-            <text
-              x={GRAPH_PADDING.left - 10}
-              y={y + 4}
-              text-anchor="end"
-              font-size="10"
-              class={cl_join(
-                'fill-slate-300',
-                noteIndex === NOTES_CUSTOM_START.length - 1 && 'fill-slate-100 font-semibold'
-              )}
-            >
-              {noteName}
-            </text>
-          {/each}
-        </g>
-      {/key}
-
-      <!-- Sargam labels -->
-      {#key `${bottom_start_note}-${selected_Sa_at}`}
-        <g in:fly={{ y: -6, duration: 220 }} out:fade={{ duration: 140 }}>
-          {#each Array.from({ length: 13 }, (_, i) => i) as noteIndex (noteIndex)}
-            {@const y = (noteIndex / 12) * GRAPH_HEIGHT + GRAPH_PADDING.top}
-            {@const sargam_key = SARGAM_CUSTOM_START[SARGAM_CUSTOM_START.length - noteIndex - 1]}
-            <text
-              x={GRAPH_PADDING.left - 30}
-              y={y + 4}
-              text-anchor="end"
-              font-size="10"
-              class={cl_join(
-                'fill-slate-300',
-                sargam_key === 's' && 'fill-slate-100 font-semibold'
-              )}
-              font-family="ome_bhatkhande_en"
-            >
-              {sargam_key}
-            </text>
-          {/each}
-        </g>
-      {/key}
-
-      <!-- Data line & jump highlights -->
-      {#key bottom_start_note}
-        {@const gradientId = noteGradientId(bottom_start_note)}
-        <g in:fade={{ duration: 220 }} out:fade={{ duration: 160 }}>
-          {#if faintSegments.length}
-            <path
-              d={faintSegments.join(' ')}
-              stroke={`url(#${gradientId})`}
-              stroke-width="2"
-              fill="none"
-              opacity="0.3"
-            />
-          {/if}
-          <path
-            d={normalSegments.join(' ')}
-            stroke={`url(#${gradientId})`}
-            stroke-width="2"
-            fill="none"
-          />
-
-          <defs>
-            <linearGradient
-              id={gradientId}
-              gradientUnits="userSpaceOnUse"
-              x1="0"
-              y1={GRAPH_PADDING.top + GRAPH_HEIGHT}
-              x2="0"
-              y2={GRAPH_PADDING.top}
-            >
-              {#each NOTES_CUSTOM_START as note, idx}
-                {@const offset = (idx / (NOTES_CUSTOM_START.length - 1)) * 100}
-                <stop offset={`${offset}%`} stop-color={NOTE_COLORS[note]} />
-              {/each}
-            </linearGradient>
-          </defs>
-        </g>
-      {/key}
-
-      <!-- Current frequency display -->
-      <g>
-        <circle cx={lastX} cy={lastY} r="4" fill="#ef4444" />
-        <text
-          x={indicatorX}
-          y={indicatorY}
-          text-anchor={textAnchor}
-          font-size="10"
-          class="fill-slate-100 font-medium opacity-95"
-        >
-          {lastPoint.pitch.toFixed(1)} Hz ({lastPoint.note}{lastPoint.scale})
-        </text>
-      </g>
-
-      <!-- Axes -->
-      <g>
-        <line
-          x1={GRAPH_PADDING.left}
-          y1={GRAPH_PADDING.top}
-          x2={GRAPH_PADDING.left}
-          y2={GRAPH_HEIGHT + GRAPH_PADDING.top}
-          stroke="#64748b"
-          stroke-width="2"
-        />
-        <line
-          x1={GRAPH_PADDING.left}
-          y1={GRAPH_HEIGHT + GRAPH_PADDING.top}
-          x2={GRAPH_WIDTH + GRAPH_PADDING.left}
-          y2={GRAPH_HEIGHT + GRAPH_PADDING.top}
-          stroke="#64748b"
-          class="opacity-80"
-          stroke-width="1"
-        />
-      </g>
-    </svg>
+    <button
+      type="button"
+      class="absolute flex items-center justify-center rounded-md p-0 select-none backdrop-blur-sm"
+      style={makeOverlayStyle(
+        GRAPH_PADDING.left - 10 - NOTE_STEP_CONTROL_SIZE / 2,
+        VIEWBOX_H - NOTE_STEP_CONTROL_SIZE - NOTE_STEP_CONTROL_BOTTOM_INSET,
+        NOTE_STEP_CONTROL_SIZE,
+        NOTE_STEP_CONTROL_SIZE
+      )}
+      aria-label="Move bottom start note up"
+      title="Move bottom start note up"
+      onclick={() => stepBottomStartNote('up')}
+      onmouseenter={(e) =>
+        ((e.currentTarget as HTMLButtonElement).style.backgroundColor = graphPalette.buttonHoverBg)}
+      onmouseleave={(e) =>
+        ((e.currentTarget as HTMLButtonElement).style.backgroundColor = graphPalette.buttonBg)}
+      style:background-color={graphPalette.buttonBg}
+      style:color={graphPalette.buttonText}
+      style:border={`1px solid ${graphPalette.buttonRing}`}
+      style:box-shadow={graphPalette.overlayShadow}
+    >
+      <Icon src={BsChevronDown} class="text-sm" />
+    </button>
   {/if}
 </div>
+
 {#if input_mode === 'mic'}
   <div class="mt-4 flex items-center justify-center space-x-3 sm:mt-5 sm:space-x-4 md:space-x-5">
     <button
-      class="btn gap-0.5 rounded-md bg-primary-600 px-1.5 py-0.5 text-base font-bold text-white sm:gap-1 sm:rounded-lg sm:px-2 sm:py-1 sm:text-xl dark:bg-primary-500"
+      class={cl_join(
+        'btn gap-0.5 rounded-md px-1.5 py-0.5 text-base font-bold text-white sm:gap-1 sm:rounded-lg sm:px-2 sm:py-1 sm:text-xl',
+        graphPalette.pauseButton
+      )}
       onclick={() => {
         paused_graph_data = { history: graphData };
         is_paused = !is_paused;
