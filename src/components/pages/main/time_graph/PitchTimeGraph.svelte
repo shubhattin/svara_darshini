@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { browser } from '$app/environment';
   import type { Snippet } from 'svelte';
   import { NOTES, NOTES_STARTING_WITH_A, type note_types, SARGAM } from '../constants';
   import { cl_join } from '~/tools/cl_join';
@@ -43,9 +44,12 @@
 
   let is_paused = $state(false);
   let containerEl: HTMLDivElement | undefined = $state(undefined);
-  let canvasEl: HTMLCanvasElement | undefined = $state(undefined);
   let containerWidth = $state(800);
   let containerHeight = $state(300);
+  let fontsReady = $state(false);
+  const PitchTimeGraphStage = browser
+    ? import('./PitchTimeGraphStage.svelte').then((module) => module.default)
+    : null;
 
   const VIEWBOX_H = 300;
   const GRAPH_PADDING = {
@@ -136,6 +140,29 @@
     return () => ro.disconnect();
   });
 
+  $effect(() => {
+    if (typeof document === 'undefined' || !('fonts' in document)) {
+      fontsReady = true;
+      return;
+    }
+
+    let cancelled = false;
+    fontsReady = document.fonts.check('10px ome_bhatkhande_en');
+
+    const ready = async () => {
+      await document.fonts.load('10px ome_bhatkhande_en');
+      if (!cancelled) {
+        fontsReady = true;
+      }
+    };
+
+    ready();
+
+    return () => {
+      cancelled = true;
+    };
+  });
+
   const stepBottomStartNote = (direction: 'up' | 'down') => {
     const currentIndex = NOTES_STARTING_WITH_A.indexOf(bottom_start_note);
     if (currentIndex === -1) return;
@@ -206,21 +233,6 @@
   const indicatorX = $derived(isRightSide ? lastX - 10 : lastX + 10);
   const indicatorY = $derived(isNearTop ? lastY + 20 : lastY - 10);
 
-  const createCurveControlPoints = (
-    x1: number,
-    y1: number,
-    x2: number,
-    y2: number,
-    smoothing = 0.3
-  ) => {
-    const dx = x2 - x1;
-    const controlPoint1X = x1 + dx * smoothing;
-    const controlPoint1Y = y1;
-    const controlPoint2X = x2 - dx * smoothing;
-    const controlPoint2Y = y2;
-    return { controlPoint1X, controlPoint1Y, controlPoint2X, controlPoint2Y };
-  };
-
   const makeOverlayStyle = (x: number, y: number, width: number, height: number) =>
     [
       `left:${(x / VIEWBOX_W) * 100}%`,
@@ -228,227 +240,23 @@
       `width:${(width / VIEWBOX_W) * 100}%`,
       `height:${(height / VIEWBOX_H) * 100}%`
     ].join(';');
-
-  const drawRoundedRect = (
-    ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    radius: number
-  ) => {
-    ctx.beginPath();
-    ctx.moveTo(x + radius, y);
-    ctx.lineTo(x + width - radius, y);
-    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-    ctx.lineTo(x + width, y + height - radius);
-    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-    ctx.lineTo(x + radius, y + height);
-    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-    ctx.lineTo(x, y + radius);
-    ctx.quadraticCurveTo(x, y, x + radius, y);
-    ctx.closePath();
-  };
-
-  const drawGraphPath = (
-    ctx: CanvasRenderingContext2D,
-    points: GraphPoint[],
-    strokeStyle: string | CanvasGradient,
-    opacity = 1,
-    drawOnlyJumps = false
-  ) => {
-    if (points.length < 2) return;
-
-    ctx.save();
-    ctx.globalAlpha = opacity;
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = strokeStyle;
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-
-    let hasDrawn = false;
-
-    for (let index = 1; index < points.length; index++) {
-      const prev = points[index - 1];
-      const point = points[index];
-      const prevX = getXPosOnGraph(index - 1);
-      const prevY = getYPosOnGraph(prev.yRatio);
-      const x = getXPosOnGraph(index);
-      const y = getYPosOnGraph(point.yRatio);
-      const deltaPitch = point.pitch - prev.pitch;
-      const deltaY = y - prevY;
-      const isJump = (deltaPitch > 0 && deltaY > 0) || (deltaPitch < 0 && deltaY < 0);
-
-      if (drawOnlyJumps !== isJump) continue;
-
-      const { controlPoint1X, controlPoint1Y, controlPoint2X, controlPoint2Y } =
-        createCurveControlPoints(prevX, prevY, x, y);
-
-      ctx.moveTo(prevX, prevY);
-      ctx.bezierCurveTo(controlPoint1X, controlPoint1Y, controlPoint2X, controlPoint2Y, x, y);
-      hasDrawn = true;
-    }
-
-    if (hasDrawn) ctx.stroke();
-    ctx.restore();
-  };
-
-  const drawMainGraphPath = (
-    ctx: CanvasRenderingContext2D,
-    points: GraphPoint[],
-    strokeStyle: string | CanvasGradient
-  ) => {
-    if (points.length === 0) return;
-
-    ctx.save();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = strokeStyle;
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(getXPosOnGraph(0), getYPosOnGraph(points[0].yRatio));
-
-    for (let index = 1; index < points.length; index++) {
-      const prev = points[index - 1];
-      const point = points[index];
-      const prevX = getXPosOnGraph(index - 1);
-      const prevY = getYPosOnGraph(prev.yRatio);
-      const x = getXPosOnGraph(index);
-      const y = getYPosOnGraph(point.yRatio);
-      const deltaPitch = point.pitch - prev.pitch;
-      const deltaY = y - prevY;
-      const isJump = (deltaPitch > 0 && deltaY > 0) || (deltaPitch < 0 && deltaY < 0);
-
-      if (isJump) {
-        ctx.moveTo(x, y);
-        continue;
-      }
-
-      const { controlPoint1X, controlPoint1Y, controlPoint2X, controlPoint2Y } =
-        createCurveControlPoints(prevX, prevY, x, y);
-      ctx.bezierCurveTo(controlPoint1X, controlPoint1Y, controlPoint2X, controlPoint2Y, x, y);
-    }
-
-    ctx.stroke();
-    ctx.restore();
-  };
-
-  const drawCanvas = (canvas: HTMLCanvasElement) => {
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const cssWidth = Math.max(containerWidth, 1);
-    const cssHeight = Math.max(containerHeight, 1);
-    const dpr = window.devicePixelRatio || 1;
-    const internalWidth = Math.max(Math.round(cssWidth * dpr), 1);
-    const internalHeight = Math.max(Math.round(cssHeight * dpr), 1);
-
-    if (canvas.width !== internalWidth) canvas.width = internalWidth;
-    if (canvas.height !== internalHeight) canvas.height = internalHeight;
-
-    ctx.setTransform(internalWidth / VIEWBOX_W, 0, 0, internalHeight / VIEWBOX_H, 0, 0);
-    ctx.clearRect(0, 0, VIEWBOX_W, VIEWBOX_H);
-
-    drawRoundedRect(ctx, 0, 0, VIEWBOX_W, VIEWBOX_H, 8);
-    ctx.fillStyle = graphPalette.background;
-    ctx.fill();
-
-    for (let noteIndex = 0; noteIndex <= 12; noteIndex++) {
+  const noteRows = $derived(
+    Array.from({ length: 13 }, (_, noteIndex) => {
       const y = (noteIndex / 12) * GRAPH_HEIGHT + GRAPH_PADDING.top;
       const noteName = NOTES_CUSTOM_START[NOTES_CUSTOM_START.length - noteIndex - 1];
       const sargamKey = SARGAM_CUSTOM_START[SARGAM_CUSTOM_START.length - noteIndex - 1];
 
-      if (noteIndex < 12) {
-        ctx.beginPath();
-        ctx.moveTo(GRAPH_PADDING.left, y);
-        ctx.lineTo(GRAPH_PADDING.left + GRAPH_WIDTH, y);
-        ctx.strokeStyle = graphPalette.grid;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-      }
-
-      if (noteName) {
-        ctx.beginPath();
-        ctx.arc(GRAPH_PADDING.left - 5, y, 2, 0, Math.PI * 2);
-        ctx.fillStyle = NOTE_COLORS[noteName];
-        ctx.fill();
-
-        ctx.font = `500 10px sans-serif`;
-        ctx.fillStyle =
-          noteIndex === NOTES_CUSTOM_START.length - 1
-            ? graphPalette.labelStrong
-            : graphPalette.label;
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(noteName, GRAPH_PADDING.left - 10, y + 4);
-      }
-
-      if (sargamKey) {
-        ctx.font = `${sargamKey === 's' ? '600' : '500'} 10px ome_bhatkhande_en, sans-serif`;
-        ctx.fillStyle = sargamKey === 's' ? graphPalette.labelStrong : graphPalette.label;
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(sargamKey, GRAPH_PADDING.left - 30, y + 4);
-      }
-    }
-
-    ctx.beginPath();
-    ctx.moveTo(GRAPH_PADDING.left, GRAPH_PADDING.top);
-    ctx.lineTo(GRAPH_PADDING.left, GRAPH_HEIGHT + GRAPH_PADDING.top);
-    ctx.strokeStyle = graphPalette.axis;
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(GRAPH_PADDING.left, GRAPH_HEIGHT + GRAPH_PADDING.top);
-    ctx.lineTo(GRAPH_WIDTH + GRAPH_PADDING.left, GRAPH_HEIGHT + GRAPH_PADDING.top);
-    ctx.strokeStyle = graphPalette.axis;
-    ctx.lineWidth = 1;
-    ctx.globalAlpha = 0.8;
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-
-    if (graphData.length > 1) {
-      const gradient = ctx.createLinearGradient(
-        0,
-        GRAPH_PADDING.top + GRAPH_HEIGHT,
-        0,
-        GRAPH_PADDING.top
-      );
-      NOTES_CUSTOM_START.forEach((note, idx) => {
-        const offset = idx / Math.max(NOTES_CUSTOM_START.length - 1, 1);
-        gradient.addColorStop(offset, NOTE_COLORS[note]);
-      });
-
-      drawGraphPath(ctx, graphData, gradient, 0.3, true);
-      drawMainGraphPath(ctx, graphData, gradient);
-    }
-
-    if (lastPoint) {
-      ctx.beginPath();
-      ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
-      ctx.fillStyle = graphPalette.point;
-      ctx.fill();
-
-      ctx.font = '500 10px sans-serif';
-      ctx.fillStyle = graphPalette.labelStrong;
-      ctx.textAlign = isRightSide ? 'right' : 'left';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(
-        `${lastPoint.pitch.toFixed(1)} Hz (${lastPoint.note}${lastPoint.scale})`,
-        indicatorX,
-        indicatorY
-      );
-    }
-  };
-
-  $effect(() => {
-    const canvas = canvasEl;
-    if (!canvas || graphData.length === 0) return;
-
-    drawCanvas(canvas);
-  });
+      return {
+        y,
+        noteName,
+        sargamKey,
+        noteColor: noteName ? NOTE_COLORS[noteName] : undefined,
+        highlightNote: noteIndex === NOTES_CUSTOM_START.length - 1,
+        highlightSargam: sargamKey === 's',
+        drawGrid: noteIndex < 12
+      };
+    })
+  );
 </script>
 
 <div class="flex items-center justify-center gap-x-8 sm:gap-x-12 md:gap-x-16 lg:gap-x-20">
@@ -532,7 +340,36 @@
   )}
 >
   {#if graphData.length > 0}
-    <canvas bind:this={canvasEl} class="block h-full w-full select-none"></canvas>
+    {#if browser && PitchTimeGraphStage}
+      {#await PitchTimeGraphStage}
+        <div class="h-full w-full"></div>
+      {:then PitchTimeGraphStageComponent}
+        {#key fontsReady}
+          <PitchTimeGraphStageComponent
+            {containerWidth}
+            {containerHeight}
+            {VIEWBOX_W}
+            {VIEWBOX_H}
+            {GRAPH_PADDING}
+            {GRAPH_WIDTH}
+            {GRAPH_HEIGHT}
+            {VISIBLE_POINTS}
+            {graphData}
+            {noteRows}
+            noteGradientNotes={NOTES_CUSTOM_START}
+            noteColors={NOTE_COLORS}
+            graphPalette={{
+              background: graphPalette.background,
+              grid: graphPalette.grid,
+              axis: graphPalette.axis,
+              label: graphPalette.label,
+              labelStrong: graphPalette.labelStrong,
+              point: graphPalette.point
+            }}
+          />
+        {/key}
+      {/await}
+    {/if}
 
     <button
       type="button"
