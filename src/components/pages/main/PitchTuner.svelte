@@ -64,7 +64,7 @@
   const GRAPH_TOTAL_TIME_MS = 8000;
 
   /** Number of Constant-Q bins; higher values improve frequency detail but cost more work per frame.*/
-  const CQT_BIN_COUNT = 960;
+  const CQT_BIN_COUNT = 1200;
   /** Ignore detected peaks below this Hz floor to avoid low-end rumble and handling noise.*/
   const CQT_MIN_FREQUENCY = 60;
   /** Ignore detected peaks above this Hz ceiling so the tuner stays focused on the vocal/instrument range we care about.*/
@@ -72,7 +72,7 @@
   /** Minimum peak strength required before a CQT bin is treated as a valid pitch candidate.*/
   const CQT_MIN_INTENSITY = 0.05;
   /** Exponential smoothing factor: higher is faster/more reactive, lower is steadier/smoother.*/
-  const CQT_PITCH_SMOOTHING_ALPHA = 0.3;
+  const CQT_PITCH_SMOOTHING_ALPHA = 0.23;
 
   // Pitch history for time graph
   const MAX_PITCH_HISTORY_POINTS = Math.floor(GRAPH_TOTAL_TIME_MS / AUDIO_INFO_UPDATE_INTERVAL); // 100 points
