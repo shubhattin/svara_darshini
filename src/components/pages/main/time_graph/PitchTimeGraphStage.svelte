@@ -1,7 +1,5 @@
 <script lang="ts">
-  import { Circle, Layer, Line, Rect, Shape, Stage, Text } from 'svelte-konva';
-  import type { Context } from 'konva/lib/Context';
-  import type { Shape as KonvaShape } from 'konva/lib/Shape';
+  import { Circle, Layer, Line, Path, Rect, Stage, Text } from 'svelte-konva';
 
   type GraphPoint = {
     yRatio: number;
@@ -80,21 +78,45 @@
     };
   };
 
-  const buildGradient = (context: Context) => {
-    const gradient = context.createLinearGradient(0, GRAPH_PADDING.top + GRAPH_HEIGHT, 0, GRAPH_PADDING.top);
-    noteGradientNotes.forEach((note, index) => {
-      gradient.addColorStop(index / Math.max(noteGradientNotes.length - 1, 1), noteColors[note]);
-    });
-    return gradient;
+  const gradientStops = $derived(
+    noteGradientNotes.flatMap((note, index) => [
+      index / Math.max(noteGradientNotes.length - 1, 1),
+      noteColors[note]
+    ])
+  );
+
+  const buildMainPathData = () => {
+    if (graphData.length < 2) return '';
+
+    const commands: string[] = [`M ${getXPosOnGraph(0)} ${getYPosOnGraph(graphData[0].yRatio)}`];
+
+    for (let index = 1; index < graphData.length; index++) {
+      const prev = graphData[index - 1];
+      const point = graphData[index];
+      const prevX = getXPosOnGraph(index - 1);
+      const prevY = getYPosOnGraph(prev.yRatio);
+      const x = getXPosOnGraph(index);
+      const y = getYPosOnGraph(point.yRatio);
+      const deltaPitch = point.pitch - prev.pitch;
+      const deltaY = y - prevY;
+      const isJump = (deltaPitch > 0 && deltaY > 0) || (deltaPitch < 0 && deltaY < 0);
+      if (isJump) {
+        commands.push(`M ${x} ${y}`);
+        continue;
+      }
+
+      const { controlPoint1X, controlPoint1Y, controlPoint2X, controlPoint2Y } =
+        createCurveControlPoints(prevX, prevY, x, y);
+      commands.push(`C ${controlPoint1X} ${controlPoint1Y}, ${controlPoint2X} ${controlPoint2Y}, ${x} ${y}`);
+    }
+
+    return commands.join(' ');
   };
 
-  const drawJumpSegments = (context: Context, shape: KonvaShape) => {
-    if (graphData.length < 2) return;
+  const buildJumpPathData = () => {
+    if (graphData.length < 2) return '';
 
-    const canvasContext = context._context;
-    const gradient = buildGradient(context);
-    canvasContext.save();
-    canvasContext.beginPath();
+    const commands: string[] = [];
 
     for (let index = 1; index < graphData.length; index++) {
       const prev = graphData[index - 1];
@@ -110,70 +132,16 @@
 
       const { controlPoint1X, controlPoint1Y, controlPoint2X, controlPoint2Y } =
         createCurveControlPoints(prevX, prevY, x, y);
-      canvasContext.moveTo(prevX, prevY);
-      canvasContext.bezierCurveTo(
-        controlPoint1X,
-        controlPoint1Y,
-        controlPoint2X,
-        controlPoint2Y,
-        x,
-        y
+      commands.push(
+        `M ${prevX} ${prevY} C ${controlPoint1X} ${controlPoint1Y}, ${controlPoint2X} ${controlPoint2Y}, ${x} ${y}`
       );
     }
 
-    canvasContext.globalAlpha = 0.3;
-    canvasContext.strokeStyle = gradient;
-    canvasContext.lineWidth = 2;
-    canvasContext.lineJoin = 'round';
-    canvasContext.lineCap = 'round';
-    canvasContext.stroke();
-    canvasContext.restore();
+    return commands.join(' ');
   };
 
-  const drawMainSegments = (context: Context, _shape: KonvaShape) => {
-    if (graphData.length === 0) return;
-
-    const canvasContext = context._context;
-    const gradient = buildGradient(context);
-    canvasContext.save();
-    canvasContext.beginPath();
-    canvasContext.moveTo(getXPosOnGraph(0), getYPosOnGraph(graphData[0].yRatio));
-
-    for (let index = 1; index < graphData.length; index++) {
-      const prev = graphData[index - 1];
-      const point = graphData[index];
-      const prevX = getXPosOnGraph(index - 1);
-      const prevY = getYPosOnGraph(prev.yRatio);
-      const x = getXPosOnGraph(index);
-      const y = getYPosOnGraph(point.yRatio);
-      const deltaPitch = point.pitch - prev.pitch;
-      const deltaY = y - prevY;
-      const isJump = (deltaPitch > 0 && deltaY > 0) || (deltaPitch < 0 && deltaY < 0);
-
-      if (isJump) {
-        canvasContext.moveTo(x, y);
-        continue;
-      }
-
-      const { controlPoint1X, controlPoint1Y, controlPoint2X, controlPoint2Y } =
-        createCurveControlPoints(prevX, prevY, x, y);
-      canvasContext.bezierCurveTo(
-        controlPoint1X,
-        controlPoint1Y,
-        controlPoint2X,
-        controlPoint2Y,
-        x,
-        y
-      );
-    }
-
-    canvasContext.strokeStyle = gradient;
-    canvasContext.lineWidth = 2;
-    canvasContext.lineJoin = 'round';
-    canvasContext.lineCap = 'round';
-    canvasContext.stroke();
-    canvasContext.restore();
-  };
+  const jumpPathData = $derived(buildJumpPathData());
+  const mainPathData = $derived(buildMainPathData());
 
   const lastPoint = $derived(graphData[graphData.length - 1]);
   const lastX = $derived(lastPoint ? getXPosOnGraph(graphData.length - 1) : GRAPH_PADDING.left);
@@ -283,8 +251,29 @@
       />
 
       {#if graphData.length > 1}
-        <Shape sceneFunc={drawJumpSegments} listening={false} />
-        <Shape sceneFunc={drawMainSegments} listening={false} />
+        <Path
+          data={jumpPathData}
+          stroke={graphPalette.label}
+          strokeWidth={2}
+          opacity={0.3}
+          lineJoin="round"
+          lineCap="round"
+          strokeLinearGradientStartPointY={GRAPH_PADDING.top + GRAPH_HEIGHT}
+          strokeLinearGradientEndPointY={GRAPH_PADDING.top}
+          strokeLinearGradientColorStops={gradientStops}
+          listening={false}
+        />
+        <Path
+          data={mainPathData}
+          stroke={graphPalette.label}
+          strokeWidth={2}
+          lineJoin="round"
+          lineCap="round"
+          strokeLinearGradientStartPointY={GRAPH_PADDING.top + GRAPH_HEIGHT}
+          strokeLinearGradientEndPointY={GRAPH_PADDING.top}
+          strokeLinearGradientColorStops={gradientStops}
+          listening={false}
+        />
       {/if}
 
       {#if lastPoint}

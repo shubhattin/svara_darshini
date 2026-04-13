@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { browser } from '$app/environment';
   import type { Snippet } from 'svelte';
+  import { onMount } from 'svelte';
   import { NOTES, NOTES_STARTING_WITH_A, type note_types, SARGAM } from '../constants';
   import { cl_join } from '~/tools/cl_join';
   import { Popover } from '@skeletonlabs/skeleton-svelte';
@@ -47,9 +47,8 @@
   let containerWidth = $state(800);
   let containerHeight = $state(300);
   let fontsReady = $state(false);
-  const PitchTimeGraphStage = browser
-    ? import('./PitchTimeGraphStage.svelte').then((module) => module.default)
-    : null;
+  let PitchTimeGraphStage =
+    $state<typeof import('./PitchTimeGraphStage.svelte').default | null>(null);
 
   const VIEWBOX_H = 300;
   const GRAPH_PADDING = {
@@ -161,6 +160,11 @@
     return () => {
       cancelled = true;
     };
+  });
+
+  onMount(async () => {
+    const module = await import('./PitchTimeGraphStage.svelte');
+    PitchTimeGraphStage = module.default;
   });
 
   const stepBottomStartNote = (direction: 'up' | 'down') => {
@@ -340,35 +344,31 @@
   )}
 >
   {#if graphData.length > 0}
-    {#if browser && PitchTimeGraphStage}
-      {#await PitchTimeGraphStage}
-        <div class="h-full w-full"></div>
-      {:then PitchTimeGraphStageComponent}
-        {#key fontsReady}
-          <PitchTimeGraphStageComponent
-            {containerWidth}
-            {containerHeight}
-            {VIEWBOX_W}
-            {VIEWBOX_H}
-            {GRAPH_PADDING}
-            {GRAPH_WIDTH}
-            {GRAPH_HEIGHT}
-            {VISIBLE_POINTS}
-            {graphData}
-            {noteRows}
-            noteGradientNotes={NOTES_CUSTOM_START}
-            noteColors={NOTE_COLORS}
-            graphPalette={{
-              background: graphPalette.background,
-              grid: graphPalette.grid,
-              axis: graphPalette.axis,
-              label: graphPalette.label,
-              labelStrong: graphPalette.labelStrong,
-              point: graphPalette.point
-            }}
-          />
-        {/key}
-      {/await}
+    {#if PitchTimeGraphStage}
+      {#key fontsReady}
+        <PitchTimeGraphStage
+          {containerWidth}
+          {containerHeight}
+          {VIEWBOX_W}
+          {VIEWBOX_H}
+          {GRAPH_PADDING}
+          {GRAPH_WIDTH}
+          {GRAPH_HEIGHT}
+          {VISIBLE_POINTS}
+          {graphData}
+          {noteRows}
+          noteGradientNotes={NOTES_CUSTOM_START}
+          noteColors={NOTE_COLORS}
+          graphPalette={{
+            background: graphPalette.background,
+            grid: graphPalette.grid,
+            axis: graphPalette.axis,
+            label: graphPalette.label,
+            labelStrong: graphPalette.labelStrong,
+            point: graphPalette.point
+          }}
+        />
+      {/key}
     {/if}
 
     <button
