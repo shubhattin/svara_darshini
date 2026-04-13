@@ -57,6 +57,12 @@
     };
   } = $props();
 
+  const stageWidth = $derived(Math.max(1, containerWidth));
+  const stageHeight = $derived(Math.max(1, containerHeight));
+  /** Map logical VIEWBOX_* coordinates to stage pixels without CSS-stretching the canvas. */
+  const layerScaleX = $derived(VIEWBOX_W > 0 ? stageWidth / VIEWBOX_W : 1);
+  const layerScaleY = $derived(VIEWBOX_H > 0 ? stageHeight / VIEWBOX_H : 1);
+
   const getXPosOnGraph = (index: number) =>
     (index / Math.max(VISIBLE_POINTS - 1, 1)) * GRAPH_WIDTH + GRAPH_PADDING.left;
   const getYPosOnGraph = (yRatio: number) =>
@@ -107,7 +113,9 @@
 
       const { controlPoint1X, controlPoint1Y, controlPoint2X, controlPoint2Y } =
         createCurveControlPoints(prevX, prevY, x, y);
-      commands.push(`C ${controlPoint1X} ${controlPoint1Y}, ${controlPoint2X} ${controlPoint2Y}, ${x} ${y}`);
+      commands.push(
+        `C ${controlPoint1X} ${controlPoint1Y}, ${controlPoint2X} ${controlPoint2Y}, ${x} ${y}`
+      );
     }
 
     return commands.join(' ');
@@ -154,14 +162,13 @@
 
 <div class="time-graph-stage h-full w-full">
   <Stage
-    width={VIEWBOX_W}
-    height={VIEWBOX_H}
+    width={stageWidth}
+    height={stageHeight}
     divWrapperProps={{
-      class: 'h-full w-full',
-      style: `width:${containerWidth}px;height:${containerHeight}px;`
+      class: 'h-full w-full'
     }}
   >
-    <Layer>
+    <Layer scaleX={layerScaleX} scaleY={layerScaleY}>
       <Rect
         x={0}
         y={0}
@@ -201,7 +208,7 @@
             text={row.noteName}
             fill={row.highlightNote ? graphPalette.labelStrong : graphPalette.label}
             fontSize={10}
-            fontStyle={row.highlightNote ? '600' : '500'}
+            fontStyle="normal"
             align="right"
             verticalAlign="middle"
             listening={false}
@@ -217,7 +224,7 @@
             text={row.sargamKey}
             fill={row.highlightSargam ? graphPalette.labelStrong : graphPalette.label}
             fontSize={10}
-            fontStyle={row.highlightSargam ? '600' : '500'}
+            fontStyle="normal"
             fontFamily="ome_bhatkhande_en"
             align="right"
             verticalAlign="middle"
@@ -286,7 +293,7 @@
           text={`${lastPoint.pitch.toFixed(1)} Hz (${lastPoint.note}${lastPoint.scale})`}
           fill={graphPalette.labelStrong}
           fontSize={10}
-          fontStyle="500"
+          fontStyle="normal"
           align={isRightSide ? 'right' : 'left'}
           verticalAlign="middle"
           listening={false}
@@ -297,19 +304,7 @@
 </div>
 
 <style>
-  :global(.time-graph-stage > div) {
-    width: 100% !important;
-    height: 100% !important;
-  }
-
-  :global(.time-graph-stage .konvajs-content) {
-    width: 100% !important;
-    height: 100% !important;
-  }
-
   :global(.time-graph-stage canvas) {
-    width: 100% !important;
-    height: 100% !important;
     display: block;
   }
 </style>

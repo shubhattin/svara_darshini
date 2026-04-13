@@ -47,8 +47,9 @@
   let containerWidth = $state(800);
   let containerHeight = $state(300);
   let fontsReady = $state(false);
-  let PitchTimeGraphStage =
-    $state<typeof import('./PitchTimeGraphStage.svelte').default | null>(null);
+  let PitchTimeGraphStage = $state<typeof import('./PitchTimeGraphStage.svelte').default | null>(
+    null
+  );
 
   const VIEWBOX_H = 300;
   const GRAPH_PADDING = {
@@ -268,7 +269,10 @@
     <Popover
       open={Sa_at_popup_status}
       onOpenChange={(e) => (Sa_at_popup_status = e.open)}
-      contentBase={cl_join('card z-50 space-y-2 rounded-lg p-2 shadow-xl', graphPalette.popoverSurface)}
+      contentBase={cl_join(
+        'card z-50 space-y-2 rounded-lg p-2 shadow-xl',
+        graphPalette.popoverSurface
+      )}
     >
       {#snippet trigger()}
         <div class="flex items-center justify-center gap-x-1 outline-hidden">
@@ -303,7 +307,10 @@
     <Popover
       open={bottom_start_note_popup_status}
       onOpenChange={(e) => (bottom_start_note_popup_status = e.open)}
-      contentBase={cl_join('card z-50 space-y-2 rounded-lg p-2 shadow-xl', graphPalette.popoverSurface)}
+      contentBase={cl_join(
+        'card z-50 space-y-2 rounded-lg p-2 shadow-xl',
+        graphPalette.popoverSurface
+      )}
     >
       {#snippet trigger()}
         <div class="flex items-center justify-center gap-x-1 outline-hidden">
@@ -343,82 +350,80 @@
     'h-[60vh] sm:h-[50vh] md:h-[500px] lg:h-[580px]'
   )}
 >
-  {#if graphData.length > 0}
-    {#if PitchTimeGraphStage}
-      {#key fontsReady}
-        <PitchTimeGraphStage
-          {containerWidth}
-          {containerHeight}
-          {VIEWBOX_W}
-          {VIEWBOX_H}
-          {GRAPH_PADDING}
-          {GRAPH_WIDTH}
-          {GRAPH_HEIGHT}
-          {VISIBLE_POINTS}
-          {graphData}
-          {noteRows}
-          noteGradientNotes={NOTES_CUSTOM_START}
-          noteColors={NOTE_COLORS}
-          graphPalette={{
-            background: graphPalette.background,
-            grid: graphPalette.grid,
-            axis: graphPalette.axis,
-            label: graphPalette.label,
-            labelStrong: graphPalette.labelStrong,
-            point: graphPalette.point
-          }}
-        />
-      {/key}
-    {/if}
-
-    <button
-      type="button"
-      class="absolute flex items-center justify-center rounded-md p-0 select-none backdrop-blur-sm"
-      style={makeOverlayStyle(
-        GRAPH_PADDING.left - 10 - NOTE_STEP_CONTROL_SIZE / 2,
-        NOTE_STEP_CONTROL_TOP_INSET,
-        NOTE_STEP_CONTROL_SIZE,
-        NOTE_STEP_CONTROL_SIZE
-      )}
-      aria-label="Move bottom start note down"
-      title="Move bottom start note down"
-      onclick={() => stepBottomStartNote('down')}
-      onmouseenter={(e) =>
-        ((e.currentTarget as HTMLButtonElement).style.backgroundColor = graphPalette.buttonHoverBg)}
-      onmouseleave={(e) =>
-        ((e.currentTarget as HTMLButtonElement).style.backgroundColor = graphPalette.buttonBg)}
-      style:background-color={graphPalette.buttonBg}
-      style:color={graphPalette.buttonText}
-      style:border={`1px solid ${graphPalette.buttonRing}`}
-      style:box-shadow={graphPalette.overlayShadow}
-    >
-      <Icon src={BsChevronUp} class="text-sm" />
-    </button>
-
-    <button
-      type="button"
-      class="absolute flex items-center justify-center rounded-md p-0 select-none backdrop-blur-sm"
-      style={makeOverlayStyle(
-        GRAPH_PADDING.left - 10 - NOTE_STEP_CONTROL_SIZE / 2,
-        VIEWBOX_H - NOTE_STEP_CONTROL_SIZE - NOTE_STEP_CONTROL_BOTTOM_INSET,
-        NOTE_STEP_CONTROL_SIZE,
-        NOTE_STEP_CONTROL_SIZE
-      )}
-      aria-label="Move bottom start note up"
-      title="Move bottom start note up"
-      onclick={() => stepBottomStartNote('up')}
-      onmouseenter={(e) =>
-        ((e.currentTarget as HTMLButtonElement).style.backgroundColor = graphPalette.buttonHoverBg)}
-      onmouseleave={(e) =>
-        ((e.currentTarget as HTMLButtonElement).style.backgroundColor = graphPalette.buttonBg)}
-      style:background-color={graphPalette.buttonBg}
-      style:color={graphPalette.buttonText}
-      style:border={`1px solid ${graphPalette.buttonRing}`}
-      style:box-shadow={graphPalette.overlayShadow}
-    >
-      <Icon src={BsChevronDown} class="text-sm" />
-    </button>
+  {#if PitchTimeGraphStage}
+    {#key fontsReady}
+      <PitchTimeGraphStage
+        {containerWidth}
+        {containerHeight}
+        {VIEWBOX_W}
+        {VIEWBOX_H}
+        {GRAPH_PADDING}
+        {GRAPH_WIDTH}
+        {GRAPH_HEIGHT}
+        {VISIBLE_POINTS}
+        {graphData}
+        {noteRows}
+        noteGradientNotes={NOTES_CUSTOM_START}
+        noteColors={NOTE_COLORS}
+        graphPalette={{
+          background: graphPalette.background,
+          grid: graphPalette.grid,
+          axis: graphPalette.axis,
+          label: graphPalette.label,
+          labelStrong: graphPalette.labelStrong,
+          point: graphPalette.point
+        }}
+      />
+    {/key}
   {/if}
+
+  <button
+    type="button"
+    class="absolute flex items-center justify-center rounded-md p-0 backdrop-blur-sm select-none"
+    style={makeOverlayStyle(
+      GRAPH_PADDING.left - 10 - NOTE_STEP_CONTROL_SIZE / 2,
+      NOTE_STEP_CONTROL_TOP_INSET,
+      NOTE_STEP_CONTROL_SIZE,
+      NOTE_STEP_CONTROL_SIZE
+    )}
+    aria-label="Move bottom start note down"
+    title="Move bottom start note down"
+    onclick={() => stepBottomStartNote('down')}
+    onmouseenter={(e) =>
+      ((e.currentTarget as HTMLButtonElement).style.backgroundColor = graphPalette.buttonHoverBg)}
+    onmouseleave={(e) =>
+      ((e.currentTarget as HTMLButtonElement).style.backgroundColor = graphPalette.buttonBg)}
+    style:background-color={graphPalette.buttonBg}
+    style:color={graphPalette.buttonText}
+    style:border={`1px solid ${graphPalette.buttonRing}`}
+    style:box-shadow={graphPalette.overlayShadow}
+  >
+    <Icon src={BsChevronUp} class="text-sm" />
+  </button>
+
+  <button
+    type="button"
+    class="absolute flex items-center justify-center rounded-md p-0 backdrop-blur-sm select-none"
+    style={makeOverlayStyle(
+      GRAPH_PADDING.left - 10 - NOTE_STEP_CONTROL_SIZE / 2,
+      VIEWBOX_H - NOTE_STEP_CONTROL_SIZE - NOTE_STEP_CONTROL_BOTTOM_INSET,
+      NOTE_STEP_CONTROL_SIZE,
+      NOTE_STEP_CONTROL_SIZE
+    )}
+    aria-label="Move bottom start note up"
+    title="Move bottom start note up"
+    onclick={() => stepBottomStartNote('up')}
+    onmouseenter={(e) =>
+      ((e.currentTarget as HTMLButtonElement).style.backgroundColor = graphPalette.buttonHoverBg)}
+    onmouseleave={(e) =>
+      ((e.currentTarget as HTMLButtonElement).style.backgroundColor = graphPalette.buttonBg)}
+    style:background-color={graphPalette.buttonBg}
+    style:color={graphPalette.buttonText}
+    style:border={`1px solid ${graphPalette.buttonRing}`}
+    style:box-shadow={graphPalette.overlayShadow}
+  >
+    <Icon src={BsChevronDown} class="text-sm" />
+  </button>
 </div>
 
 {#if input_mode === 'mic'}
