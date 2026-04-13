@@ -22,7 +22,6 @@
   import CircularScale from './circular/CircularScale.svelte';
   import PitchTimeGraph from './time_graph/PitchTimeGraph.svelte';
   import AudioInputFile from './AudioInputFile.svelte';
-  import type { ZodMiniNumber } from 'zod/v4-mini';
 
   let {
     selected_device = $bindable(),
@@ -60,7 +59,7 @@
   let update_interval: NodeJS.Timeout | null = null;
   let mic_stream: MediaStream | null = null;
 
-  const AUDIO_INFO_UPDATE_INTERVAL = 100;
+  const AUDIO_INFO_UPDATE_INTERVAL = 80;
   const GRAPH_TOTAL_TIME_MS = 8000;
 
   const FFT_SIZE = Math.pow(2, 12); // 4096
@@ -69,7 +68,7 @@
   const MAX_PITCH_HISTORY_POINTS = Math.floor(GRAPH_TOTAL_TIME_MS / AUDIO_INFO_UPDATE_INTERVAL); // 25 points
 
   let started = $state(false);
-  let audio_info = $state<{
+  let currrent_audio_info = $state<{
     pitch: number;
     clarity: number;
     note: string;
@@ -79,10 +78,10 @@
 
   let pitch_history = $state<
     Array<{
-      time: number;
+      // time: number;
       pitch: number;
       note: string;
-      clarity: number;
+      // clarity: number;
       scale: number;
     }>
   >([]);
@@ -176,7 +175,7 @@
     // stop audio context
     audio_context?.close();
 
-    audio_info = null;
+    currrent_audio_info = null;
     audio_context = null;
     analyzer_node = null;
     mic_stream = null;
@@ -299,7 +298,7 @@
       function updateAudioInfo() {
         // For file mode, only analyze when audio is playing
         if (input_mode === 'file' && !file_is_playing) {
-          audio_info = { pitch: 0, clarity: 0, note: '', scale: 0, detune: NaN };
+          currrent_audio_info = { pitch: 0, clarity: 0, note: '', scale: 0, detune: NaN };
           return;
         }
 
@@ -317,16 +316,16 @@
           detune: getDetuneFromPitch(pitch, rawNoteNumber)
         };
 
-        audio_info = currentAudioInfo;
+        currrent_audio_info = currentAudioInfo;
         // console.log('audio_info', audio_info);
 
         // Add to pitch history for time graph
         const currentTime = Date.now();
         pitch_history.push({
-          time: currentTime,
+          // time: currentTime,
           pitch: currentAudioInfo.pitch,
           note: currentAudioInfo.note,
-          clarity: currentAudioInfo.clarity,
+          // clarity: currentAudioInfo.clarity,
           scale: currentAudioInfo.scale
         });
 
@@ -345,7 +344,7 @@
   };
 
   const handleDeviceChange = () => {
-    if (audio_info) {
+    if (currrent_audio_info) {
       // disconnect previous mic
       mic_stream?.getTracks().forEach((track) => track.stop());
       Start(); // Restart with new device if already running
@@ -410,7 +409,7 @@
   </button>
 {/snippet}
 
-{#if audio_info && started}
+{#if currrent_audio_info && started}
   <Tabs
     value={selected_pitch_display_type}
     onValueChange={(e) =>
@@ -424,7 +423,7 @@
     {#snippet content()}
       <Tabs.Panel value="circular_scale">
         <CircularScale
-          audio_info={audio_info!}
+          audio_info={currrent_audio_info!}
           bind:selected_Sa_at
           bind:selected_sargam_orientation
           bind:selected_note_orientation

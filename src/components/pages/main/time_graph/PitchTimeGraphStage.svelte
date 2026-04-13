@@ -1,24 +1,6 @@
 <script lang="ts">
   import { Circle, Layer, Line, Path, Rect, Stage, Text } from 'svelte-konva';
-
-  type GraphPoint = {
-    yRatio: number;
-    pitch: number;
-    note: string;
-    clarity: number;
-    originalIndex: number;
-    scale: number;
-  };
-
-  type GraphRow = {
-    y: number;
-    noteName?: string;
-    sargamKey?: string;
-    noteColor?: string;
-    highlightNote: boolean;
-    highlightSargam: boolean;
-    drawGrid: boolean;
-  };
+  import type { GraphPoint, GraphRow } from './time_graph_types';
 
   let {
     containerWidth,
@@ -31,7 +13,7 @@
     VISIBLE_POINTS,
     graphData,
     noteRows,
-    noteGradientNotes,
+    reorderedNotes: noteGradientNotes,
     noteColors,
     graphPalette
   }: {
@@ -42,10 +24,11 @@
     GRAPH_PADDING: { top: number; left: number; right: number; bottom: number };
     GRAPH_WIDTH: number;
     GRAPH_HEIGHT: number;
+    /** Number of points visible in the graph based on screen size */
     VISIBLE_POINTS: number;
     graphData: GraphPoint[];
     noteRows: GraphRow[];
-    noteGradientNotes: string[];
+    reorderedNotes: string[];
     noteColors: Record<string, string>;
     graphPalette: {
       background: string;
@@ -151,13 +134,27 @@
   const jumpPathData = $derived(buildJumpPathData());
   const mainPathData = $derived(buildMainPathData());
 
+  const INDICATOR_LABEL_WIDTH = 160;
+  const INDICATOR_MARGIN = 10;
+
   const lastPoint = $derived(graphData[graphData.length - 1]);
   const lastX = $derived(lastPoint ? getXPosOnGraph(graphData.length - 1) : GRAPH_PADDING.left);
   const lastY = $derived(lastPoint ? getYPosOnGraph(lastPoint.yRatio) : GRAPH_PADDING.top);
-  const isRightSide = $derived(lastX > VIEWBOX_W * 0.85);
+  const isRightSide = $derived(
+    lastX + INDICATOR_MARGIN + INDICATOR_LABEL_WIDTH > VIEWBOX_W - GRAPH_PADDING.right
+  );
   const isNearTop = $derived(lastY < GRAPH_PADDING.top + 20);
-  const indicatorX = $derived(isRightSide ? lastX - 170 : lastX + 10);
-  const indicatorY = $derived(isNearTop ? lastY + 14 : lastY - 14);
+  const indicatorX = $derived(
+    isRightSide ? lastX - INDICATOR_MARGIN - INDICATOR_LABEL_WIDTH : lastX + INDICATOR_MARGIN
+  );
+  const INDICATOR_TEXT_HEIGHT = 10;
+  const rawIndicatorY = $derived(isNearTop ? lastY + 14 : lastY - 14);
+  const indicatorY = $derived(
+    Math.min(
+      Math.max(rawIndicatorY, GRAPH_PADDING.top + INDICATOR_TEXT_HEIGHT / 2),
+      VIEWBOX_H - GRAPH_PADDING.bottom - INDICATOR_TEXT_HEIGHT / 2
+    )
+  );
 </script>
 
 <div class="time-graph-stage h-full w-full">
@@ -189,48 +186,45 @@
           />
         {/if}
 
-        {#if row.noteColor}
-          <Circle
-            x={GRAPH_PADDING.left - 5}
-            y={row.y}
-            radius={2}
-            fill={row.noteColor}
-            listening={false}
-          />
-        {/if}
+        <!-- Color of the note -->
+        <Circle
+          x={GRAPH_PADDING.left - 5}
+          y={row.y}
+          radius={2}
+          fill={row.noteColor}
+          listening={false}
+        />
 
-        {#if row.noteName}
-          <Text
-            x={GRAPH_PADDING.left - 34}
-            y={row.y - 5}
-            width={24}
-            height={10}
-            text={row.noteName}
-            fill={row.highlightNote ? graphPalette.labelStrong : graphPalette.label}
-            fontSize={10}
-            fontStyle="normal"
-            align="right"
-            verticalAlign="middle"
-            listening={false}
-          />
-        {/if}
+        <!-- Note name -->
+        <Text
+          x={GRAPH_PADDING.left - 34}
+          y={row.y - 5}
+          width={24}
+          height={10}
+          text={row.noteName}
+          fill={row.highlightNote ? graphPalette.labelStrong : graphPalette.label}
+          fontSize={10}
+          fontStyle="normal"
+          align="right"
+          verticalAlign="middle"
+          listening={false}
+        />
 
-        {#if row.sargamKey}
-          <Text
-            x={GRAPH_PADDING.left - 50}
-            y={row.y - 5}
-            width={16}
-            height={10}
-            text={row.sargamKey}
-            fill={row.highlightSargam ? graphPalette.labelStrong : graphPalette.label}
-            fontSize={10}
-            fontStyle="normal"
-            fontFamily="ome_bhatkhande_en"
-            align="right"
-            verticalAlign="middle"
-            listening={false}
-          />
-        {/if}
+        <!-- Sargam key -->
+        <Text
+          x={GRAPH_PADDING.left - 45}
+          y={row.y - 5 + 2}
+          width={16}
+          height={10}
+          text={row.sargamKey}
+          fill={row.highlightSargam ? graphPalette.labelStrong : graphPalette.label}
+          fontSize={10}
+          fontStyle="normal"
+          fontFamily="ome_bhatkhande_en"
+          align="right"
+          verticalAlign="middle"
+          listening={false}
+        />
       {/each}
 
       <Line
@@ -288,7 +282,7 @@
         <Text
           x={indicatorX}
           y={indicatorY - 5}
-          width={160}
+          width={INDICATOR_LABEL_WIDTH}
           height={10}
           text={`${lastPoint.pitch.toFixed(1)} Hz (${lastPoint.note}${lastPoint.scale})`}
           fill={graphPalette.labelStrong}

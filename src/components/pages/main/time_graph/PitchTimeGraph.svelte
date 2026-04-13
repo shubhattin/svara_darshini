@@ -7,15 +7,7 @@
   import { BsChevronDown, BsChevronUp, BsPauseFill, BsPlayFill } from 'svelte-icons-pack/bs';
   import Icon from '~/tools/Icon.svelte';
   import { mode } from 'mode-watcher';
-
-  type GraphPoint = {
-    yRatio: number;
-    pitch: number;
-    note: string;
-    clarity: number;
-    originalIndex: number;
-    scale: number;
-  };
+  import type { GraphPoint } from './time_graph_types';
 
   let Sa_at_popup_status = $state(false);
   let bottom_start_note_popup_status = $state(false);
@@ -29,10 +21,8 @@
     input_mode
   }: {
     pitch_history: Array<{
-      time: number;
       pitch: number;
       note: string;
-      clarity: number;
       scale: number;
     }>;
     stop_button: Snippet;
@@ -84,6 +74,8 @@
   const VIEWBOX_W = $derived(Math.round(VIEWBOX_H * aspectRatio));
   const GRAPH_WIDTH = $derived(VIEWBOX_W - GRAPH_PADDING.left - GRAPH_PADDING.right);
   const GRAPH_HEIGHT = VIEWBOX_H - GRAPH_PADDING.top - GRAPH_PADDING.bottom;
+
+  /** Number of points visible in the graph based on screen size */
   const VISIBLE_POINTS = $derived(
     Math.max(
       20,
@@ -127,6 +119,7 @@
   });
 
   $effect(() => {
+    // canvas mounting
     const el = containerEl;
     if (!el) return;
     const ro = new ResizeObserver((entries) => {
@@ -141,6 +134,7 @@
   });
 
   $effect(() => {
+    // custom font loading check
     if (typeof document === 'undefined' || !('fonts' in document)) {
       fontsReady = true;
       return;
@@ -180,11 +174,6 @@
     bottom_start_note = NOTES_STARTING_WITH_A[nextIndex];
   };
 
-  const getXPosOnGraph = (index: number) =>
-    (index / Math.max(VISIBLE_POINTS - 1, 1)) * GRAPH_WIDTH + GRAPH_PADDING.left;
-  const getYPosOnGraph = (yRatio: number) =>
-    GRAPH_HEIGHT + GRAPH_PADDING.top - yRatio * GRAPH_HEIGHT;
-
   const frequencyToYPositionRatio = (frequency: number) => {
     if (!Number.isFinite(frequency) || frequency <= 0) {
       return null;
@@ -208,8 +197,6 @@
               yRatio: yPos,
               pitch: point.pitch,
               note: point.note,
-              clarity: point.clarity,
-              originalIndex: index,
               scale: point.scale
             }
           : null;
@@ -226,17 +213,16 @@
   });
 
   const graphData = $derived.by(() => {
-    const source = is_paused ? paused_graph_data.history : graphDataMain;
+    const source = is_paused
+      ? paused_graph_data.history
+          .map((point) => {
+            const yRatio = frequencyToYPositionRatio(point.pitch);
+            return yRatio === null ? null : { ...point, yRatio };
+          })
+          .filter((point): point is GraphPoint => point !== null)
+      : graphDataMain;
     return source.length > VISIBLE_POINTS ? source.slice(-VISIBLE_POINTS) : source;
   });
-
-  const lastPoint = $derived(graphData[graphData.length - 1]);
-  const lastX = $derived(lastPoint ? getXPosOnGraph(graphData.length - 1) : GRAPH_PADDING.left);
-  const lastY = $derived(lastPoint ? getYPosOnGraph(lastPoint.yRatio) : GRAPH_PADDING.top);
-  const isRightSide = $derived(lastX > VIEWBOX_W * 0.85);
-  const isNearTop = $derived(lastY < GRAPH_PADDING.top + 20);
-  const indicatorX = $derived(isRightSide ? lastX - 10 : lastX + 10);
-  const indicatorY = $derived(isNearTop ? lastY + 20 : lastY - 10);
 
   const makeOverlayStyle = (x: number, y: number, width: number, height: number) =>
     [
@@ -255,8 +241,9 @@
         y,
         noteName,
         sargamKey,
-        noteColor: noteName ? NOTE_COLORS[noteName] : undefined,
-        highlightNote: noteIndex === NOTES_CUSTOM_START.length - 1,
+        noteColor: NOTE_COLORS[noteName],
+        // highlightNote: noteIndex === NOTES_CUSTOM_START.length - 1,
+        highlightNote: sargamKey === 's',
         highlightSargam: sargamKey === 's',
         drawGrid: noteIndex < 12
       };
@@ -363,7 +350,7 @@
         {VISIBLE_POINTS}
         {graphData}
         {noteRows}
-        noteGradientNotes={NOTES_CUSTOM_START}
+        reorderedNotes={NOTES_CUSTOM_START}
         noteColors={NOTE_COLORS}
         graphPalette={{
           background: graphPalette.background,
@@ -379,7 +366,7 @@
 
   <button
     type="button"
-    class="absolute flex items-center justify-center rounded-md p-0 backdrop-blur-sm select-none"
+    class="absolute flex items-center justify-center rounded-md p-0 outline-hidden backdrop-blur-sm select-none"
     style={makeOverlayStyle(
       GRAPH_PADDING.left - 10 - NOTE_STEP_CONTROL_SIZE / 2,
       NOTE_STEP_CONTROL_TOP_INSET,
@@ -403,7 +390,7 @@
 
   <button
     type="button"
-    class="absolute flex items-center justify-center rounded-md p-0 backdrop-blur-sm select-none"
+    class="absolute flex items-center justify-center rounded-md p-0 outline-hidden backdrop-blur-sm select-none"
     style={makeOverlayStyle(
       GRAPH_PADDING.left - 10 - NOTE_STEP_CONTROL_SIZE / 2,
       VIEWBOX_H - NOTE_STEP_CONTROL_SIZE - NOTE_STEP_CONTROL_BOTTOM_INSET,
