@@ -1,0 +1,23 @@
+[package]
+name = "svara-darshini"
+version = "0.1.0"
+edition = "2021"
+description = "Real-time pitch visualizer with Indian Sargam notation"
+
+[dependencies]
+# GUI
+eframe = "0.31"
+egui = "0.31"
+egui_plot = "0.31"
+
+# Audio
+cpal = { version = "0.17", features = ["jack"] }
+pitch-detection = "0.3"
+
+# Threading & synchronization
+crossbeam-channel = "0.5"
+ringbuf = "0.4"
+
+# Utilities
+log = "0.4"
+env_logger = "0.11"

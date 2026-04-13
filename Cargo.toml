@@ -1,0 +1,7 @@
+[workspace]
+members = ["app"]
+resolver = "3"
+
+[profile.bench]
+lto = true
+   codegen-units = 1
