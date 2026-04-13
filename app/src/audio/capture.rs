@@ -41,7 +41,7 @@ impl AudioCapture {
         log::info!("Available audio hosts: {:?}", available);
 
         // Prefer JACK on Linux (PipeWire provides a JACK server)
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", feature = "jack-backend"))]
         {
             if available.contains(&cpal::HostId::Jack) {
                 match cpal::host_from_id(cpal::HostId::Jack) {

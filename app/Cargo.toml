@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2021"
 description = "Real-time pitch visualizer with Indian Sargam notation"
 
+[features]
+default = ["jack-backend"]
+jack-backend = ["cpal/jack"]
+
 [dependencies]
 # GUI
 eframe = "0.31"
@@ -11,7 +15,7 @@ egui = "0.31"
 egui_plot = "0.31"
 
 # Audio
-cpal = { version = "0.17", features = ["jack"] }
+cpal = "0.17"
 pitch-detection = "0.3"
 
 # Threading & synchronization
