@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { PitchDetector } from 'pitchy';
   import {
     NOTES,
     type note_types,
@@ -22,6 +21,7 @@
   import CircularScale from './circular/CircularScale.svelte';
   import PitchTimeGraph from './time_graph/PitchTimeGraph.svelte';
   import AudioInputFile from './AudioInputFile.svelte';
+  import { CqtEngine, findDominantCqtPitch } from './time_graph/cqt/cqt-engine';
 
   let {
     selected_device = $bindable(),
@@ -59,22 +59,42 @@
   let update_interval: NodeJS.Timeout | null = null;
   let mic_stream: MediaStream | null = null;
 
-  const AUDIO_INFO_UPDATE_INTERVAL = 80;
+  // These constants control how responsive the CQT graphing/detection feels.
+  const AUDIO_INFO_UPDATE_INTERVAL = 120;
   const GRAPH_TOTAL_TIME_MS = 8000;
 
-  const FFT_SIZE = Math.pow(2, 12); // 4096
+  /** Number of Constant-Q bins; higher values improve frequency detail but cost more work per frame.*/
+  const CQT_BIN_COUNT = 960;
+  /** Ignore detected peaks below this Hz floor to avoid low-end rumble and handling noise.*/
+  const CQT_MIN_FREQUENCY = 60;
+  /** Ignore detected peaks above this Hz ceiling so the tuner stays focused on the vocal/instrument range we care about.*/
+  const CQT_MAX_FREQUENCY = 2200;
+  /** Minimum peak strength required before a CQT bin is treated as a valid pitch candidate.*/
+  const CQT_MIN_INTENSITY = 0.05;
+  /** Exponential smoothing factor: higher is faster/more reactive, lower is steadier/smoother.*/
+  const CQT_PITCH_SMOOTHING_ALPHA = 0.3;
 
   // Pitch history for time graph
   const MAX_PITCH_HISTORY_POINTS = Math.floor(GRAPH_TOTAL_TIME_MS / AUDIO_INFO_UPDATE_INTERVAL); // 100 points
 
-  let started = $state(false);
-  let currrent_audio_info = $state<{
+  type AudioInfo = {
     pitch: number;
     clarity: number;
     note: string;
     scale: number;
     detune: number;
-  } | null>(null);
+  };
+
+  const EMPTY_AUDIO_INFO: AudioInfo = {
+    pitch: 0,
+    clarity: 0,
+    note: '',
+    scale: 0,
+    detune: NaN
+  };
+
+  let started = $state(false);
+  let currrent_audio_info = $state<AudioInfo | null>(null);
 
   let pitch_history = $state<
     Array<{
@@ -85,6 +105,14 @@
       scale: number;
     }>
   >([]);
+  let cqt_engine: CqtEngine | null = null;
+  let cqt_loading = $state(false);
+  let smoothed_cqt_pitch = 0;
+  let cqt_init_token = 0;
+  const display_audio_info = $derived(
+    cqt_loading ? EMPTY_AUDIO_INFO : (currrent_audio_info ?? EMPTY_AUDIO_INFO)
+  );
+  const display_pitch_history = $derived(cqt_loading ? [] : pitch_history);
 
   const buildAudioConstraints = (deviceId: string): MediaTrackConstraints | true => {
     if (!deviceId) return true;
@@ -131,6 +159,50 @@
     console.groupEnd();
   };
 
+  const setEmptyAudioInfo = () => {
+    currrent_audio_info = { ...EMPTY_AUDIO_INFO };
+  };
+
+  const destroyCqtEngine = () => {
+    cqt_init_token += 1;
+    cqt_engine?.destroy();
+    cqt_engine = null;
+    cqt_loading = false;
+    smoothed_cqt_pitch = 0;
+  };
+
+  const initCqtEngine = async (analyserNode: AnalyserNode) => {
+    destroyCqtEngine();
+
+    const initToken = ++cqt_init_token;
+    const engine = new CqtEngine();
+    cqt_loading = true;
+
+    try {
+      await engine.init({
+        sampleRate: analyserNode.context.sampleRate,
+        width: CQT_BIN_COUNT
+      });
+    } catch (error) {
+      engine.destroy();
+      if (initToken === cqt_init_token) {
+        cqt_loading = false;
+      }
+      throw error;
+    }
+
+    if (initToken !== cqt_init_token) {
+      engine.destroy();
+      return false;
+    }
+
+    analyserNode.fftSize = engine.fftSize;
+    cqt_engine = engine;
+    cqt_loading = false;
+    smoothed_cqt_pitch = 0;
+    return true;
+  };
+
   const get_audio_devices = async (show_loading = true) => {
     if (show_loading) device_list_loaded = false;
     await delay(250, true);
@@ -159,6 +231,7 @@
     started = false;
     //clear interval
     clearInterval(update_interval!);
+    update_interval = null;
 
     // stop mic stream
     mic_stream?.getTracks().forEach((track) => track.stop());
@@ -171,6 +244,7 @@
 
     // destroy analyzer node
     analyzer_node?.disconnect();
+    destroyCqtEngine();
 
     // stop audio context
     audio_context?.close();
@@ -267,8 +341,6 @@
         mic_stream = stream;
 
         logAudioTrackDebugInfo(stream, selected_device);
-
-        analyzer_node.fftSize = FFT_SIZE;
         audio_context.createMediaStreamSource(stream).connect(analyzer_node);
       } else if (input_mode === 'file') {
         // File input mode
@@ -281,7 +353,6 @@
         audio_context = new AudioContext();
         // create analyzer node
         analyzer_node = audio_context.createAnalyser();
-        analyzer_node.fftSize = FFT_SIZE;
 
         // Create media element source
         const source = audio_context.createMediaElementSource(file_audio_element);
@@ -289,45 +360,76 @@
         source.connect(audio_context.destination); // So we can hear the audio
       }
 
-      const detector = PitchDetector.forFloat32Array(analyzer_node!.fftSize);
-      const input = new Float32Array(detector.inputLength);
-
       clearInterval(update_interval!);
       pitch_history = [];
+      setEmptyAudioInfo();
+      started = true;
+
+      if (!analyzer_node) {
+        throw new Error('Audio analyser could not be created.');
+      }
+
+      const cqtReady = await initCqtEngine(analyzer_node);
+      if (!cqtReady) return;
 
       function updateAudioInfo() {
         // For file mode, only analyze when audio is playing
         if (input_mode === 'file' && !file_is_playing) {
-          currrent_audio_info = { pitch: 0, clarity: 0, note: '', scale: 0, detune: NaN };
+          setEmptyAudioInfo();
           return;
         }
 
-        analyzer_node?.getFloatTimeDomainData(input);
-        const [pitch, clarity] = detector.findPitch(input, audio_context!.sampleRate);
+        if (!analyzer_node || !cqt_engine?.ready) {
+          setEmptyAudioInfo();
+          return;
+        }
 
-        const rawNoteNumber = getNoteNumberFromPitch(pitch);
+        const frame = cqt_engine.computeFrame(analyzer_node);
+        const dominantPitch = frame
+          ? findDominantCqtPitch(frame, {
+              minFrequency: CQT_MIN_FREQUENCY,
+              maxFrequency: CQT_MAX_FREQUENCY,
+              minIntensity: CQT_MIN_INTENSITY
+            })
+          : null;
+
+        if (
+          !dominantPitch ||
+          !Number.isFinite(dominantPitch.frequency) ||
+          dominantPitch.frequency <= 0
+        ) {
+          setEmptyAudioInfo();
+          return;
+        }
+
+        smoothed_cqt_pitch =
+          smoothed_cqt_pitch === 0
+            ? dominantPitch.frequency
+            : dominantPitch.frequency * CQT_PITCH_SMOOTHING_ALPHA +
+              smoothed_cqt_pitch * (1 - CQT_PITCH_SMOOTHING_ALPHA);
+
+        const rawNoteNumber = getNoteNumberFromPitch(smoothed_cqt_pitch);
         const noteName = NOTES[rawNoteNumber % 12];
 
         const currentAudioInfo = {
-          pitch: Math.round(pitch * 10) / 10,
-          clarity: Math.round(clarity * 100),
+          pitch: Math.round(smoothed_cqt_pitch * 10) / 10,
+          clarity: Math.round(Math.min(Math.max(dominantPitch.intensity, 0), 1) * 100),
           note: noteName,
           scale: getScaleFromNoteNumber(rawNoteNumber),
-          detune: getDetuneFromPitch(pitch, rawNoteNumber)
+          detune: getDetuneFromPitch(smoothed_cqt_pitch, rawNoteNumber)
         };
 
         currrent_audio_info = currentAudioInfo;
-        // console.log('audio_info', audio_info);
 
         // Add to pitch history for time graph
-        const currentTime = Date.now();
-        pitch_history.push({
-          // time: currentTime,
-          pitch: currentAudioInfo.pitch,
-          note: currentAudioInfo.note,
-          // clarity: currentAudioInfo.clarity,
-          scale: currentAudioInfo.scale
-        });
+        pitch_history = [
+          ...pitch_history,
+          {
+            pitch: currentAudioInfo.pitch,
+            note: currentAudioInfo.note,
+            scale: currentAudioInfo.scale
+          }
+        ];
 
         // Keep only the last MAX_PITCH_HISTORY_POINTS entries
         if (pitch_history.length > MAX_PITCH_HISTORY_POINTS) {
@@ -337,14 +439,14 @@
 
       updateAudioInfo();
       update_interval = setInterval(updateAudioInfo, AUDIO_INFO_UPDATE_INTERVAL);
-      started = true;
     } catch (error) {
       console.error('error in Start-->', error);
+      Stop();
     }
   };
 
   const handleDeviceChange = () => {
-    if (currrent_audio_info) {
+    if (started && input_mode === 'mic') {
       // disconnect previous mic
       mic_stream?.getTracks().forEach((track) => track.stop());
       Start(); // Restart with new device if already running
@@ -409,7 +511,7 @@
   </button>
 {/snippet}
 
-{#if currrent_audio_info && started}
+{#if started}
   <Tabs
     value={selected_pitch_display_type}
     onValueChange={(e) =>
@@ -423,7 +525,7 @@
     {#snippet content()}
       <Tabs.Panel value="circular_scale">
         <CircularScale
-          audio_info={currrent_audio_info!}
+          audio_info={display_audio_info}
           bind:selected_Sa_at
           bind:selected_sargam_orientation
           bind:selected_note_orientation
@@ -433,7 +535,7 @@
       </Tabs.Panel>
       <Tabs.Panel value="time_graph">
         <PitchTimeGraph
-          {pitch_history}
+          pitch_history={display_pitch_history}
           {stop_button}
           {MAX_PITCH_HISTORY_POINTS}
           {input_mode}

@@ -5,11 +5,15 @@ import { SvelteKitPWA } from '@vite-pwa/sveltekit';
 import tailwindcss from '@tailwindcss/vite';
 import devtoolsJson from 'vite-plugin-devtools-json';
 import { generateAndroidManifest } from './src/tools/plugins/android_manifest';
+import wasm from 'vite-plugin-wasm';
+import topLevelAwait from 'vite-plugin-top-level-await';
 
 const IS_ANDROID_BUILD = process.env.IS_ANDROID_BUILD === 'true';
 
 export default defineConfig({
   plugins: [
+    wasm(),
+    topLevelAwait(),
     tailwindcss(),
     sveltekit(),
     devtoolsJson(),
@@ -71,5 +75,8 @@ export default defineConfig({
   },
   define: {
     'import.meta.env.IS_ANDROID_BUILD': JSON.stringify(String(IS_ANDROID_BUILD))
+  },
+  optimizeDeps: {
+    exclude: ['showcqt']
   }
 });
