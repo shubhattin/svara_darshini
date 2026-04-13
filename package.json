@@ -57,12 +57,14 @@
     "@mozartec/capacitor-microphone": "^7.1.0",
     "buffer": "^6.0.3",
     "clsx": "^2.1.1",
+    "konva": "^10.2.5",
     "ms": "^2.1.3",
     "pitchy": "^4.1.0",
     "posthog-js": "^1.332.0",
     "qrcode": "^1.5.4",
     "sass": "^1.97.2",
     "svelte-icons-pack": "^3.1.3",
+    "svelte-konva": "^1.0.1",
     "tailwind-merge": "^2.6.0",
     "zod": "^4.3.5"
   }
