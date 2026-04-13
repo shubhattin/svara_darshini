@@ -49,8 +49,8 @@
     bottom: 26
   } as const;
   const NOTE_STEP_CONTROL_SIZE = 15;
-  const NOTE_STEP_CONTROL_TOP_INSET = 2;
-  const NOTE_STEP_CONTROL_BOTTOM_INSET = 1;
+  const NOTE_STEP_CONTROL_TOP_INSET = 3;
+  const NOTE_STEP_CONTROL_BOTTOM_INSET = 3;
 
   const NOTE_COLORS: Record<note_types, string> = {
     A: 'hsla(0, 100%, 50%, 1)',
@@ -84,12 +84,12 @@
   );
 
   const graphPalette = $derived({
-    background: isDarkMode ? '#0f172a' : '#f8fafc',
-    grid: isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(15,23,42,0.12)',
-    axis: isDarkMode ? '#64748b' : '#475569',
-    label: isDarkMode ? '#cbd5e1' : '#334155',
-    labelStrong: isDarkMode ? '#f8fafc' : '#0f172a',
-    point: isDarkMode ? '#ef4444' : '#dc2626',
+    background: '#0f172a',
+    grid: 'rgba(255,255,255,0.15)',
+    axis: '#64748b',
+    label: '#cbd5e1',
+    labelStrong: '#f8fafc',
+    point: '#ef4444',
     buttonBg: 'rgba(51, 65, 85, 0.95)',
     buttonHoverBg: 'rgba(71, 85, 105, 0.95)',
     buttonText: '#f1f5f9',
