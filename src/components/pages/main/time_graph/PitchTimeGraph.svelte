@@ -48,9 +48,9 @@
     right: 10,
     bottom: 26
   } as const;
-  const NOTE_STEP_CONTROL_SIZE = 18;
+  const NOTE_STEP_CONTROL_SIZE = 15;
   const NOTE_STEP_CONTROL_TOP_INSET = 2;
-  const NOTE_STEP_CONTROL_BOTTOM_INSET = 6;
+  const NOTE_STEP_CONTROL_BOTTOM_INSET = 1;
 
   const NOTE_COLORS: Record<note_types, string> = {
     A: 'hsla(0, 100%, 50%, 1)',
@@ -84,12 +84,12 @@
   );
 
   const graphPalette = $derived({
-    background: '#0f172a',
-    grid: 'rgba(255,255,255,0.15)',
-    axis: '#64748b',
-    label: '#cbd5e1',
-    labelStrong: '#f8fafc',
-    point: '#ef4444',
+    background: isDarkMode ? '#0f172a' : '#f8fafc',
+    grid: isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(15,23,42,0.12)',
+    axis: isDarkMode ? '#64748b' : '#475569',
+    label: isDarkMode ? '#cbd5e1' : '#334155',
+    labelStrong: isDarkMode ? '#f8fafc' : '#0f172a',
+    point: isDarkMode ? '#ef4444' : '#dc2626',
     buttonBg: 'rgba(51, 65, 85, 0.95)',
     buttonHoverBg: 'rgba(71, 85, 105, 0.95)',
     buttonText: '#f1f5f9',
@@ -234,8 +234,9 @@
   const noteRows = $derived(
     Array.from({ length: 13 }, (_, noteIndex) => {
       const y = (noteIndex / 12) * GRAPH_HEIGHT + GRAPH_PADDING.top;
-      const noteName = NOTES_CUSTOM_START[NOTES_CUSTOM_START.length - noteIndex - 1];
-      const sargamKey = SARGAM_CUSTOM_START[SARGAM_CUSTOM_START.length - noteIndex - 1];
+      const noteIndex_clamped = noteIndex % NOTES_CUSTOM_START.length;
+      const noteName = NOTES_CUSTOM_START[NOTES_CUSTOM_START.length - noteIndex_clamped - 1];
+      const sargamKey = SARGAM_CUSTOM_START[SARGAM_CUSTOM_START.length - noteIndex_clamped - 1];
 
       return {
         y,
@@ -366,7 +367,7 @@
 
   <button
     type="button"
-    class="absolute flex items-center justify-center rounded-md p-0 outline-hidden backdrop-blur-sm select-none"
+    class="absolute flex items-center justify-center rounded-full p-0 outline-hidden backdrop-blur-sm select-none"
     style={makeOverlayStyle(
       GRAPH_PADDING.left - 10 - NOTE_STEP_CONTROL_SIZE / 2,
       NOTE_STEP_CONTROL_TOP_INSET,
@@ -385,12 +386,12 @@
     style:border={`1px solid ${graphPalette.buttonRing}`}
     style:box-shadow={graphPalette.overlayShadow}
   >
-    <Icon src={BsChevronUp} class="text-sm" />
+    <Icon src={BsChevronUp} class="size-3.5 shrink-0 leading-none" />
   </button>
 
   <button
     type="button"
-    class="absolute flex items-center justify-center rounded-md p-0 outline-hidden backdrop-blur-sm select-none"
+    class="absolute flex items-center justify-center rounded-full p-0 outline-hidden backdrop-blur-sm select-none"
     style={makeOverlayStyle(
       GRAPH_PADDING.left - 10 - NOTE_STEP_CONTROL_SIZE / 2,
       VIEWBOX_H - NOTE_STEP_CONTROL_SIZE - NOTE_STEP_CONTROL_BOTTOM_INSET,
@@ -409,7 +410,7 @@
     style:border={`1px solid ${graphPalette.buttonRing}`}
     style:box-shadow={graphPalette.overlayShadow}
   >
-    <Icon src={BsChevronDown} class="text-sm" />
+    <Icon src={BsChevronDown} class="size-3.5 shrink-0 leading-none" />
   </button>
 </div>
 

@@ -65,7 +65,7 @@
   const FFT_SIZE = Math.pow(2, 12); // 4096
 
   // Pitch history for time graph
-  const MAX_PITCH_HISTORY_POINTS = Math.floor(GRAPH_TOTAL_TIME_MS / AUDIO_INFO_UPDATE_INTERVAL); // 25 points
+  const MAX_PITCH_HISTORY_POINTS = Math.floor(GRAPH_TOTAL_TIME_MS / AUDIO_INFO_UPDATE_INTERVAL); // 100 points
 
   let started = $state(false);
   let currrent_audio_info = $state<{
