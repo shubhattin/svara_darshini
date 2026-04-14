@@ -21,7 +21,10 @@
   import CircularScale from './circular/CircularScale.svelte';
   import PitchTimeGraph from './time_graph/PitchTimeGraph.svelte';
   import AudioInputFile from './AudioInputFile.svelte';
-  import { CqtEngine, findDominantCqtPitch } from './time_graph/cqt/cqt-engine';
+  import type { AudioInfo, PitchDetector } from '~/tools/pitch/types';
+  import { EMPTY_AUDIO_INFO } from '~/tools/pitch/types';
+  import { FftPitchDetector } from '~/tools/pitch/fft';
+  import { CqtPitchDetector } from '~/tools/pitch/cqt';
 
   let {
     selected_device = $bindable(),
@@ -43,6 +46,8 @@
     welcome_msg: Snippet;
   } = $props();
 
+  let detection_method: 'cqt' | 'fft' = $state('cqt');
+
   let input_mode = $state<'mic' | 'file'>('mic');
   let input_file = $state<File | null>(null);
   let audio_devices = $state<MediaDeviceInfo[]>([]);
@@ -59,39 +64,14 @@
   let update_interval: NodeJS.Timeout | null = null;
   let mic_stream: MediaStream | null = null;
 
-  // These constants control how responsive the CQT graphing/detection feels.
-  const AUDIO_INFO_UPDATE_INTERVAL = 120;
+  // These constants control how responsive the graphing/detection feels.
+  const AUDIO_INFO_UPDATE_INTERVAL = $derived(detection_method === 'cqt' ? 120 : 80);
   const GRAPH_TOTAL_TIME_MS = 8000;
 
-  /** Number of Constant-Q bins; higher values improve frequency detail but cost more work per frame.*/
-  const CQT_BIN_COUNT = 1200;
-  /** Ignore detected peaks below this Hz floor to avoid low-end rumble and handling noise.*/
-  const CQT_MIN_FREQUENCY = 60;
-  /** Ignore detected peaks above this Hz ceiling so the tuner stays focused on the vocal/instrument range we care about.*/
-  const CQT_MAX_FREQUENCY = 2200;
-  /** Minimum peak strength required before a CQT bin is treated as a valid pitch candidate.*/
-  const CQT_MIN_INTENSITY = 0.05;
-  /** Exponential smoothing factor: higher is faster/more reactive, lower is steadier/smoother.*/
-  const CQT_PITCH_SMOOTHING_ALPHA = 0.23;
-
   // Pitch history for time graph
-  const MAX_PITCH_HISTORY_POINTS = Math.floor(GRAPH_TOTAL_TIME_MS / AUDIO_INFO_UPDATE_INTERVAL); // 100 points
-
-  type AudioInfo = {
-    pitch: number;
-    clarity: number;
-    note: string;
-    scale: number;
-    detune: number;
-  };
-
-  const EMPTY_AUDIO_INFO: AudioInfo = {
-    pitch: 0,
-    clarity: 0,
-    note: '',
-    scale: 0,
-    detune: NaN
-  };
+  const MAX_PITCH_HISTORY_POINTS = $derived(
+    Math.floor(GRAPH_TOTAL_TIME_MS / AUDIO_INFO_UPDATE_INTERVAL)
+  ); // 100 points
 
   let started = $state(false);
   let currrent_audio_info = $state<AudioInfo | null>(null);
@@ -105,14 +85,26 @@
       scale: number;
     }>
   >([]);
-  let cqt_engine: CqtEngine | null = null;
-  let cqt_loading = $state(false);
-  let smoothed_cqt_pitch = 0;
-  let cqt_init_token = 0;
+  let detector: PitchDetector | null = null;
+  let is_detector_loading = $state(false);
   const display_audio_info = $derived(
-    cqt_loading ? EMPTY_AUDIO_INFO : (currrent_audio_info ?? EMPTY_AUDIO_INFO)
+    is_detector_loading ? EMPTY_AUDIO_INFO : (currrent_audio_info ?? EMPTY_AUDIO_INFO)
   );
-  const display_pitch_history = $derived(cqt_loading ? [] : pitch_history);
+  const display_pitch_history = $derived(is_detector_loading ? [] : pitch_history);
+
+  // Seamlessly restart detection when the algorithm is switched mid-session.
+  // We pass silent=true / keep_started=true so the display stays mounted
+  // and no fade transition fires — only the pitch history clears.
+  $effect(() => {
+    const _method = detection_method; // track reactively
+
+    return () => {
+      if (started) {
+        Stop(true); // tear down pipeline, keep started=true
+        Start(true); // rebuild with new method, skip setting started=true
+      }
+    };
+  });
 
   const buildAudioConstraints = (deviceId: string): MediaTrackConstraints | true => {
     if (!deviceId) return true;
@@ -163,46 +155,6 @@
     currrent_audio_info = { ...EMPTY_AUDIO_INFO };
   };
 
-  const destroyCqtEngine = () => {
-    cqt_init_token += 1;
-    cqt_engine?.destroy();
-    cqt_engine = null;
-    cqt_loading = false;
-    smoothed_cqt_pitch = 0;
-  };
-
-  const initCqtEngine = async (analyserNode: AnalyserNode) => {
-    destroyCqtEngine();
-
-    const initToken = ++cqt_init_token;
-    const engine = new CqtEngine();
-    cqt_loading = true;
-
-    try {
-      await engine.init({
-        sampleRate: analyserNode.context.sampleRate,
-        width: CQT_BIN_COUNT
-      });
-    } catch (error) {
-      engine.destroy();
-      if (initToken === cqt_init_token) {
-        cqt_loading = false;
-      }
-      throw error;
-    }
-
-    if (initToken !== cqt_init_token) {
-      engine.destroy();
-      return false;
-    }
-
-    analyserNode.fftSize = engine.fftSize;
-    cqt_engine = engine;
-    cqt_loading = false;
-    smoothed_cqt_pitch = 0;
-    return true;
-  };
-
   const get_audio_devices = async (show_loading = true) => {
     if (show_loading) device_list_loaded = false;
     await delay(250, true);
@@ -227,8 +179,12 @@
     };
   });
 
-  const Stop = () => {
-    started = false;
+  /**
+   * @param silent - if true, keeps `started` as-is so the display stays mounted
+   *                 (used when restarting mid-session without the close/open transition)
+   */
+  const Stop = (silent = false) => {
+    if (!silent) started = false;
     //clear interval
     clearInterval(update_interval!);
     update_interval = null;
@@ -244,7 +200,9 @@
 
     // destroy analyzer node
     analyzer_node?.disconnect();
-    destroyCqtEngine();
+    detector?.destroy();
+    detector = null;
+    is_detector_loading = false;
 
     // stop audio context
     audio_context?.close();
@@ -291,7 +249,11 @@
     }
   };
 
-  const Start = async () => {
+  /**
+   * @param keep_started - if true, skips setting `started = true` (caller guarantees it's already true)
+   *                       used for seamless algorithm hot-swap without the fade-in transition
+   */
+  const Start = async (keep_started = false) => {
     try {
       if (input_mode === 'mic') {
         // Microphone input mode
@@ -363,14 +325,28 @@
       clearInterval(update_interval!);
       pitch_history = [];
       setEmptyAudioInfo();
-      started = true;
+      if (!keep_started) started = true;
 
       if (!analyzer_node) {
         throw new Error('Audio analyser could not be created.');
       }
 
-      const cqtReady = await initCqtEngine(analyzer_node);
-      if (!cqtReady) return;
+      is_detector_loading = true;
+      detector = detection_method === 'cqt' ? new CqtPitchDetector() : new FftPitchDetector();
+
+      try {
+        await detector.init(analyzer_node, audio_context!);
+      } catch (error) {
+        is_detector_loading = false;
+        throw error;
+      }
+
+      if (!started) {
+        detector.destroy();
+        detector = null;
+        return;
+      }
+      is_detector_loading = false;
 
       function updateAudioInfo() {
         // For file mode, only analyze when audio is playing
@@ -379,45 +355,17 @@
           return;
         }
 
-        if (!analyzer_node || !cqt_engine?.ready) {
+        if (!analyzer_node || !detector?.ready) {
           setEmptyAudioInfo();
           return;
         }
 
-        const frame = cqt_engine.computeFrame(analyzer_node);
-        const dominantPitch = frame
-          ? findDominantCqtPitch(frame, {
-              minFrequency: CQT_MIN_FREQUENCY,
-              maxFrequency: CQT_MAX_FREQUENCY,
-              minIntensity: CQT_MIN_INTENSITY
-            })
-          : null;
+        const currentAudioInfo = detector.detect(analyzer_node, audio_context!);
 
-        if (
-          !dominantPitch ||
-          !Number.isFinite(dominantPitch.frequency) ||
-          dominantPitch.frequency <= 0
-        ) {
+        if (!currentAudioInfo) {
           setEmptyAudioInfo();
           return;
         }
-
-        smoothed_cqt_pitch =
-          smoothed_cqt_pitch === 0
-            ? dominantPitch.frequency
-            : dominantPitch.frequency * CQT_PITCH_SMOOTHING_ALPHA +
-              smoothed_cqt_pitch * (1 - CQT_PITCH_SMOOTHING_ALPHA);
-
-        const rawNoteNumber = getNoteNumberFromPitch(smoothed_cqt_pitch);
-        const noteName = NOTES[rawNoteNumber % 12];
-
-        const currentAudioInfo = {
-          pitch: Math.round(smoothed_cqt_pitch * 10) / 10,
-          clarity: Math.round(Math.min(Math.max(dominantPitch.intensity, 0), 1) * 100),
-          note: noteName,
-          scale: getScaleFromNoteNumber(rawNoteNumber),
-          detune: getDetuneFromPitch(smoothed_cqt_pitch, rawNoteNumber)
-        };
 
         currrent_audio_info = currentAudioInfo;
 
@@ -484,7 +432,7 @@
              dark:from-amber-600 dark:via-orange-600 dark:to-yellow-700
              dark:hover:from-amber-700 dark:hover:via-orange-700 dark:hover:to-yellow-800
              "
-      onclick={Start}
+      onclick={() => Start()}
     >
       <!-- {input_mode === 'file' && !input_file ? 'cursor-not-allowed opacity-50' : ''} -->
       <!-- disabled={input_mode === 'file' && !input_file} -->
@@ -504,7 +452,7 @@
 {#snippet stop_button()}
   <button
     class="btn gap-0.5 rounded-md bg-error-600 px-1.5 py-0.5 text-base font-bold text-white sm:gap-1 sm:rounded-lg sm:px-2 sm:py-1 sm:text-xl dark:bg-error-500"
-    onclick={Stop}
+    onclick={() => Stop()}
   >
     <Icon src={BiStopCircle} class="-mt-0.5 text-xl sm:-mt-1 sm:text-2xl" />
     Stop
@@ -546,6 +494,12 @@
       </Tabs.Panel>
     {/snippet}
   </Tabs>
+  <div class="mt-4 flex items-center justify-center space-x-2">
+    <select class="select rounded-md px-2 py-1" bind:value={detection_method}>
+      <option value="cqt">CQT</option>
+      <option value="fft">FFT</option>
+    </select>
+  </div>
 {/if}
 <Tabs
   value={input_mode}
