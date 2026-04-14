@@ -252,7 +252,7 @@
       />
 
       {#if graphData.length > 1}
-        <Path
+        <!-- <Path
           data={jumpPathData}
           stroke={graphPalette.label}
           strokeWidth={2}
@@ -263,7 +263,7 @@
           strokeLinearGradientEndPointY={GRAPH_PADDING.top}
           strokeLinearGradientColorStops={gradientStops}
           listening={false}
-        />
+        /> -->
         <Path
           data={mainPathData}
           stroke={graphPalette.label}
