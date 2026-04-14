@@ -87,10 +87,10 @@
 
   const projectLinks = [
     {
-      href: 'http://projects.thesanskritchannel.org/',
+      href: 'http://thesanskritchannel.org/',
       icon: BsBook,
       title: 'Projects',
-      subtitle: 'Sanskrit Channel Projects',
+      subtitle: 'The Sanskrit Channel Website',
       iconClass: 'bg-gradient-to-br from-green-500 to-emerald-600'
     },
     {

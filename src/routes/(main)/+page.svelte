@@ -26,6 +26,8 @@
     'prev_timegraph_bottom_start_note',
     'C'
   );
+  // show the opacity version of the jumps
+  let default_show_jumps = persistedStore<boolean>('saved_show_jumps', false);
 
   // Demo animation state for the circular display
   let demo_pitch = $state(108);
@@ -120,6 +122,7 @@
     bind:selected_pitch_display_type={$default_pitch_display_type}
     bind:selected_timegraph_Sa_at={$default_Sa_at}
     bind:selected_timegraph_bottom_start_note={$default_timegraph_bottom_start_note}
+    bind:show_jumps={$default_show_jumps}
   >
     <!-- Currently using the same Sa_at for the time graph as the circular display -->
     {#snippet welcome_msg()}

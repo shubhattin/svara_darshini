@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { PitchDetector } from 'pitchy';
   import {
     NOTES,
     type note_types,
@@ -8,7 +7,7 @@
     getDetuneFromPitch
   } from './constants';
   import { onMount, type Snippet } from 'svelte';
-  import { FiMusic, FiPlay, FiRefreshCcw } from 'svelte-icons-pack/fi';
+  import { FiMusic, FiPlay, FiRefreshCcw, FiSettings } from 'svelte-icons-pack/fi';
   import Icon from '~/tools/Icon.svelte';
   import { BiMicrophone, BiStopCircle } from 'svelte-icons-pack/bi';
   import { fade, slide } from 'svelte/transition';
@@ -18,10 +17,14 @@
   import { indactivity_timeout } from './inactivity';
   import ms from 'ms';
   import { Microphone } from '@mozartec/capacitor-microphone';
-  import { Tabs } from '@skeletonlabs/skeleton-svelte';
+  import { Popover, Tabs } from '@skeletonlabs/skeleton-svelte';
   import CircularScale from './circular/CircularScale.svelte';
   import PitchTimeGraph from './time_graph/PitchTimeGraph.svelte';
   import AudioInputFile from './AudioInputFile.svelte';
+  import type { AudioInfo, PitchDetector } from '~/tools/pitch/types';
+  import { EMPTY_AUDIO_INFO } from '~/tools/pitch/types';
+  import { FftPitchDetector } from '~/tools/pitch/fft';
+  import { CqtPitchDetector } from '~/tools/pitch/cqt';
 
   let {
     selected_device = $bindable(),
@@ -31,6 +34,7 @@
     selected_pitch_display_type = $bindable(),
     selected_timegraph_Sa_at = $bindable(),
     selected_timegraph_bottom_start_note = $bindable(),
+    show_jumps = $bindable(),
     welcome_msg
   }: {
     selected_device: string;
@@ -40,8 +44,12 @@
     selected_pitch_display_type: 'circular_scale' | 'time_graph';
     selected_timegraph_Sa_at: note_types;
     selected_timegraph_bottom_start_note: note_types;
+    show_jumps: boolean;
     welcome_msg: Snippet;
   } = $props();
+
+  let detection_method: 'cqt' | 'fft' = $state('cqt');
+  let analysis_settings_popup_open = $state(false);
 
   let input_mode = $state<'mic' | 'file'>('mic');
   let input_file = $state<File | null>(null);
@@ -58,23 +66,28 @@
   let analyzer_node: AnalyserNode | null = null;
   let update_interval: NodeJS.Timeout | null = null;
   let mic_stream: MediaStream | null = null;
+  let startToken = 0;
 
-  const AUDIO_INFO_UPDATE_INTERVAL = 80;
+  // These constants control how responsive the graphing/detection feels.
+  const AUDIO_INFO_UPDATE_INTERVAL = $derived(detection_method === 'cqt' ? 120 : 80);
   const GRAPH_TOTAL_TIME_MS = 8000;
-
-  const FFT_SIZE = Math.pow(2, 12); // 4096
+  // Master kill switch for the analyzer-side input filter chain.
+  // Set to false to compare raw capture vs filtered capture quickly.
+  const ENABLE_PITCH_INPUT_FILTERING = true;
+  // Gentle high-pass cutoff that removes handling noise, breath pops,
+  // and low-frequency rumble without trimming normal voice/tanpura fundamentals.
+  const PITCH_INPUT_HIGHPASS_HZ = 70;
+  // Gentle low-pass cutoff that reduces upper-band hiss while keeping
+  // enough harmonic content for stable pitch detection.
+  const PITCH_INPUT_LOWPASS_HZ = 4000;
 
   // Pitch history for time graph
-  const MAX_PITCH_HISTORY_POINTS = Math.floor(GRAPH_TOTAL_TIME_MS / AUDIO_INFO_UPDATE_INTERVAL); // 100 points
+  const MAX_PITCH_HISTORY_POINTS = $derived(
+    Math.floor(GRAPH_TOTAL_TIME_MS / AUDIO_INFO_UPDATE_INTERVAL)
+  ); // 100 points
 
   let started = $state(false);
-  let currrent_audio_info = $state<{
-    pitch: number;
-    clarity: number;
-    note: string;
-    scale: number;
-    detune: number;
-  } | null>(null);
+  let current_audio_info = $state<AudioInfo | null>(null);
 
   let pitch_history = $state<
     Array<{
@@ -85,6 +98,26 @@
       scale: number;
     }>
   >([]);
+  let detector: PitchDetector | null = null;
+  let is_detector_loading = $state(false);
+  const display_audio_info = $derived(
+    is_detector_loading ? EMPTY_AUDIO_INFO : (current_audio_info ?? EMPTY_AUDIO_INFO)
+  );
+  const display_pitch_history = $derived(is_detector_loading ? [] : pitch_history);
+
+  // Seamlessly restart detection when the algorithm is switched mid-session.
+  // We pass silent=true / keep_started=true so the display stays mounted
+  // and no fade transition fires — only the pitch history clears.
+  $effect(() => {
+    const _method = detection_method; // track reactively
+
+    return () => {
+      if (started) {
+        Stop(true); // tear down pipeline, keep started=true
+        Start(true); // rebuild with new method, skip setting started=true
+      }
+    };
+  });
 
   const buildAudioConstraints = (deviceId: string): MediaTrackConstraints | true => {
     if (!deviceId) return true;
@@ -131,6 +164,66 @@
     console.groupEnd();
   };
 
+  const setEmptyAudioInfo = () => {
+    current_audio_info = { ...EMPTY_AUDIO_INFO };
+  };
+
+  const connectPitchAnalysisInput = ({
+    audioContext,
+    source,
+    analyzer
+  }: {
+    audioContext: AudioContext;
+    source: AudioNode;
+    analyzer: AnalyserNode;
+  }) => {
+    if (!ENABLE_PITCH_INPUT_FILTERING) {
+      source.connect(analyzer);
+      return;
+    }
+
+    // Keep the filter chain gentle so we remove rumble and hiss
+    // without flattening harmonics that help pitch detection.
+    const highPass = audioContext.createBiquadFilter();
+    highPass.type = 'highpass';
+    highPass.frequency.value = PITCH_INPUT_HIGHPASS_HZ;
+
+    const lowPass = audioContext.createBiquadFilter();
+    lowPass.type = 'lowpass';
+    lowPass.frequency.value = PITCH_INPUT_LOWPASS_HZ;
+
+    source.connect(highPass);
+    highPass.connect(lowPass);
+    lowPass.connect(analyzer);
+  };
+
+  const cleanupPendingStart = async ({
+    nextAudioContext,
+    nextAnalyzerNode,
+    nextMicStream,
+    nextDetector,
+    nextFileSource
+  }: {
+    nextAudioContext: AudioContext | null;
+    nextAnalyzerNode: AnalyserNode | null;
+    nextMicStream: MediaStream | null;
+    nextDetector: PitchDetector | null;
+    nextFileSource: MediaElementAudioSourceNode | null;
+  }) => {
+    nextFileSource?.disconnect();
+    nextAnalyzerNode?.disconnect();
+    nextDetector?.destroy();
+    nextMicStream?.getTracks().forEach((track) => track.stop());
+
+    if (nextAudioContext && nextAudioContext.state !== 'closed') {
+      try {
+        await nextAudioContext.close();
+      } catch (error) {
+        console.warn('[PitchTuner] Failed to close stale audio context', error);
+      }
+    }
+  };
+
   const get_audio_devices = async (show_loading = true) => {
     if (show_loading) device_list_loaded = false;
     await delay(250, true);
@@ -155,10 +248,16 @@
     };
   });
 
-  const Stop = () => {
-    started = false;
+  /**
+   * @param silent - if true, keeps `started` as-is so the display stays mounted
+   *                 (used when restarting mid-session without the close/open transition)
+   */
+  const Stop = (silent = false) => {
+    startToken++;
+    if (!silent) started = false;
     //clear interval
     clearInterval(update_interval!);
+    update_interval = null;
 
     // stop mic stream
     mic_stream?.getTracks().forEach((track) => track.stop());
@@ -171,11 +270,14 @@
 
     // destroy analyzer node
     analyzer_node?.disconnect();
+    detector?.destroy();
+    detector = null;
+    is_detector_loading = false;
 
     // stop audio context
     audio_context?.close();
 
-    currrent_audio_info = null;
+    current_audio_info = null;
     audio_context = null;
     analyzer_node = null;
     mic_stream = null;
@@ -217,7 +319,18 @@
     }
   };
 
-  const Start = async () => {
+  /**
+   * @param keep_started - if true, skips setting `started = true` (caller guarantees it's already true)
+   *                       used for seamless algorithm hot-swap without the fade-in transition
+   */
+  const Start = async (keep_started = false) => {
+    const token = ++startToken;
+    let nextAudioContext: AudioContext | null = null;
+    let nextAnalyzerNode: AnalyserNode | null = null;
+    let nextMicStream: MediaStream | null = null;
+    let nextDetector: PitchDetector | null = null;
+    let nextFileSource: MediaElementAudioSourceNode | null = null;
+
     try {
       if (input_mode === 'mic') {
         // Microphone input mode
@@ -226,6 +339,7 @@
           console.error('Microphone permission not granted');
           return;
         }
+        if (token !== startToken) return;
         console.log(
           'Selected Microphone: ',
           audio_devices.find((device, i) => device.deviceId === selected_device)?.label ??
@@ -233,9 +347,9 @@
         );
 
         // start audio context
-        audio_context = new AudioContext();
+        nextAudioContext = new AudioContext();
         // create analyzer node
-        analyzer_node = audio_context.createAnalyser();
+        nextAnalyzerNode = nextAudioContext.createAnalyser();
 
         const constraints: MediaStreamConstraints = {
           audio: buildAudioConstraints(selected_device)
@@ -255,21 +369,39 @@
               error: err
             }
           );
-          await audio_context.close();
-          audio_context = null;
-          analyzer_node = null;
+          await cleanupPendingStart({
+            nextAudioContext,
+            nextAnalyzerNode,
+            nextMicStream,
+            nextDetector,
+            nextFileSource
+          });
+          return;
+        }
+        if (token !== startToken) {
+          nextMicStream = stream;
+          await cleanupPendingStart({
+            nextAudioContext,
+            nextAnalyzerNode,
+            nextMicStream,
+            nextDetector,
+            nextFileSource
+          });
           return;
         }
         get_audio_devices(false); // refresh list
-        if (!audio_context) return;
-        if (!analyzer_node) return;
+        if (!nextAudioContext) return;
+        if (!nextAnalyzerNode) return;
         if (!stream) return;
-        mic_stream = stream;
+        nextMicStream = stream;
 
         logAudioTrackDebugInfo(stream, selected_device);
-
-        analyzer_node.fftSize = FFT_SIZE;
-        audio_context.createMediaStreamSource(stream).connect(analyzer_node);
+        const nextMicSource = nextAudioContext.createMediaStreamSource(stream);
+        connectPitchAnalysisInput({
+          audioContext: nextAudioContext,
+          source: nextMicSource,
+          analyzer: nextAnalyzerNode
+        });
       } else if (input_mode === 'file') {
         // File input mode
         if (!file_audio_element || !input_file) {
@@ -278,56 +410,100 @@
         }
 
         // start audio context
-        audio_context = new AudioContext();
+        nextAudioContext = new AudioContext();
         // create analyzer node
-        analyzer_node = audio_context.createAnalyser();
-        analyzer_node.fftSize = FFT_SIZE;
+        nextAnalyzerNode = nextAudioContext.createAnalyser();
 
         // Create media element source
-        const source = audio_context.createMediaElementSource(file_audio_element);
-        source.connect(analyzer_node);
-        source.connect(audio_context.destination); // So we can hear the audio
+        nextFileSource = nextAudioContext.createMediaElementSource(file_audio_element);
+        connectPitchAnalysisInput({
+          audioContext: nextAudioContext,
+          source: nextFileSource,
+          analyzer: nextAnalyzerNode
+        });
+        nextFileSource.connect(nextAudioContext.destination); // So we can hear the audio
       }
 
-      const detector = PitchDetector.forFloat32Array(analyzer_node!.fftSize);
-      const input = new Float32Array(detector.inputLength);
+      if (token !== startToken) {
+        await cleanupPendingStart({
+          nextAudioContext,
+          nextAnalyzerNode,
+          nextMicStream,
+          nextDetector,
+          nextFileSource
+        });
+        return;
+      }
 
       clearInterval(update_interval!);
       pitch_history = [];
+      setEmptyAudioInfo();
+      if (!keep_started) started = true;
+
+      if (!nextAnalyzerNode || !nextAudioContext) {
+        throw new Error('Audio analyser could not be created.');
+      }
+
+      is_detector_loading = true;
+      nextDetector = detection_method === 'cqt' ? new CqtPitchDetector() : new FftPitchDetector();
+
+      try {
+        await nextDetector.init(nextAnalyzerNode, nextAudioContext);
+      } catch (error) {
+        is_detector_loading = false;
+        throw error;
+      }
+
+      if (token !== startToken || !started) {
+        await cleanupPendingStart({
+          nextAudioContext,
+          nextAnalyzerNode,
+          nextMicStream,
+          nextDetector,
+          nextFileSource
+        });
+        return;
+      }
+
+      audio_context = nextAudioContext;
+      analyzer_node = nextAnalyzerNode;
+      mic_stream = nextMicStream;
+      detector = nextDetector;
+      is_detector_loading = false;
 
       function updateAudioInfo() {
+        if (token !== startToken) {
+          return;
+        }
         // For file mode, only analyze when audio is playing
         if (input_mode === 'file' && !file_is_playing) {
-          currrent_audio_info = { pitch: 0, clarity: 0, note: '', scale: 0, detune: NaN };
+          setEmptyAudioInfo();
           return;
         }
 
-        analyzer_node?.getFloatTimeDomainData(input);
-        const [pitch, clarity] = detector.findPitch(input, audio_context!.sampleRate);
+        if (!nextAnalyzerNode || !nextAudioContext || !nextDetector?.ready) {
+          setEmptyAudioInfo();
+          return;
+        }
 
-        const rawNoteNumber = getNoteNumberFromPitch(pitch);
-        const noteName = NOTES[rawNoteNumber % 12];
+        const currentAudioInfo = nextDetector.detect(nextAnalyzerNode, nextAudioContext);
 
-        const currentAudioInfo = {
-          pitch: Math.round(pitch * 10) / 10,
-          clarity: Math.round(clarity * 100),
-          note: noteName,
-          scale: getScaleFromNoteNumber(rawNoteNumber),
-          detune: getDetuneFromPitch(pitch, rawNoteNumber)
-        };
+        if (!currentAudioInfo) {
+          setEmptyAudioInfo();
+          return;
+        }
 
-        currrent_audio_info = currentAudioInfo;
-        // console.log('audio_info', audio_info);
+        current_audio_info = currentAudioInfo;
 
         // Add to pitch history for time graph
-        const currentTime = Date.now();
-        pitch_history.push({
-          // time: currentTime,
-          pitch: currentAudioInfo.pitch,
-          note: currentAudioInfo.note,
-          // clarity: currentAudioInfo.clarity,
-          scale: currentAudioInfo.scale
-        });
+        pitch_history = [
+          ...pitch_history,
+          {
+            pitch: currentAudioInfo.pitch,
+            note: currentAudioInfo.note,
+            scale: currentAudioInfo.scale
+          }
+        ];
 
         // Keep only the last MAX_PITCH_HISTORY_POINTS entries
         if (pitch_history.length > MAX_PITCH_HISTORY_POINTS) {
@@ -337,14 +513,24 @@
 
       updateAudioInfo();
       update_interval = setInterval(updateAudioInfo, AUDIO_INFO_UPDATE_INTERVAL);
-      started = true;
     } catch (error) {
       console.error('error in Start-->', error);
+      if (token === startToken) {
+        Stop();
+      } else {
+        await cleanupPendingStart({
+          nextAudioContext,
+          nextAnalyzerNode,
+          nextMicStream,
+          nextDetector,
+          nextFileSource
+        });
+      }
     }
   };
 
   const handleDeviceChange = () => {
-    if (currrent_audio_info) {
+    if (started && input_mode === 'mic') {
       // disconnect previous mic
       mic_stream?.getTracks().forEach((track) => track.stop());
       Start(); // Restart with new device if already running
@@ -382,7 +568,7 @@
              dark:from-amber-600 dark:via-orange-600 dark:to-yellow-700
              dark:hover:from-amber-700 dark:hover:via-orange-700 dark:hover:to-yellow-800
              "
-      onclick={Start}
+      onclick={() => Start()}
     >
       <!-- {input_mode === 'file' && !input_file ? 'cursor-not-allowed opacity-50' : ''} -->
       <!-- disabled={input_mode === 'file' && !input_file} -->
@@ -402,14 +588,14 @@
 {#snippet stop_button()}
   <button
     class="btn gap-0.5 rounded-md bg-error-600 px-1.5 py-0.5 text-base font-bold text-white sm:gap-1 sm:rounded-lg sm:px-2 sm:py-1 sm:text-xl dark:bg-error-500"
-    onclick={Stop}
+    onclick={() => Stop()}
   >
     <Icon src={BiStopCircle} class="-mt-0.5 text-xl sm:-mt-1 sm:text-2xl" />
     Stop
   </button>
 {/snippet}
 
-{#if currrent_audio_info && started}
+{#if started}
   <Tabs
     value={selected_pitch_display_type}
     onValueChange={(e) =>
@@ -423,7 +609,7 @@
     {#snippet content()}
       <Tabs.Panel value="circular_scale">
         <CircularScale
-          audio_info={currrent_audio_info!}
+          audio_info={display_audio_info}
           bind:selected_Sa_at
           bind:selected_sargam_orientation
           bind:selected_note_orientation
@@ -433,8 +619,9 @@
       </Tabs.Panel>
       <Tabs.Panel value="time_graph">
         <PitchTimeGraph
-          {pitch_history}
+          pitch_history={display_pitch_history}
           {stop_button}
+          {show_jumps}
           {MAX_PITCH_HISTORY_POINTS}
           {input_mode}
           bind:selected_Sa_at={selected_timegraph_Sa_at}
@@ -505,3 +692,61 @@
     </Tabs.Panel>
   {/snippet}
 </Tabs>
+{#if started}
+  <div class="mt-4 flex items-center justify-center">
+    <Popover
+      contentBase="card z-50 space-y-2 p-2 rounded-lg shadow-xl dark:bg-surface-900 bg-slate-100"
+      open={analysis_settings_popup_open}
+      onOpenChange={(e) => (analysis_settings_popup_open = e.open)}
+    >
+      {#snippet trigger()}
+        <div class="flex items-center justify-center gap-1.5 text-center font-bold outline-hidden">
+          <span class="text-sm">Options</span>
+          <Icon
+            src={FiSettings}
+            class={cl_join(
+              'size-4 transition-transform duration-200 ease-out',
+              analysis_settings_popup_open ? 'rotate-90' : 'rotate-0'
+            )}
+          />
+        </div>
+      {/snippet}
+      {#snippet content()}
+        <div class="space-x-1">
+          <span class="text-sm font-semibold">Algorithm</span>
+          <label>
+            <input type="radio" bind:group={detection_method} value="cqt" />
+            <span class="text-sm">CQT</span>
+          </label>
+          <label>
+            <input type="radio" bind:group={detection_method} value="fft" />
+            <span class="text-sm">FFT</span>
+          </label>
+        </div>
+        {#if selected_pitch_display_type === 'time_graph'}
+          <div class="space-x-1">
+            <span class="text-sm font-semibold">Jumps</span>
+            <label>
+              <input
+                type="radio"
+                name="show_jumps"
+                checked={show_jumps}
+                onchange={() => (show_jumps = true)}
+              />
+              <span class="text-sm">Show</span>
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="show_jumps"
+                checked={!show_jumps}
+                onchange={() => (show_jumps = false)}
+              />
+              <span class="text-sm">Hide</span>
+            </label>
+          </div>
+        {/if}
+      {/snippet}
+    </Popover>
+  </div>
+{/if}

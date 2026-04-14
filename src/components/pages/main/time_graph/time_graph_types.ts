@@ -11,7 +11,13 @@ export type GraphRow = {
   noteName: string;
   sargamKey: string;
   noteColor: string;
+  /** font boldness */
   highlightNote: boolean;
+  /** font boldness */
   highlightSargam: boolean;
   drawGrid: boolean;
+  /** opacity of the note, default is 1 */
+  noteOpacity?: number;
+  /** opacity of the sargam, default is 1 */
+  sargamOpacity?: number;
 };
