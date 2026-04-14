@@ -417,8 +417,8 @@
     listJustify="justify-center"
   >
     {#snippet list()}
-      <Tabs.Control value="circular_scale">Circular Scale</Tabs.Control>
-      <Tabs.Control value="time_graph">Time Graph</Tabs.Control>
+      <Tabs.Control value="circular_scale">Vṛtta</Tabs.Control>
+      <Tabs.Control value="time_graph">Rēkhā</Tabs.Control>
     {/snippet}
     {#snippet content()}
       <Tabs.Panel value="circular_scale">
