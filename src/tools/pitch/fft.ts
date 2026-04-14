@@ -5,7 +5,7 @@ import {
   getNoteNumberFromPitch,
   getScaleFromNoteNumber,
   getDetuneFromPitch
-} from '../../components/pages/main/constants';
+} from '~/components/pages/main/constants';
 
 export class FftPitchDetector implements PitchDetector {
   private _ready = false;
