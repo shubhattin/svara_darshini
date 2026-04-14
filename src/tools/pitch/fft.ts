@@ -47,7 +47,7 @@ export class FftPitchDetector implements PitchDetector {
     // Some threshold for clarity maybe? E.g., if clarity is very low, return null.
     // The previous implementation always mapped it, so we'll keep that behavior but
     // it's good practice to filter out extremely low confidence occasionally.
-    if (clarity < 0.8 && pitch <= 0) {
+    if (clarity < 0.8 || pitch <= 0) {
       // Just basic sanity check
       return null;
     }
