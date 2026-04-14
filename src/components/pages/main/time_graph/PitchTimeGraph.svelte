@@ -18,7 +18,8 @@
     MAX_PITCH_HISTORY_POINTS,
     bottom_start_note = $bindable(),
     selected_Sa_at = $bindable(),
-    input_mode
+    input_mode,
+    show_jumps
   }: {
     pitch_history: Array<{
       pitch: number;
@@ -30,6 +31,7 @@
     bottom_start_note: note_types;
     selected_Sa_at: note_types;
     input_mode: 'mic' | 'file';
+    show_jumps: boolean;
   } = $props();
 
   let is_paused = $state(false);
@@ -350,6 +352,7 @@
   {#if PitchTimeGraphStage}
     {#key fontsReady}
       <PitchTimeGraphStage
+        {show_jumps}
         {containerWidth}
         {containerHeight}
         {VIEWBOX_W}

@@ -15,7 +15,8 @@
     noteRows,
     reorderedNotes: noteGradientNotes,
     noteColors,
-    graphPalette
+    graphPalette,
+    show_jumps
   }: {
     containerWidth: number;
     containerHeight: number;
@@ -38,6 +39,7 @@
       labelStrong: string;
       point: string;
     };
+    show_jumps: boolean;
   } = $props();
 
   const stageWidth = $derived(Math.max(1, containerWidth));
@@ -255,18 +257,20 @@
       />
 
       {#if graphData.length > 1}
-        <!-- <Path
-          data={jumpPathData}
-          stroke={graphPalette.label}
-          strokeWidth={2}
-          opacity={0.3}
-          lineJoin="round"
-          lineCap="round"
-          strokeLinearGradientStartPointY={GRAPH_PADDING.top + GRAPH_HEIGHT}
-          strokeLinearGradientEndPointY={GRAPH_PADDING.top}
-          strokeLinearGradientColorStops={gradientStops}
-          listening={false}
-        /> -->
+        {#if show_jumps}
+          <Path
+            data={jumpPathData}
+            stroke={graphPalette.label}
+            strokeWidth={2}
+            opacity={0.3}
+            lineJoin="round"
+            lineCap="round"
+            strokeLinearGradientStartPointY={GRAPH_PADDING.top + GRAPH_HEIGHT}
+            strokeLinearGradientEndPointY={GRAPH_PADDING.top}
+            strokeLinearGradientColorStops={gradientStops}
+            listening={false}
+          />
+        {/if}
         <Path
           data={mainPathData}
           stroke={graphPalette.label}

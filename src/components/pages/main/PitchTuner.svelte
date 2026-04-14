@@ -7,7 +7,7 @@
     getDetuneFromPitch
   } from './constants';
   import { onMount, type Snippet } from 'svelte';
-  import { FiMusic, FiPlay, FiRefreshCcw } from 'svelte-icons-pack/fi';
+  import { FiMusic, FiPlay, FiRefreshCcw, FiSettings } from 'svelte-icons-pack/fi';
   import Icon from '~/tools/Icon.svelte';
   import { BiMicrophone, BiStopCircle } from 'svelte-icons-pack/bi';
   import { fade, slide } from 'svelte/transition';
@@ -17,7 +17,7 @@
   import { indactivity_timeout } from './inactivity';
   import ms from 'ms';
   import { Microphone } from '@mozartec/capacitor-microphone';
-  import { Tabs } from '@skeletonlabs/skeleton-svelte';
+  import { Popover, Tabs } from '@skeletonlabs/skeleton-svelte';
   import CircularScale from './circular/CircularScale.svelte';
   import PitchTimeGraph from './time_graph/PitchTimeGraph.svelte';
   import AudioInputFile from './AudioInputFile.svelte';
@@ -34,6 +34,7 @@
     selected_pitch_display_type = $bindable(),
     selected_timegraph_Sa_at = $bindable(),
     selected_timegraph_bottom_start_note = $bindable(),
+    show_jumps = $bindable(),
     welcome_msg
   }: {
     selected_device: string;
@@ -43,10 +44,12 @@
     selected_pitch_display_type: 'circular_scale' | 'time_graph';
     selected_timegraph_Sa_at: note_types;
     selected_timegraph_bottom_start_note: note_types;
+    show_jumps: boolean;
     welcome_msg: Snippet;
   } = $props();
 
   let detection_method: 'cqt' | 'fft' = $state('cqt');
+  let analysis_settings_popup_open = $state(false);
 
   let input_mode = $state<'mic' | 'file'>('mic');
   let input_file = $state<File | null>(null);
@@ -571,6 +574,7 @@
         <PitchTimeGraph
           pitch_history={display_pitch_history}
           {stop_button}
+          {show_jumps}
           {MAX_PITCH_HISTORY_POINTS}
           {input_mode}
           bind:selected_Sa_at={selected_timegraph_Sa_at}
@@ -580,12 +584,6 @@
       </Tabs.Panel>
     {/snippet}
   </Tabs>
-  <div class="mt-4 flex items-center justify-center space-x-2">
-    <select class="select rounded-md px-2 py-1" bind:value={detection_method}>
-      <option value="cqt">CQT</option>
-      <option value="fft">FFT</option>
-    </select>
-  </div>
 {/if}
 <Tabs
   value={input_mode}
@@ -647,3 +645,61 @@
     </Tabs.Panel>
   {/snippet}
 </Tabs>
+{#if started}
+  <div class="mt-4 flex items-center justify-center">
+    <Popover
+      contentBase="card z-50 space-y-2 p-2 rounded-lg shadow-xl dark:bg-surface-900 bg-slate-100"
+      open={analysis_settings_popup_open}
+      onOpenChange={(e) => (analysis_settings_popup_open = e.open)}
+    >
+      {#snippet trigger()}
+        <div class="flex items-center justify-center gap-1.5 text-center font-bold outline-hidden">
+          <span class="text-sm">Options</span>
+          <Icon
+            src={FiSettings}
+            class={cl_join(
+              'size-4 transition-transform duration-200 ease-out',
+              analysis_settings_popup_open ? 'rotate-90' : 'rotate-0'
+            )}
+          />
+        </div>
+      {/snippet}
+      {#snippet content()}
+        <div class="space-x-1">
+          <span class="text-sm font-semibold">Algorithm</span>
+          <label>
+            <input type="radio" bind:group={detection_method} value="cqt" />
+            <span class="text-sm">CQT</span>
+          </label>
+          <label>
+            <input type="radio" bind:group={detection_method} value="fft" />
+            <span class="text-sm">FFT</span>
+          </label>
+        </div>
+        {#if selected_pitch_display_type === 'time_graph'}
+          <div class="space-x-1">
+            <span class="text-sm font-semibold">Jumps</span>
+            <label>
+              <input
+                type="radio"
+                name="show_jumps"
+                checked={show_jumps}
+                onchange={() => (show_jumps = true)}
+              />
+              <span class="text-sm">Show</span>
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="show_jumps"
+                checked={!show_jumps}
+                onchange={() => (show_jumps = false)}
+              />
+              <span class="text-sm">Hide</span>
+            </label>
+          </div>
+        {/if}
+      {/snippet}
+    </Popover>
+  </div>
+{/if}
