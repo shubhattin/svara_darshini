@@ -231,12 +231,15 @@
       `width:${(width / VIEWBOX_W) * 100}%`,
       `height:${(height / VIEWBOX_H) * 100}%`
     ].join(';');
+  /** Faded label/dot for the wrapped octave row (same pitch class as the top). */
+  const DUPLICATE_BOUNDARY_OPACITY = 0.45;
   const noteRows = $derived(
     Array.from({ length: 13 }, (_, noteIndex) => {
       const y = (noteIndex / 12) * GRAPH_HEIGHT + GRAPH_PADDING.top;
       const noteIndex_clamped = noteIndex % NOTES_CUSTOM_START.length;
       const noteName = NOTES_CUSTOM_START[NOTES_CUSTOM_START.length - noteIndex_clamped - 1];
       const sargamKey = SARGAM_CUSTOM_START[SARGAM_CUSTOM_START.length - noteIndex_clamped - 1];
+      const isDuplicateBoundaryRow = noteIndex === 12;
 
       return {
         y,
@@ -246,7 +249,13 @@
         // highlightNote: noteIndex === NOTES_CUSTOM_START.length - 1,
         highlightNote: sargamKey === 's',
         highlightSargam: sargamKey === 's',
-        drawGrid: noteIndex < 12
+        drawGrid: noteIndex < 12,
+        ...(isDuplicateBoundaryRow
+          ? {
+              noteOpacity: DUPLICATE_BOUNDARY_OPACITY,
+              sargamOpacity: DUPLICATE_BOUNDARY_OPACITY
+            }
+          : {})
       };
     })
   );

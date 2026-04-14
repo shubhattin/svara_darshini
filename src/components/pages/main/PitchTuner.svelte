@@ -63,6 +63,7 @@
   let analyzer_node: AnalyserNode | null = null;
   let update_interval: NodeJS.Timeout | null = null;
   let mic_stream: MediaStream | null = null;
+  let startToken = 0;
 
   // These constants control how responsive the graphing/detection feels.
   const AUDIO_INFO_UPDATE_INTERVAL = $derived(detection_method === 'cqt' ? 120 : 80);
@@ -74,7 +75,7 @@
   ); // 100 points
 
   let started = $state(false);
-  let currrent_audio_info = $state<AudioInfo | null>(null);
+  let current_audio_info = $state<AudioInfo | null>(null);
 
   let pitch_history = $state<
     Array<{
@@ -88,7 +89,7 @@
   let detector: PitchDetector | null = null;
   let is_detector_loading = $state(false);
   const display_audio_info = $derived(
-    is_detector_loading ? EMPTY_AUDIO_INFO : (currrent_audio_info ?? EMPTY_AUDIO_INFO)
+    is_detector_loading ? EMPTY_AUDIO_INFO : (current_audio_info ?? EMPTY_AUDIO_INFO)
   );
   const display_pitch_history = $derived(is_detector_loading ? [] : pitch_history);
 
@@ -152,7 +153,34 @@
   };
 
   const setEmptyAudioInfo = () => {
-    currrent_audio_info = { ...EMPTY_AUDIO_INFO };
+    current_audio_info = { ...EMPTY_AUDIO_INFO };
+  };
+
+  const cleanupPendingStart = async ({
+    nextAudioContext,
+    nextAnalyzerNode,
+    nextMicStream,
+    nextDetector,
+    nextFileSource
+  }: {
+    nextAudioContext: AudioContext | null;
+    nextAnalyzerNode: AnalyserNode | null;
+    nextMicStream: MediaStream | null;
+    nextDetector: PitchDetector | null;
+    nextFileSource: MediaElementAudioSourceNode | null;
+  }) => {
+    nextFileSource?.disconnect();
+    nextAnalyzerNode?.disconnect();
+    nextDetector?.destroy();
+    nextMicStream?.getTracks().forEach((track) => track.stop());
+
+    if (nextAudioContext && nextAudioContext.state !== 'closed') {
+      try {
+        await nextAudioContext.close();
+      } catch (error) {
+        console.warn('[PitchTuner] Failed to close stale audio context', error);
+      }
+    }
   };
 
   const get_audio_devices = async (show_loading = true) => {
@@ -184,6 +212,7 @@
    *                 (used when restarting mid-session without the close/open transition)
    */
   const Stop = (silent = false) => {
+    startToken++;
     if (!silent) started = false;
     //clear interval
     clearInterval(update_interval!);
@@ -207,7 +236,7 @@
     // stop audio context
     audio_context?.close();
 
-    currrent_audio_info = null;
+    current_audio_info = null;
     audio_context = null;
     analyzer_node = null;
     mic_stream = null;
@@ -254,6 +283,13 @@
    *                       used for seamless algorithm hot-swap without the fade-in transition
    */
   const Start = async (keep_started = false) => {
+    const token = ++startToken;
+    let nextAudioContext: AudioContext | null = null;
+    let nextAnalyzerNode: AnalyserNode | null = null;
+    let nextMicStream: MediaStream | null = null;
+    let nextDetector: PitchDetector | null = null;
+    let nextFileSource: MediaElementAudioSourceNode | null = null;
+
     try {
       if (input_mode === 'mic') {
         // Microphone input mode
@@ -262,6 +298,7 @@
           console.error('Microphone permission not granted');
           return;
         }
+        if (token !== startToken) return;
         console.log(
           'Selected Microphone: ',
           audio_devices.find((device, i) => device.deviceId === selected_device)?.label ??
@@ -269,9 +306,9 @@
         );
 
         // start audio context
-        audio_context = new AudioContext();
+        nextAudioContext = new AudioContext();
         // create analyzer node
-        analyzer_node = audio_context.createAnalyser();
+        nextAnalyzerNode = nextAudioContext.createAnalyser();
 
         const constraints: MediaStreamConstraints = {
           audio: buildAudioConstraints(selected_device)
@@ -291,19 +328,34 @@
               error: err
             }
           );
-          await audio_context.close();
-          audio_context = null;
-          analyzer_node = null;
+          await cleanupPendingStart({
+            nextAudioContext,
+            nextAnalyzerNode,
+            nextMicStream,
+            nextDetector,
+            nextFileSource
+          });
+          return;
+        }
+        if (token !== startToken) {
+          nextMicStream = stream;
+          await cleanupPendingStart({
+            nextAudioContext,
+            nextAnalyzerNode,
+            nextMicStream,
+            nextDetector,
+            nextFileSource
+          });
           return;
         }
         get_audio_devices(false); // refresh list
-        if (!audio_context) return;
-        if (!analyzer_node) return;
+        if (!nextAudioContext) return;
+        if (!nextAnalyzerNode) return;
         if (!stream) return;
-        mic_stream = stream;
+        nextMicStream = stream;
 
         logAudioTrackDebugInfo(stream, selected_device);
-        audio_context.createMediaStreamSource(stream).connect(analyzer_node);
+        nextAudioContext.createMediaStreamSource(stream).connect(nextAnalyzerNode);
       } else if (input_mode === 'file') {
         // File input mode
         if (!file_audio_element || !input_file) {
@@ -312,14 +364,25 @@
         }
 
         // start audio context
-        audio_context = new AudioContext();
+        nextAudioContext = new AudioContext();
         // create analyzer node
-        analyzer_node = audio_context.createAnalyser();
+        nextAnalyzerNode = nextAudioContext.createAnalyser();
 
         // Create media element source
-        const source = audio_context.createMediaElementSource(file_audio_element);
-        source.connect(analyzer_node);
-        source.connect(audio_context.destination); // So we can hear the audio
+        nextFileSource = nextAudioContext.createMediaElementSource(file_audio_element);
+        nextFileSource.connect(nextAnalyzerNode);
+        nextFileSource.connect(nextAudioContext.destination); // So we can hear the audio
+      }
+
+      if (token !== startToken) {
+        await cleanupPendingStart({
+          nextAudioContext,
+          nextAnalyzerNode,
+          nextMicStream,
+          nextDetector,
+          nextFileSource
+        });
+        return;
       }
 
       clearInterval(update_interval!);
@@ -327,47 +390,60 @@
       setEmptyAudioInfo();
       if (!keep_started) started = true;
 
-      if (!analyzer_node) {
+      if (!nextAnalyzerNode || !nextAudioContext) {
         throw new Error('Audio analyser could not be created.');
       }
 
       is_detector_loading = true;
-      detector = detection_method === 'cqt' ? new CqtPitchDetector() : new FftPitchDetector();
+      nextDetector = detection_method === 'cqt' ? new CqtPitchDetector() : new FftPitchDetector();
 
       try {
-        await detector.init(analyzer_node, audio_context!);
+        await nextDetector.init(nextAnalyzerNode, nextAudioContext);
       } catch (error) {
         is_detector_loading = false;
         throw error;
       }
 
-      if (!started) {
-        detector.destroy();
-        detector = null;
+      if (token !== startToken || !started) {
+        await cleanupPendingStart({
+          nextAudioContext,
+          nextAnalyzerNode,
+          nextMicStream,
+          nextDetector,
+          nextFileSource
+        });
         return;
       }
+
+      audio_context = nextAudioContext;
+      analyzer_node = nextAnalyzerNode;
+      mic_stream = nextMicStream;
+      detector = nextDetector;
       is_detector_loading = false;
 
       function updateAudioInfo() {
+        if (token !== startToken) {
+          return;
+        }
         // For file mode, only analyze when audio is playing
         if (input_mode === 'file' && !file_is_playing) {
           setEmptyAudioInfo();
           return;
         }
 
-        if (!analyzer_node || !detector?.ready) {
+        if (!nextAnalyzerNode || !nextAudioContext || !nextDetector?.ready) {
           setEmptyAudioInfo();
           return;
         }
 
-        const currentAudioInfo = detector.detect(analyzer_node, audio_context!);
+        const currentAudioInfo = nextDetector.detect(nextAnalyzerNode, nextAudioContext);
 
         if (!currentAudioInfo) {
           setEmptyAudioInfo();
           return;
         }
 
-        currrent_audio_info = currentAudioInfo;
+        current_audio_info = currentAudioInfo;
 
         // Add to pitch history for time graph
         pitch_history = [
@@ -389,7 +465,17 @@
       update_interval = setInterval(updateAudioInfo, AUDIO_INFO_UPDATE_INTERVAL);
     } catch (error) {
       console.error('error in Start-->', error);
-      Stop();
+      if (token === startToken) {
+        Stop();
+      } else {
+        await cleanupPendingStart({
+          nextAudioContext,
+          nextAnalyzerNode,
+          nextMicStream,
+          nextDetector,
+          nextFileSource
+        });
+      }
     }
   };
 

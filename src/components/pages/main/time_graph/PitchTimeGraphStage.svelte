@@ -192,6 +192,7 @@
           y={row.y}
           radius={2}
           fill={row.noteColor}
+          opacity={row.noteOpacity ?? 1}
           listening={false}
         />
 
@@ -207,6 +208,7 @@
           fontStyle="normal"
           align="right"
           verticalAlign="middle"
+          opacity={row.noteOpacity ?? 1}
           listening={false}
         />
 
@@ -223,6 +225,7 @@
           fontFamily="ome_bhatkhande_en"
           align="right"
           verticalAlign="middle"
+          opacity={row.sargamOpacity ?? 1}
           listening={false}
         />
       {/each}
