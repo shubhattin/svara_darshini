@@ -71,6 +71,15 @@
   // These constants control how responsive the graphing/detection feels.
   const AUDIO_INFO_UPDATE_INTERVAL = $derived(detection_method === 'cqt' ? 120 : 80);
   const GRAPH_TOTAL_TIME_MS = 8000;
+  // Master kill switch for the analyzer-side input filter chain.
+  // Set to false to compare raw capture vs filtered capture quickly.
+  const ENABLE_PITCH_INPUT_FILTERING = true;
+  // Gentle high-pass cutoff that removes handling noise, breath pops,
+  // and low-frequency rumble without trimming normal voice/tanpura fundamentals.
+  const PITCH_INPUT_HIGHPASS_HZ = 70;
+  // Gentle low-pass cutoff that reduces upper-band hiss while keeping
+  // enough harmonic content for stable pitch detection.
+  const PITCH_INPUT_LOWPASS_HZ = 4000;
 
   // Pitch history for time graph
   const MAX_PITCH_HISTORY_POINTS = $derived(
@@ -157,6 +166,35 @@
 
   const setEmptyAudioInfo = () => {
     current_audio_info = { ...EMPTY_AUDIO_INFO };
+  };
+
+  const connectPitchAnalysisInput = ({
+    audioContext,
+    source,
+    analyzer
+  }: {
+    audioContext: AudioContext;
+    source: AudioNode;
+    analyzer: AnalyserNode;
+  }) => {
+    if (!ENABLE_PITCH_INPUT_FILTERING) {
+      source.connect(analyzer);
+      return;
+    }
+
+    // Keep the filter chain gentle so we remove rumble and hiss
+    // without flattening harmonics that help pitch detection.
+    const highPass = audioContext.createBiquadFilter();
+    highPass.type = 'highpass';
+    highPass.frequency.value = PITCH_INPUT_HIGHPASS_HZ;
+
+    const lowPass = audioContext.createBiquadFilter();
+    lowPass.type = 'lowpass';
+    lowPass.frequency.value = PITCH_INPUT_LOWPASS_HZ;
+
+    source.connect(highPass);
+    highPass.connect(lowPass);
+    lowPass.connect(analyzer);
   };
 
   const cleanupPendingStart = async ({
@@ -358,7 +396,12 @@
         nextMicStream = stream;
 
         logAudioTrackDebugInfo(stream, selected_device);
-        nextAudioContext.createMediaStreamSource(stream).connect(nextAnalyzerNode);
+        const nextMicSource = nextAudioContext.createMediaStreamSource(stream);
+        connectPitchAnalysisInput({
+          audioContext: nextAudioContext,
+          source: nextMicSource,
+          analyzer: nextAnalyzerNode
+        });
       } else if (input_mode === 'file') {
         // File input mode
         if (!file_audio_element || !input_file) {
@@ -373,7 +416,11 @@
 
         // Create media element source
         nextFileSource = nextAudioContext.createMediaElementSource(file_audio_element);
-        nextFileSource.connect(nextAnalyzerNode);
+        connectPitchAnalysisInput({
+          audioContext: nextAudioContext,
+          source: nextFileSource,
+          analyzer: nextAnalyzerNode
+        });
         nextFileSource.connect(nextAudioContext.destination); // So we can hear the audio
       }
 
