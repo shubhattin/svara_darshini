@@ -1,11 +1,5 @@
 <script lang="ts">
-  import {
-    NOTES,
-    type note_types,
-    getNoteNumberFromPitch,
-    getScaleFromNoteNumber,
-    getDetuneFromPitch
-  } from './constants';
+  import { type note_types } from './constants';
   import { onMount, type Snippet } from 'svelte';
   import { FiMusic, FiPlay, FiRefreshCcw, FiSettings } from 'svelte-icons-pack/fi';
   import Icon from '~/tools/Icon.svelte';
@@ -17,7 +11,7 @@
   import { indactivity_timeout } from './inactivity';
   import ms from 'ms';
   import { Microphone } from '@mozartec/capacitor-microphone';
-  import { Popover, Tabs } from '@skeletonlabs/skeleton-svelte';
+  import { Popover, Switch, Tabs } from '@skeletonlabs/skeleton-svelte';
   import CircularScale from './circular/CircularScale.svelte';
   import PitchTimeGraph from './time_graph/PitchTimeGraph.svelte';
   import AudioInputFile from './AudioInputFile.svelte';
@@ -71,9 +65,7 @@
   // These constants control how responsive the graphing/detection feels.
   const AUDIO_INFO_UPDATE_INTERVAL = $derived(detection_method === 'cqt' ? 120 : 80);
   const GRAPH_TOTAL_TIME_MS = 8000;
-  // Master kill switch for the analyzer-side input filter chain.
-  // Set to false to compare raw capture vs filtered capture quickly.
-  const ENABLE_PITCH_INPUT_FILTERING = true;
+  let enable_pitch_filtering = $state(false);
   // Gentle high-pass cutoff that removes handling noise, breath pops,
   // and low-frequency rumble without trimming normal voice/tanpura fundamentals.
   const PITCH_INPUT_HIGHPASS_HZ = 70;
@@ -177,7 +169,7 @@
     source: AudioNode;
     analyzer: AnalyserNode;
   }) => {
-    if (!ENABLE_PITCH_INPUT_FILTERING) {
+    if (!enable_pitch_filtering) {
       source.connect(analyzer);
       return;
     }
@@ -701,7 +693,7 @@
     >
       {#snippet trigger()}
         <div class="flex items-center justify-center gap-1.5 text-center font-bold outline-hidden">
-          <span class="text-sm">Options</span>
+          <span class="text-sm">Settings</span>
           <Icon
             src={FiSettings}
             class={cl_join(
@@ -746,6 +738,13 @@
             </label>
           </div>
         {/if}
+        <!-- <label class="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span class="text-xs font-semibold">Simple Pitch Filtering</span>
+          <Switch
+            checked={enable_pitch_filtering}
+            onCheckedChange={(e) => (enable_pitch_filtering = e.checked)}
+          />
+        </label> -->
       {/snippet}
     </Popover>
   </div>

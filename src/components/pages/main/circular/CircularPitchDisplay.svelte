@@ -19,6 +19,7 @@
   let Sa_at_index = $derived(NOTES.indexOf(Sa_at));
 
   const { detune, note: note_, scale } = $derived(audio_info);
+  const hasDetune = $derived(Number.isFinite(detune));
 
   let note_index = $derived(NOTES.indexOf(note_ as note_types));
 
@@ -189,11 +190,11 @@
 
     <!-- Needle -->
     <g
-      transform={`rotate(${detune ? cents_to_rotation(detune, note_) : 0})`}
+      transform={`rotate(${hasDetune ? cents_to_rotation(detune, note_) : 0})`}
       class={cl_join(
         '-z-10',
         'origin-top-left transition-transform duration-300 ease-linear',
-        !detune && 'opacity-50'
+        !hasDetune && 'opacity-50'
       )}
     >
       <line
@@ -220,17 +221,17 @@
     <!-- Sector -->
     <path
       d={get_sector_path()}
-      transform={`rotate(${detune ? (note_index - Sa_at_index) * 30 : 0} 0 0)`}
+      transform={`rotate(${hasDetune ? (note_index - Sa_at_index) * 30 : 0} 0 0)`}
       class={cl_join(
         'fill-black opacity-10 dark:fill-white dark:opacity-15',
         'origin-top-left transition-transform duration-300 ease-linear',
-        !detune && 'hidden'
+        !hasDetune && 'hidden'
       )}
     />
 
     <!-- Center display -->
     <!-- <circle cx="0" cy="0" r={MIDDLE_CIRCLE_RADIUS} class="fill-white opacity-60 dark:fill-black" /> -->
-    {#if detune}
+    {#if hasDetune}
       <g>
         <text
           x="0"
